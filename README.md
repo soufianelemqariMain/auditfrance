@@ -2,156 +2,142 @@
 
 # Audit France
 
-**Tableau de bord open-source pour la transparence des finances publiques et la séparation des pouvoirs**
+**A real-time civic intelligence dashboard for democratic checks and balances**
 
-[![Licence MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
-[![Deploy with Vercel](https://img.shields.io/badge/déployer-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
-[![Open Source](https://img.shields.io/badge/open%20source-%E2%9D%A4-red)]()
-[![PRs Welcome](https://img.shields.io/badge/PRs-bienvenues-brightgreen.svg)](CONTRIBUTING.md)
+[![Deploy with Vercel](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/soufianelemqariMain/auditfrance/issues)
 
-[Démo live](https://auditfrance.vercel.app) · [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) · [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues)
+[Live demo](https://auditfrance.vercel.app) · [Report a bug](https://github.com/soufianelemqariMain/auditfrance/issues) · [Request a feature](https://github.com/soufianelemqariMain/auditfrance/issues)
 
 </div>
 
 ---
 
-## À propos
+## What this is
 
-Audit France est un tableau de bord de veille civique inspiré de [worldmonitor.app](https://worldmonitor.app) — mais ancré dans la réalité française, avec une obsession pour la **transparence démocratique** et l'**équilibre des pouvoirs**.
+A mission control for French democracy. One screen. Everything that matters.
 
-Là où d'autres tableaux de bord agrègent de l'information générale, Audit France se concentre sur une question précise : **qui décide quoi, avec quel argent public, et au profit de qui ?**
+Inspired by [worldmonitor.app](https://worldmonitor.app) — massive kudos for the concept. They applied it to Polymarket predictions. We applied it to something that actually affects people's lives: **who holds power, who spends public money, and whether they're doing their job**.
 
-Données officielles uniquement. Aucune base de données privée. Aucun scraping.
+Big respect to the French open data ecosystem — the agents from data.gouv.fr, BOAMP, nosdeputes.fr, DECP, OFGL — who made it possible to build something like this without a single proprietary database or data deal. The state publishing its own receipts. That's the move.
 
 ---
 
-## Ce que ça fait
+## What it does
 
-### Carte nationale interactive
+### Interactive national map
 
-Cliquez sur n'importe lequel des 101 départements pour accéder instantanément à son tableau de bord local :
+Click any of France's 101 departments. Get the full picture instantly:
 
-| Onglet | Ce qu'il montre |
+| Tab | What's inside |
 |---|---|
-| **Aperçu** | Population, superficie, densité, préfecture, liens régionaux |
-| **Élus** | Président·e du Conseil Régional + tous les député·e·s avec leurs scores d'activité parlementaire |
-| **Appels d'offres** | Avis de marchés publics actifs encore ouverts aux candidatures — en direct depuis BOAMP |
-| **Budget** | Estimations budgétaires du conseil départemental (ratios OFGL) avec liens vers les sources officielles |
+| **Aperçu** | Population, area, density, prefecture — the basics |
+| **Élus** | Regional council president + all deputies with live activity scores |
+| **Appels d'offres** | Active public procurement tenders — live from BOAMP |
+| **Budget** | Departmental spending breakdown (OFGL ratios) |
 
-### Flux d'information en temps réel
+### Live bottom bar
 
-| Panneau | Source | Fréquence |
+| Panel | Source | Refresh |
 |---|---|---|
-| Fil d'actualité | BFM, France Info, Le Monde, Le Figaro, RFI, France 24 | Toutes les 5 min |
-| Brief IA | API Mistral | À la demande |
-| CAC 40 | Yahoo Finance proxy | Temps réel |
-| Parlement | RSS Assemblée Nationale + Sénat | En direct |
+| News feed | BFM, France Info, Le Monde, Le Figaro, RFI, France 24 | 5 min |
+| Live TV | France 24, BFM TV, CNews, LCP | Stream |
+| Sous-actifs | nosdeputes.fr synthese | 1 hour |
+| AO ouverts | BOAMP OpenDataSoft | 15 min |
+| CAC 40 | Yahoo Finance (~40 companies) | 60 sec |
 
-### Page audit national (`/audit`)
+### National audit page (`/audit`)
 
-Quatre onglets pour une vision nationale complète :
-
-| Onglet | Source | Contenu |
+| Tab | Source | Content |
 |---|---|---|
-| **Budget PLF** | budget.gouv.fr | Répartition du PLF 2025 par ministère |
-| **Marchés attribués** | DECP | Classement des entreprises par volume de marchés publics |
-| **Marchés ouverts** | BOAMP | Tous les appels d'offres actifs, filtrables par département |
-| **Subventions** | data-subventions.beta.gouv.fr + aides-territoires | Subventions attribuées + programmes de financement ouverts |
+| **Budget PLF** | budget.gouv.fr | PLF 2025 by ministry |
+| **Marchés attribués** | DECP | Top contractors by public procurement volume |
+| **Marchés ouverts** | BOAMP | All active tenders, filterable by department |
+| **Subventions** | data-subventions.beta.gouv.fr | Grants awarded + open funding programs |
 
 ---
 
-## Sources de données
+## Data sources
 
-Toutes les données sont récupérées en direct depuis les API officielles de l'État français — sans base de données, sans scraping.
+All data is pulled live from official French government APIs. No private database. No scraping. No bullshit.
 
-| Donnée | API | Cache |
+| Data | API | Cache |
 |---|---|---|
-| Marchés attribués | [DECP v3 — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min |
-| Appels d'offres ouverts | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min |
-| Subventions État | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min |
-| Programmes de financement | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min |
-| Activité des député·e·s | [nosdeputes.fr](https://www.nosdeputes.fr) | 1 heure |
-| Actualité | RSS (BFM, Le Monde, France Info, Le Figaro, RFI, France 24) | 5 min |
-| Brief IA | [API Mistral](https://mistral.ai) | À la demande |
+| Awarded contracts | [DECP v3 — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min |
+| Open tenders | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min |
+| State grants | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min |
+| Funding programs | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min |
+| Deputy activity | [nosdeputes.fr](https://www.nosdeputes.fr) | 1 hour |
+| News | RSS (BFM, Le Monde, France Info, Le Figaro, RFI, France 24) | 5 min |
+| Stocks | Yahoo Finance | 60 sec |
 
 ---
 
-## Stack technique
+## Stack
 
-- **[Next.js 16](https://nextjs.org)** — App Router, routes API serveur
-- **[React 19](https://react.dev)** — interface utilisateur
-- **[TypeScript](https://www.typescriptlang.org)** — typage strict bout en bout
-- **[MapLibre GL](https://maplibre.org)** — carte interactive
-- **[Zustand](https://zustand-demo.pmnd.rs)** — état client
-- **[Tailwind CSS](https://tailwindcss.com)** — styles utilitaires
+- **[Next.js 16](https://nextjs.org)** — App Router, server API routes
+- **[React 19](https://react.dev)** — UI
+- **[TypeScript](https://www.typescriptlang.org)** — end-to-end types
+- **[MapLibre GL](https://maplibre.org)** — interactive map
+- **[Zustand](https://zustand-demo.pmnd.rs)** — client state
+- **[Tailwind CSS](https://tailwindcss.com)** — utility styles
 
 ---
 
-## Lancer en local
-
-### Prérequis
-
-- Node.js 18+
-- Une [clé API Mistral](https://console.mistral.ai) gratuite (optionnelle — active le brief IA)
-
-### Installation
+## Run locally
 
 ```bash
 git clone https://github.com/soufianelemqariMain/auditfrance.git
 cd auditfrance
 npm install
-```
-
-Créer un `.env.local` :
-
-```env
-MISTRAL_API_KEY=votre_clé_ici   # optionnel
-```
-
-```bash
 npm run dev
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). No API keys required to get something running.
 
-### Déployer sur Vercel
+### Deploy to Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
 
-Après déploiement, ajoutez `MISTRAL_API_KEY` dans les variables d'environnement Vercel pour activer le brief IA.
+---
+
+## Contribute
+
+Open source contributions are welcome and encouraged.
+
+The architecture is deliberately modular — every panel and every API route is isolated. Adding a new data source is usually a single file. No global state, no framework magic to fight.
+
+**Good first issues:**
+- Add a new data source to the department panel
+- Improve the deputy activity scoring algorithm
+- Add a regional news feed filtered by department
+- Mobile responsiveness
+- More market data sources (beyond BOAMP)
+- Dark/light theme toggle
+
+**To contribute:**
+
+1. Fork the repo
+2. Create a branch: `git checkout -b feature/your-thing`
+3. Make your changes
+4. Push: `git push origin feature/your-thing`
+5. Open a PR
+
+One feature per PR. Follow the existing style (TypeScript, inline styles with CSS variables). If you're touching a data source, document what you're fetching and why.
 
 ---
 
-## Contribuer
+## License
 
-Les contributions sont les bienvenues. Chaque panneau et chaque route API sont isolés — c'est facile à étendre.
-
-**Bonnes premières issues :**
-- Ajouter une nouvelle source de données au panneau département
-- Améliorer l'algorithme de score d'activité des député·e·s
-- Ajouter un flux d'actualité régional filtré par département
-- Améliorer la responsivité mobile
-- Ajouter un thème clair / sombre
-
-**Pour contribuer :**
-
-1. Forkez le dépôt
-2. Créez une branche : `git checkout -b feature/ma-fonctionnalite`
-3. Faites vos modifications
-4. Poussez : `git push origin feature/ma-fonctionnalite`
-5. Ouvrez une pull request
-
-Une fonctionnalité par PR. Suivez le style existant (TypeScript, styles inline avec les variables CSS du système).
-
----
-
-## Licence
-
-MIT — voir [LICENSE](LICENSE) pour les détails.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
-Construit avec des données publiques, dans l'intérêt général.
+
+Built on public data, for the public interest.<br>
+Because transparency isn't a feature — it's the whole point.
+
 </div>

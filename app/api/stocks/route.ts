@@ -27,6 +27,20 @@ const SYMBOLS: { symbol: string; name: string }[] = [
   { symbol: "BN.PA",  name: "Danone"            },
   { symbol: "ORA.PA", name: "Orange"            },
   { symbol: "EN.PA",  name: "Bouygues"          },
+  { symbol: "HO.PA",  name: "Thales"            },
+  { symbol: "SW.PA",  name: "Sodexo"            },
+  { symbol: "WLN.PA", name: "Worldline"         },
+  { symbol: "LR.PA",  name: "Legrand"           },
+  { symbol: "PUB.PA", name: "Publicis"          },
+  { symbol: "ENGI.PA",name: "Engie"             },
+  { symbol: "ML.PA",  name: "Michelin"          },
+  { symbol: "SGO.PA", name: "Saint-Gobain"      },
+  { symbol: "TE.PA",  name: "Technip Energies"  },
+  { symbol: "STLAP.PA",name:"Stellantis"        },
+  { symbol: "URW.AS", name: "Unibail-Rodamco"   },
+  { symbol: "RNO.PA", name: "Renault"           },
+  { symbol: "ERF.PA", name: "Eurofins"          },
+  { symbol: "FR.PA",  name: "Valeo"             },
 ];
 
 export interface StockQuote {
