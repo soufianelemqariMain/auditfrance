@@ -31,10 +31,11 @@ export async function GET(request: NextRequest) {
   // Query DECP for each term independently — skip terms that error
   for (const term of terms.slice(0, 3)) {
     try {
-      // URLSearchParams encodes % → %25, which ODS correctly decodes back to % for LIKE wildcards
+      // Use q= for full-text search (avoids % encoding issues with LIKE in ODS v2.1)
       const params = new URLSearchParams({
         select: FIELDS,
-        where: `acheteur_nom LIKE "%${term}%" AND montant>25000`,
+        where: "montant>25000",
+        q: term,
         order_by: "montant DESC",
         limit: "30",
       });

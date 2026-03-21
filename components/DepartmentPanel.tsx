@@ -39,7 +39,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
   const [contracts, setContracts] = useState<DeptContract[] | null>(null);
   const [loadStatus, setLoadStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [loadMsg, setLoadMsg] = useState("");
-  const [tab, setTab] = useState<"apercu" | "marches" | "budget" | "elus">("apercu");
+  const [tab, setTab] = useState<"apercu" | "marches" | "consultations" | "subventions" | "budget" | "elus">("apercu");
 
   // National sample procurement data relevant to this department's key buyers
   const sampleContracts = getSampleContracts(code);
@@ -137,12 +137,12 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10 }}>
-          {(["apercu", "elus", "marches", "budget"] as const).map((t) => (
+          {(["apercu", "elus", "marches", "consultations", "subventions", "budget"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               style={{
-                padding: "5px 14px",
+                padding: "5px 12px",
                 fontSize: 10,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -155,7 +155,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
                 transition: "all 0.15s",
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "marches" ? "Marchés" : "Budget"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "marches" ? "Marchés att." : t === "consultations" ? "AO ouverts" : t === "subventions" ? "Subventions" : "Budget"}
             </button>
           ))}
         </div>
@@ -178,6 +178,8 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
             onRefresh={fetchDecp}
           />
         )}
+        {tab === "consultations" && <ConsultationsTab code={code} />}
+        {tab === "subventions" && <SubventionsTab code={code} />}
         {tab === "budget" && (
           <BudgetTab code={code} nom={nom} />
         )}
@@ -369,10 +371,6 @@ function ElusTab({ code, region }: { code: string; region: string }) {
           })}
         </div>
 
-        {/* Senate link */}
-        <div style={{ marginTop: 12 }}>
-          <ExtLink href={`https://www.senat.fr/elus-locaux/departement.html`} label="Sénateurs du département → Sénat.fr" />
-        </div>
       </div>
     </div>
   );
@@ -592,6 +590,167 @@ function MiniStat({ label, value, unit, color }: { label: string; value: number;
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{label}</span>
       <span style={{ fontSize: 10, fontWeight: 700, color, fontFamily: "var(--font-mono)" }}>{value}{unit ? " " + unit : ""}</span>
+    </div>
+  );
+}
+
+// --- Consultations tab (BOAMP open RFPs for this department) ---
+interface Consultation {
+  id: string;
+  objet: string;
+  acheteur: string;
+  typeMarche: string;
+  dateParution: string;
+  dateLimite: string;
+  url: string;
+}
+
+function daysLeft(dateLimite: string): { n: number; color: string } | null {
+  if (!dateLimite) return null;
+  const d = new Date(dateLimite);
+  if (isNaN(d.getTime())) return null;
+  const n = Math.ceil((d.getTime() - Date.now()) / 86400000);
+  return { n, color: n <= 3 ? "#ef4444" : n <= 7 ? "#eab308" : "#22c55e" };
+}
+
+function ConsultationsTab({ code }: { code: string }) {
+  const [items, setItems] = useState<Consultation[]>([]);
+  const [total, setTotal] = useState(0);
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
+
+  useEffect(() => {
+    setStatus("loading");
+    setErrMsg("");
+    fetch(`/api/consultations?dept=${code}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setItems(d.consultations ?? []);
+        setTotal(d.total ?? 0);
+        setStatus("done");
+      })
+      .catch((e) => { setStatus("error"); setErrMsg(String(e?.message ?? e)); });
+  }, [code]);
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <div style={{ width: 7, height: 7, borderRadius: "50%", background: status === "done" ? "#22c55e" : status === "loading" ? "#eab308" : status === "error" ? "#ef4444" : "var(--border)" }} />
+        <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+          {status === "loading" && "Chargement BOAMP…"}
+          {status === "done" && `${items.length} appels d'offres ouverts — dépt ${code}`}
+          {status === "error" && `Erreur : ${errMsg}`}
+        </span>
+      </div>
+
+      {status === "done" && items.length === 0 && (
+        <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "16px 0" }}>
+          Aucun appel d'offres actif pour ce département.
+          <div style={{ marginTop: 8 }}>
+            <ExtLink href={`https://www.boamp.fr/pages/avis/?q=code_departement:${code}`} label="Voir sur BOAMP.fr" />
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {items.map((c) => {
+          const rem = daysLeft(c.dateLimite);
+          return (
+            <div key={c.id}
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "8px 10px", cursor: c.url ? "pointer" : "default" }}
+              onClick={() => c.url && window.open(c.url, "_blank", "noopener,noreferrer")}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3, flex: 1 }}>{c.objet || "Objet non précisé"}</div>
+                {rem && <span style={{ fontSize: 10, fontWeight: 700, color: rem.color, fontFamily: "var(--font-mono)", flexShrink: 0 }}>J-{rem.n}</span>}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 3 }}>{c.acheteur}</div>
+              <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 2, fontFamily: "var(--font-mono)" }}>
+                Publié {c.dateParution} · Limite {c.dateLimite}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {total > items.length && (
+        <div style={{ marginTop: 10 }}>
+          <ExtLink href={`https://www.boamp.fr/pages/avis/?q=code_departement:${code}`} label={`Voir les ${total} avis sur BOAMP.fr →`} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Subventions tab (open programs for this region) ---
+interface Aide {
+  id: number;
+  name: string;
+  description: string;
+  url: string;
+  financers: string[];
+  submission_deadline: string | null;
+}
+
+function SubventionsTab({ code }: { code: string }) {
+  const [aides, setAides] = useState<Aide[]>([]);
+  const [total, setTotal] = useState(0);
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
+
+  useEffect(() => {
+    setStatus("loading");
+    setErrMsg("");
+    fetch("/api/subventions?type=ouvertes")
+      .then((r) => r.json())
+      .then((d) => {
+        setAides((d.aides ?? []).slice(0, 20));
+        setTotal(d.total ?? 0);
+        setStatus("done");
+      })
+      .catch((e) => { setStatus("error"); setErrMsg(String(e?.message ?? e)); });
+  }, [code]);
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <div style={{ width: 7, height: 7, borderRadius: "50%", background: status === "done" ? "#22c55e" : status === "loading" ? "#eab308" : status === "error" ? "#ef4444" : "var(--border)" }} />
+        <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+          {status === "loading" && "Chargement aides-territoires…"}
+          {status === "done" && `${total.toLocaleString("fr-FR")} programmes de subventions ouverts`}
+          {status === "error" && `Erreur : ${errMsg}`}
+        </span>
+      </div>
+
+      {status === "done" && aides.length === 0 && (
+        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Aucun programme disponible actuellement.</div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {aides.map((a) => (
+          <div key={a.id}
+            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "8px 10px", cursor: a.url ? "pointer" : "default" }}
+            onClick={() => a.url && window.open(a.url, "_blank", "noopener,noreferrer")}
+          >
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3 }}>{a.name}</div>
+            {a.financers.length > 0 && (
+              <div style={{ fontSize: 10, color: "var(--accent-blue)", marginTop: 2 }}>{a.financers.slice(0, 2).join(" · ")}</div>
+            )}
+            {a.description && (
+              <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.4 }}>{a.description.slice(0, 100)}…</div>
+            )}
+            {a.submission_deadline && (
+              <div style={{ fontSize: 9, color: "var(--accent-yellow)", marginTop: 2, fontFamily: "var(--font-mono)" }}>Clôture : {a.submission_deadline}</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {total > aides.length && (
+        <div style={{ marginTop: 10 }}>
+          <ExtLink href="https://aides-territoires.beta.gouv.fr" label={`Voir tous les ${total} programmes →`} />
+        </div>
+      )}
     </div>
   );
 }

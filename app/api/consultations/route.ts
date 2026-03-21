@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // BOAMP via OpenDataSoft — all French public procurement notices
 const BOAMP_API =
   "https://boamp-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/boamp/records";
 
-let cache: { data: ConsultationsData; ts: number } | null = null;
+// Cache: one entry per dept key ("all" or dept code)
+const cache = new Map<string, { data: ConsultationsData; ts: number }>();
 const CACHE_TTL = 15 * 60 * 1000; // 15 min
 
 interface Consultation {
@@ -24,18 +25,26 @@ interface ConsultationsData {
   fetchedAt: string;
 }
 
-export async function GET(): Promise<NextResponse> {
-  if (cache && Date.now() - cache.ts < CACHE_TTL) {
-    return NextResponse.json(cache.data);
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const dept = request.nextUrl.searchParams.get("dept");
+  const cacheKey = dept ?? "all";
+
+  const hit = cache.get(cacheKey);
+  if (hit && Date.now() - hit.ts < CACHE_TTL) {
+    return NextResponse.json(hit.data);
   }
 
   // Filter for active tenders: deadline in the future, initial publication state
   const today = new Date().toISOString().slice(0, 10);
+  const whereClause = dept
+    ? `datelimitereponse>"${today}" AND etat="INITIAL" AND code_departement="${dept.padStart(2, "0")}"`
+    : `datelimitereponse>"${today}" AND etat="INITIAL"`;
+
   const params = new URLSearchParams({
     select: "idweb,objet,nomacheteur,type_marche,code_departement,dateparution,datelimitereponse,url_avis",
-    where: `datelimitereponse>"${today}" AND etat="INITIAL"`,
+    where: whereClause,
     order_by: "dateparution DESC",
-    limit: "100",
+    limit: dept ? "50" : "100",
   });
 
   try {
@@ -76,7 +85,7 @@ export async function GET(): Promise<NextResponse> {
       fetchedAt: new Date().toISOString(),
     };
 
-    cache = { data, ts: Date.now() };
+    cache.set(cacheKey, { data, ts: Date.now() });
     return NextResponse.json(data);
   } catch (err) {
     return NextResponse.json(
