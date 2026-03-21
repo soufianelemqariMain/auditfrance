@@ -13,46 +13,53 @@ interface WebcamEntry {
 }
 
 // Live HLS streams sourced from official broadcasters / iptv-org (fr.m3u)
+// BFM regional via SFR CDN (302→live), France 24 via official CDN (200)
 const WEBCAMS: WebcamEntry[] = [
   {
-    name: "Paris — Île-de-France",
+    name: "Paris — FigaroTV",
     region: "ÎLE-DE-FRANCE",
     hlsUrl: "https://figarotv-live.freecaster.com/live/freecaster/figarotv.m3u8",
     url: "https://www.lefigaro.fr/idf",
   },
   {
-    name: "Paris Direct",
+    name: "Paris Direct — France 24",
     region: "ÎLE-DE-FRANCE",
     hlsUrl: "https://live.france24.com/hls/live/2037179/F24_FR_HI_HLS/master_5000.m3u8",
     url: "https://www.france24.com/fr/direct",
   },
   {
-    name: "Côte d'Azur",
+    name: "Nice — BFM Côte d'Azur",
     region: "PACA",
-    hlsUrl: "https://vdo2.pro-fhi.net:3628/live/uppodsfqlive.m3u8",
-    url: "https://www.lerendezvous.tv",
+    hlsUrl: "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_NICECOTEDAZUR/index.m3u8?end=END&start=LIVE",
+    url: "https://www.bfmtv.com/cote-d-azur/",
   },
   {
-    name: "Marseille / PACA",
+    name: "Marseille — BFM Marseille",
     region: "PACA",
-    hlsUrl: "https://live-cdn-stream-euw1.bfmtv.bct.nextradiotv.com/master.m3u8",
-    url: "https://www.bfmtv.com/en-direct/",
+    hlsUrl: "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_MARSEILLEPROV/index.m3u8?end=END&start=LIVE",
+    url: "https://www.bfmtv.com/marseille/",
   },
   {
-    name: "Mont Saint-Michel",
+    name: "Normandie — BFM Normandie",
     region: "NORMANDIE",
-    hlsUrl: "https://streamtv.cdn.dvmr.fr/TVR/ngrp:tvr.stream_all/master.m3u8",
-    url: "https://www.tvr-bretagne.fr/direct",
+    hlsUrl: "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_NORMANDIE/index.m3u8?end=END&start=LIVE",
+    url: "https://www.bfmtv.com/normandie/",
   },
   {
-    name: "Brest — Bretagne",
+    name: "Bretagne — BFM Grand Littoral",
     region: "BRETAGNE",
-    hlsUrl: "https://streamtv.cdn.dvmr.fr/TVR/ngrp:tvr.stream_all/master.m3u8",
-    url: "https://www.tvr-bretagne.fr/direct",
+    hlsUrl: "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFMGRANDLITTORAL/index.m3u8?end=END&start=LIVE",
+    url: "https://www.bfmtv.com/grand-littoral/",
+  },
+  {
+    name: "Lyon — BFM Lyon",
+    region: "AUVERGNE-RHÔNE-ALPES",
+    hlsUrl: "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_LYON/index.m3u8?end=END&start=LIVE",
+    url: "https://www.bfmtv.com/lyon/",
   },
 ];
 
-const FILTER_TABS = ["TOUS", "ÎLE-DE-FRANCE", "NORMANDIE", "PACA", "BRETAGNE"];
+const FILTER_TABS = ["TOUS", "ÎLE-DE-FRANCE", "NORMANDIE", "PACA", "BRETAGNE", "AUVERGNE-RHÔNE-ALPES"];
 
 function WebcamCard({ cam }: { cam: WebcamEntry }) {
   return (

@@ -23,7 +23,7 @@ const CHANNELS: TVChannel[] = [
     name: "BFM TV",
     short: "BFM",
     hlsUrl:
-      "https://live-cdn-stream-euw1.bfmtv.bct.nextradiotv.com/master.m3u8",
+      "https://ncdn-live-bfm.pfd.sfr.net/shls/LIVE$BFM_TV/index.m3u8?end=END&start=LIVE",
     color: "#e60000",
   },
   {
