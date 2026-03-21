@@ -134,7 +134,7 @@ export default function ParlementPanel() {
           }}
         >
           {new Date(fetchedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-          {" "}· "}
+          {" · "}
           <a
             href="https://www.assemblee-nationale.fr"
             target="_blank"
