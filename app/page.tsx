@@ -9,6 +9,7 @@ import InsightsPanel from "@/components/InsightsPanel";
 import TVPanel from "@/components/TVPanel";
 import CAC40Panel from "@/components/CAC40Panel";
 import DepartmentPanel from "@/components/DepartmentPanel";
+import ParlementPanel from "@/components/ParlementPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -60,22 +61,27 @@ export default function Home() {
               overflow: "hidden",
             }}
           >
-            {/* News — 35% */}
-            <div style={{ flex: "0 0 35%", overflow: "hidden" }}>
+            {/* News — 30% */}
+            <div style={{ flex: "0 0 30%", overflow: "hidden" }}>
               <NewsTickerPanel />
             </div>
 
-            {/* TV Direct — 25% */}
-            <div style={{ flex: "0 0 25%", overflow: "hidden" }}>
+            {/* TV Direct — 20% */}
+            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
               <TVPanel />
             </div>
 
-            {/* CAC40 — 25% */}
-            <div style={{ flex: "0 0 25%", overflow: "hidden" }}>
+            {/* CAC40 — 20% */}
+            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
               <CAC40Panel />
             </div>
 
-            {/* AI Insights — 15% */}
+            {/* Parlement AN/Sénat — 20% */}
+            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
+              <ParlementPanel />
+            </div>
+
+            {/* AI Insights — 10% */}
             <div style={{ flex: 1, overflow: "hidden" }}>
               <InsightsPanel />
             </div>

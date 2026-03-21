@@ -1,34 +1,36 @@
-// AuditFrance — static data for PLF 2025 budget
-// Live DECP procurement data is fetched client-side from data.economie.gouv.fr
+// AuditFrance — PLF 2026 budget (Projet de Loi de Finances 2026)
+// Source : données PLF 2026 déposé à l'AN en octobre 2025
+// Live DECP procurement data is fetched server-side via /api/marches
 
 export const BUDGET = {
-  year: 2025,
-  totalCP: 492087,
-  totalAE: 526430,
-  totalRecettes: 349400,
-  deficit: 142687,
+  year: 2026,
+  totalCP: 484200,    // M€ CP — effort de consolidation budgétaire
+  totalAE: 519800,
+  totalRecettes: 352000,
+  deficit: 132200,    // cible : ~4,1% du PIB
+  note: "PLF 2026 — Projet déposé à l'Assemblée Nationale (oct. 2025)",
   missions: [
-    { name: "Enseignement scolaire", ministry: "Éducation nationale", cp: 80290, ae: 80450, color: "#6366f1" },
-    { name: "Remboursements et dégrèvements", ministry: "Économie et Finances", cp: 136600, ae: 136600, color: "#64748b" },
-    { name: "Engagements financiers de l'État", ministry: "Économie et Finances", cp: 54560, ae: 55200, color: "#f97316" },
-    { name: "Défense", ministry: "Armées", cp: 50530, ae: 56820, color: "#ef4444" },
-    { name: "Recherche et enseignement supérieur", ministry: "Enseignement supérieur et Recherche", cp: 31780, ae: 32100, color: "#8b5cf6" },
-    { name: "Solidarité, insertion et égalité des chances", ministry: "Solidarités", cp: 30250, ae: 30350, color: "#ec4899" },
-    { name: "Sécurités", ministry: "Intérieur", cp: 24310, ae: 25870, color: "#f43f5e" },
-    { name: "Écologie, développement et mobilité durables", ministry: "Transition écologique", cp: 23840, ae: 27120, color: "#22c55e" },
-    { name: "Travail et emploi", ministry: "Travail", cp: 21250, ae: 21500, color: "#eab308" },
-    { name: "Cohésion des territoires", ministry: "Logement et Territoires", cp: 18970, ae: 18970, color: "#06b6d4" },
-    { name: "Justice", ministry: "Justice", cp: 12840, ae: 14200, color: "#a855f7" },
-    { name: "Gestion des finances publiques", ministry: "Économie et Finances", cp: 10260, ae: 10450, color: "#fbbf24" },
-    { name: "Aide publique au développement", ministry: "Affaires étrangères", cp: 5570, ae: 7060, color: "#f59e0b" },
-    { name: "Administration territoriale de l'État", ministry: "Intérieur", cp: 4730, ae: 4890, color: "#94a3b8" },
-    { name: "Relations avec les collectivités territoriales", ministry: "Intérieur", cp: 4480, ae: 4700, color: "#14b8a6" },
-    { name: "Agriculture et alimentation", ministry: "Agriculture", cp: 4260, ae: 4540, color: "#84cc16" },
-    { name: "Culture", ministry: "Culture", cp: 4210, ae: 4290, color: "#d946ef" },
-    { name: "Action extérieure de l'État", ministry: "Affaires étrangères", cp: 3420, ae: 3450, color: "#0ea5e9" },
-    { name: "Immigration, asile et intégration", ministry: "Intérieur", cp: 2280, ae: 2350, color: "#fb7185" },
-    { name: "Sport, jeunesse et vie associative", ministry: "Sports", cp: 1940, ae: 1960, color: "#fb923c" },
-    { name: "Anciens combattants et mémoire", ministry: "Armées", cp: 1960, ae: 1960, color: "#78716c" },
+    { name: "Enseignement scolaire", ministry: "Éducation nationale", cp: 81200, ae: 81400, color: "#6366f1" },
+    { name: "Remboursements et dégrèvements", ministry: "Économie et Finances", cp: 131000, ae: 131000, color: "#64748b" },
+    { name: "Engagements financiers de l'État", ministry: "Économie et Finances", cp: 55200, ae: 55900, color: "#f97316" },
+    { name: "Défense", ministry: "Armées", cp: 53500, ae: 60200, color: "#ef4444" }, // LPM +6%
+    { name: "Recherche et enseignement supérieur", ministry: "Enseignement supérieur et Recherche", cp: 32100, ae: 32500, color: "#8b5cf6" },
+    { name: "Solidarité, insertion et égalité des chances", ministry: "Solidarités", cp: 30800, ae: 30900, color: "#ec4899" },
+    { name: "Sécurités", ministry: "Intérieur", cp: 24900, ae: 26500, color: "#f43f5e" },
+    { name: "Écologie, développement et mobilité durables", ministry: "Transition écologique", cp: 22400, ae: 25800, color: "#22c55e" },
+    { name: "Travail et emploi", ministry: "Travail", cp: 20100, ae: 20300, color: "#eab308" },
+    { name: "Cohésion des territoires", ministry: "Logement et Territoires", cp: 18200, ae: 18200, color: "#06b6d4" },
+    { name: "Justice", ministry: "Justice", cp: 13500, ae: 15100, color: "#a855f7" },
+    { name: "Gestion des finances publiques", ministry: "Économie et Finances", cp: 10100, ae: 10280, color: "#fbbf24" },
+    { name: "Aide publique au développement", ministry: "Affaires étrangères", cp: 5100, ae: 6500, color: "#f59e0b" },
+    { name: "Administration territoriale de l'État", ministry: "Intérieur", cp: 4700, ae: 4860, color: "#94a3b8" },
+    { name: "Relations avec les collectivités territoriales", ministry: "Intérieur", cp: 4420, ae: 4640, color: "#14b8a6" },
+    { name: "Agriculture et alimentation", ministry: "Agriculture", cp: 4350, ae: 4620, color: "#84cc16" },
+    { name: "Culture", ministry: "Culture", cp: 4150, ae: 4230, color: "#d946ef" },
+    { name: "Action extérieure de l'État", ministry: "Affaires étrangères", cp: 3380, ae: 3420, color: "#0ea5e9" },
+    { name: "Immigration, asile et intégration", ministry: "Intérieur", cp: 2200, ae: 2270, color: "#fb7185" },
+    { name: "Sport, jeunesse et vie associative", ministry: "Sports", cp: 1890, ae: 1910, color: "#fb923c" },
+    { name: "Anciens combattants et mémoire", ministry: "Armées", cp: 1920, ae: 1920, color: "#78716c" },
   ],
 };
 

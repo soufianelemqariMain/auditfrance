@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getDeptInfo, fmtPop, DEPT_SEARCH_TERMS } from "@/lib/deptData";
+import { getDeptInfo, fmtPop } from "@/lib/deptData";
 import { getPresidentCD, getPresidentCR } from "@/lib/elusData";
 import { MARCHES_SAMPLE } from "@/lib/auditData";
 
 interface DeptContract {
   titulaire: string;
+  siret?: string;
   montant: number;
   acheteur: string;
   objet: string;
   date: string;
   procedure: string;
+  cpv?: string;
 }
 
 interface Props {
@@ -20,7 +22,6 @@ interface Props {
   onClose: () => void;
 }
 
-const DECP_API = "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp-v3-marches-valides/records";
 
 function fmtEur(n: number): string {
   if (n >= 1e9) return (n / 1e9).toFixed(2).replace(".", ",") + " Md€";
@@ -46,30 +47,29 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
 
   const fetchDecp = useCallback(async () => {
     setLoadStatus("loading");
-    setLoadMsg("Interrogation DECP data.economie.gouv.fr…");
+    setLoadMsg("Interrogation DECP via proxy…");
     try {
-      const terms = DEPT_SEARCH_TERMS[code] ?? [nom];
-      const whereTerms = terms.slice(0, 3).map(t => `acheteur_nom LIKE "%${t}%"`).join(" OR ");
-      const url = `${DECP_API}?select=titulaire_denominationsociale_2,montant,acheteur_nom,objet,datenotification,procedure&where=(${encodeURIComponent(whereTerms)}) AND montant>25000&order_by=montant DESC&limit=20`;
-      const res = await fetch(url);
+      const res = await fetch(`/api/marches?dept=${code}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      const results: DeptContract[] = (json.results || []).map((r: Record<string, unknown>) => ({
-        titulaire: String(r.titulaire_denominationsociale_2 || "N/A"),
+      const results: DeptContract[] = (json.marches || []).map((r: Record<string, unknown>) => ({
+        titulaire: String(r.titulaire || "Titulaire non renseigné"),
+        siret: String(r.siret || ""),
         montant: Number(r.montant) || 0,
-        acheteur: String(r.acheteur_nom || ""),
+        acheteur: String(r.acheteur || ""),
         objet: String(r.objet || ""),
-        date: String(r.datenotification || ""),
+        date: String(r.date || ""),
         procedure: String(r.procedure || ""),
+        cpv: String(r.cpv || ""),
       }));
       setContracts(results);
       setLoadStatus("done");
-      setLoadMsg(`${results.length} marchés trouvés`);
+      setLoadMsg(`${results.length} marchés trouvés — DECP live`);
     } catch (err) {
       setLoadStatus("error");
       setLoadMsg(String(err instanceof Error ? err.message : err));
     }
-  }, [code, nom]);
+  }, [code]);
 
   // Auto-fetch DECP when switching to marchés tab
   useEffect(() => {
@@ -376,11 +376,20 @@ function ElusTab({ code, region }: { code: string; region: string }) {
                   </div>
                 )}
 
-                {/* Links */}
-                <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité détaillée</a>
-                  {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ Fiche AN</a>}
-                  {d.twitter && <a href={`https://twitter.com/${d.twitter}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "#1DA1F2", textDecoration: "none" }}>→ Twitter</a>}
+                {/* Links + Phase 2b: profession de foi */}
+                <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                  <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité</a>
+                  {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ AN</a>}
+                  <a
+                    href={`https://www.data.gouv.fr/fr/datasets/professions-de-foi-des-candidats-aux-elections-legislatives-2022/#/resources`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 10, color: "#22c55e", textDecoration: "none" }}
+                    title="Profession de foi — élections législatives 2022 (16ème legislature)"
+                  >
+                    → Profession de foi
+                  </a>
+                  {d.twitter && <a href={`https://twitter.com/${d.twitter}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "#1DA1F2", textDecoration: "none" }}>→ X</a>}
                 </div>
               </div>
             );
@@ -484,9 +493,10 @@ function MarchesTab({ contracts, loadStatus, loadMsg, isLive, onRefresh }: {
             <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {c.objet || c.acheteur}
             </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
               {c.date && <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>{fmtDate(c.date)}</span>}
-              {c.acheteur && <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{c.acheteur.slice(0, 40)}</span>}
+              {c.acheteur && <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{c.acheteur.slice(0, 35)}</span>}
+              {c.cpv && <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>CPV {c.cpv.slice(0, 8)}</span>}
             </div>
           </div>
         ))}

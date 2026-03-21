@@ -56,8 +56,6 @@ export const useAppStore = create<AppState>((set) => ({
     telco_hubs:     true,
     departments:    true,
     heatmap_elus:   false,
-    weather_alerts: false,
-    seismic:        false,
   },
   toggleLayer: (key: string) =>
     set((state) => ({
