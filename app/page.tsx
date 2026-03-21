@@ -9,7 +9,8 @@ import InsightsPanel from "@/components/InsightsPanel";
 import TVPanel from "@/components/TVPanel";
 import CAC40Panel from "@/components/CAC40Panel";
 import DepartmentPanel from "@/components/DepartmentPanel";
-import ParlementPanel from "@/components/ParlementPanel";
+import SousActifsPanel from "@/components/SousActifsPanel";
+import AoOuvertsPanel from "@/components/AoOuvertsPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -52,7 +53,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* Bottom panels — 50% of available height: News · TV Direct · CAC40 · Insights */}
+          {/* Bottom panels — 50% of available height: News · TV Direct · Sous-actifs · AO Ouverts · CAC40 · Insights */}
           <div
             style={{
               flex: "0 0 50%",
@@ -61,24 +62,29 @@ export default function Home() {
               overflow: "hidden",
             }}
           >
-            {/* News — 30% */}
-            <div style={{ flex: "0 0 30%", overflow: "hidden" }}>
+            {/* News — 22% */}
+            <div style={{ flex: "0 0 22%", overflow: "hidden" }}>
               <NewsTickerPanel />
             </div>
 
-            {/* TV Direct — 20% */}
-            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
+            {/* TV Direct — 15% */}
+            <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
               <TVPanel />
             </div>
 
-            {/* CAC40 — 20% */}
-            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
-              <CAC40Panel />
+            {/* Sous-actifs — 18% */}
+            <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
+              <SousActifsPanel />
             </div>
 
-            {/* Parlement AN/Sénat — 20% */}
-            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
-              <ParlementPanel />
+            {/* AO Ouverts — 18% */}
+            <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
+              <AoOuvertsPanel />
+            </div>
+
+            {/* CAC40 — 17% */}
+            <div style={{ flex: "0 0 17%", overflow: "hidden" }}>
+              <CAC40Panel />
             </div>
 
             {/* AI Insights — 10% */}
