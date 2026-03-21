@@ -95,7 +95,7 @@ export default function NewsTickerPanel() {
     return () => clearInterval(id);
   }, []);
 
-  const filteredItems = newsItems.filter((item) => matchesTab(item, activeTab));
+  const filteredItems = (Array.isArray(newsItems) ? newsItems : []).filter((item) => matchesTab(item, activeTab));
   const tickerText = buildTickerString(newsItems);
   const doubledTicker = tickerText + tickerText;
 

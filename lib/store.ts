@@ -78,7 +78,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   // News
   newsItems: [],
-  setNewsItems: (items: NewsItem[]) => set({ newsItems: items }),
+  setNewsItems: (items: NewsItem[]) => set({ newsItems: Array.isArray(items) ? items : [] }),
 
   // AI insight
   insightText: "",
