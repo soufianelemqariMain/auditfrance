@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import LayerPanel from "@/components/LayerPanel";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
-import InsightsPanel from "@/components/InsightsPanel";
 import TVPanel from "@/components/TVPanel";
 import CAC40Panel from "@/components/CAC40Panel";
 import DepartmentPanel from "@/components/DepartmentPanel";
@@ -53,7 +52,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* Bottom panels — 50% of available height: News · TV Direct · Sous-actifs · AO Ouverts · CAC40 · Insights */}
+          {/* Bottom panels — 50% of available height: News · TV Direct · Sous-actifs · AO Ouverts · CAC40 */}
           <div
             style={{
               flex: "0 0 50%",
@@ -82,14 +81,9 @@ export default function Home() {
               <AoOuvertsPanel />
             </div>
 
-            {/* CAC40 — 17% */}
-            <div style={{ flex: "0 0 17%", overflow: "hidden" }}>
-              <CAC40Panel />
-            </div>
-
-            {/* AI Insights — 10% */}
+            {/* CAC40 — fills remaining space */}
             <div style={{ flex: 1, overflow: "hidden" }}>
-              <InsightsPanel />
+              <CAC40Panel />
             </div>
           </div>
         </div>

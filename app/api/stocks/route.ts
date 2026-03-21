@@ -1,19 +1,32 @@
 import { NextResponse } from "next/server";
 
-// Top CAC40 components — Yahoo Finance symbols
+// CAC40 components — Yahoo Finance symbols
 const SYMBOLS: { symbol: string; name: string }[] = [
-  { symbol: "^FCHI",  name: "CAC 40"           },
-  { symbol: "MC.PA",  name: "LVMH"             },
-  { symbol: "TTE.PA", name: "TotalEnergies"    },
-  { symbol: "SAN.PA", name: "Sanofi"           },
-  { symbol: "AI.PA",  name: "Air Liquide"      },
-  { symbol: "BNP.PA", name: "BNP Paribas"      },
-  { symbol: "OR.PA",  name: "L'Oréal"          },
-  { symbol: "SU.PA",  name: "Schneider"        },
-  { symbol: "AIR.PA", name: "Airbus"           },
-  { symbol: "CS.PA",  name: "AXA"              },
-  { symbol: "DG.PA",  name: "Vinci"            },
-  { symbol: "RMS.PA", name: "Hermès"           },
+  { symbol: "^FCHI",  name: "CAC 40"            },
+  { symbol: "MC.PA",  name: "LVMH"              },
+  { symbol: "TTE.PA", name: "TotalEnergies"     },
+  { symbol: "SAN.PA", name: "Sanofi"            },
+  { symbol: "AI.PA",  name: "Air Liquide"       },
+  { symbol: "BNP.PA", name: "BNP Paribas"       },
+  { symbol: "OR.PA",  name: "L'Oréal"           },
+  { symbol: "SU.PA",  name: "Schneider"         },
+  { symbol: "AIR.PA", name: "Airbus"            },
+  { symbol: "CS.PA",  name: "AXA"               },
+  { symbol: "DG.PA",  name: "Vinci"             },
+  { symbol: "RMS.PA", name: "Hermès"            },
+  { symbol: "SAF.PA", name: "Safran"            },
+  { symbol: "CAP.PA", name: "Capgemini"         },
+  { symbol: "KER.PA", name: "Kering"            },
+  { symbol: "DSY.PA", name: "Dassault Systèmes" },
+  { symbol: "SG.PA",  name: "Société Générale"  },
+  { symbol: "STM.PA", name: "STMicro"           },
+  { symbol: "RI.PA",  name: "Pernod Ricard"     },
+  { symbol: "VIE.PA", name: "Veolia"            },
+  { symbol: "EL.PA",  name: "EssilorLuxottica"  },
+  { symbol: "ACA.PA", name: "Crédit Agricole"   },
+  { symbol: "BN.PA",  name: "Danone"            },
+  { symbol: "ORA.PA", name: "Orange"            },
+  { symbol: "EN.PA",  name: "Bouygues"          },
 ];
 
 export interface StockQuote {
