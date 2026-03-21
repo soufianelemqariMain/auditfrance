@@ -55,6 +55,7 @@ export const useAppStore = create<AppState>((set) => ({
     data_centers:   true,
     telco_hubs:     true,
     departments:    true,
+    heatmap_elus:   false,
     weather_alerts: false,
     seismic:        false,
   },

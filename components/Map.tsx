@@ -90,13 +90,22 @@ export default function Map({ onDeptClick }: MapProps) {
     };
 
     Object.entries(LAYER_MAP).forEach(([key, ids]) => {
-      const visible = layers[key] !== false; // default on
+      const visible = layers[key] !== false;
       ids.forEach((id) => {
         if (map.getLayer(id)) {
           map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
         }
       });
     });
+
+    // Heatmap: colour departments by elected officials' activity score
+    if (layers.heatmap_elus) {
+      applyHeatmap(map);
+    } else if (map.getLayer && map.getLayer("departments-fill")) {
+      // Reset to subtle default blue tint
+      map.setPaintProperty("departments-fill", "fill-color", "#0055A4");
+      map.setPaintProperty("departments-fill", "fill-opacity", 0.06);
+    }
   }, [layers]);
 
   // Update 3D pitch
@@ -144,6 +153,7 @@ export default function Map({ onDeptClick }: MapProps) {
         <div style={{ color: "#C9A227" }}>⬟ Data center</div>
         <div style={{ color: "#00aaff" }}>◉ Hub télécoms / IXP</div>
         <div style={{ color: "rgba(0,85,164,0.8)" }}>▭ Dép. (clic → intelligence)</div>
+        <div style={{ color: "#EF4135" }}>🗳 Heatmap activité élus</div>
       </div>
     </div>
   );
@@ -178,6 +188,35 @@ function MapButton({
   );
 }
 
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function applyHeatmap(map: any) {
+  try {
+    const res = await fetch("/api/dept-stats");
+    if (!res.ok) return;
+    const json = await res.json();
+    const depts: Array<{ code: string; norm: number }> = json.depts ?? [];
+    if (!depts.length || !map.getLayer("departments-fill")) return;
+
+    // Build a MapLibre match expression: ["match", ["get", "code"], "75", color75, "69", color69, ..., defaultColor]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const matchExpr: any[] = ["match", ["get", "code"]];
+    for (const dept of depts) {
+      const t = dept.norm; // 0–1
+      // Interpolate: low = dark navy #0c1c2e, high = bright red #EF4135
+      const r = Math.round(12 + t * (239 - 12));
+      const g = Math.round(28 + t * (65 - 28));
+      const b = Math.round(46 + t * (53 - 46));
+      matchExpr.push(dept.code, `rgb(${r},${g},${b})`);
+    }
+    matchExpr.push("#0c1c2e"); // default fallback
+
+    map.setPaintProperty("departments-fill", "fill-color", matchExpr);
+    map.setPaintProperty("departments-fill", "fill-opacity", 0.65);
+  } catch {
+    // silently ignore
+  }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function loadLayers(map: any, maplibregl: any) {

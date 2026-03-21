@@ -222,14 +222,33 @@ function ApercuTab({ info, code }: { info: ReturnType<typeof getDeptInfo> & obje
   );
 }
 
+interface DeputeActivite {
+  presenceSemaines: number | null;
+  interventionsHemicycle: number | null;
+  interventionsCommission: number | null;
+  amendementsProposes: number | null;
+  amendementsAdoptes: number | null;
+  questionsEcrites: number | null;
+  questionsOrales: number | null;
+  propositionsEcrites: number | null;
+  rapports: number | null;
+  nbMois: number | null;
+}
+
 interface DeputeInfo {
   nom: string;
   prenom: string;
   groupe: string;
   circo: string;
+  numCirco: number;
   nbMandats: number;
+  profession: string | null;
+  mandatDebut: string;
   url: string;
   urlAN: string;
+  twitter: string | null;
+  score: number;
+  activite: DeputeActivite;
 }
 
 function ElusTab({ code, region }: { code: string; region: string }) {
@@ -238,6 +257,7 @@ function ElusTab({ code, region }: { code: string; region: string }) {
   const [deputes, setDeputes] = useState<DeputeInfo[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [errMsg, setErrMsg] = useState("");
+  const [legislature, setLegislature] = useState("");
 
   useEffect(() => {
     setStatus("loading");
@@ -245,6 +265,7 @@ function ElusTab({ code, region }: { code: string; region: string }) {
       .then((r) => r.json())
       .then((d) => {
         setDeputes(d.deputes ?? []);
+        setLegislature(d.legislature ?? "");
         setStatus("done");
       })
       .catch((e) => {
@@ -311,7 +332,7 @@ function ElusTab({ code, region }: { code: string; region: string }) {
         <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
           <span>Député·e·s à l'Assemblée Nationale</span>
           {status === "loading" && <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>chargement…</span>}
-          {status === "done" && <span style={{ fontSize: 9, color: "#22c55e" }}>● live nosdeputes.fr</span>}
+          {status === "done" && <span style={{ fontSize: 9, color: "#22c55e" }}>● {legislature || "nosdeputes.fr"}</span>}
           {status === "error" && <span style={{ fontSize: 9, color: "#ef4444" }} title={errMsg}>● erreur</span>}
         </div>
 
@@ -321,32 +342,49 @@ function ElusTab({ code, region }: { code: string; region: string }) {
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {deputes.map((d, i) => (
-            <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "8px 10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{d.prenom} {d.nom}</div>
-                  <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>{d.circo}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {deputes.map((d, i) => {
+            const scoreColor = d.score >= 70 ? "#22c55e" : d.score >= 40 ? "#eab308" : "#ef4444";
+            const gc = GROUPE_COLORS[d.groupe] ?? "#555";
+            return (
+              <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "10px 10px" }}>
+                {/* Name + group + score */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{d.prenom} {d.nom}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 1 }}>
+                      Circ. {d.numCirco} · {d.circo}
+                      {d.profession && <span style={{ marginLeft: 6 }}>· {d.profession}</span>}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>{d.groupe}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>Score</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor, fontFamily: "var(--font-mono)" }}>{d.score}</span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                  <span style={{
-                    fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
-                    background: (GROUPE_COLORS[d.groupe] ?? "#555") + "22",
-                    color: GROUPE_COLORS[d.groupe] ?? "var(--text-secondary)",
-                    border: `1px solid ${(GROUPE_COLORS[d.groupe] ?? "#555")}44`,
-                  }}>{d.groupe}</span>
-                  {d.nbMandats > 0 && (
-                    <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{d.nbMandats} mandat{d.nbMandats > 1 ? "s" : ""}</span>
-                  )}
+
+                {/* Activity mini-bars */}
+                {d.activite.presenceSemaines !== null && (
+                  <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 12px" }}>
+                    <MiniStat label="Présence" value={d.activite.presenceSemaines} unit="sem." color="#22c55e" />
+                    <MiniStat label="Interventions" value={(d.activite.interventionsHemicycle ?? 0) + (d.activite.interventionsCommission ?? 0)} unit="" color="var(--accent-blue)" />
+                    <MiniStat label="Amendements" value={d.activite.amendementsProposes ?? 0} unit="proposés" color="var(--accent-yellow)" />
+                    <MiniStat label="Questions" value={(d.activite.questionsEcrites ?? 0) + (d.activite.questionsOrales ?? 0)} unit="" color="#a855f7" />
+                  </div>
+                )}
+
+                {/* Links */}
+                <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                  <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité détaillée</a>
+                  {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ Fiche AN</a>}
+                  {d.twitter && <a href={`https://twitter.com/${d.twitter}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "#1DA1F2", textDecoration: "none" }}>→ Twitter</a>}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité</a>
-                {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ Fiche AN</a>}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Senate link */}
@@ -563,6 +601,15 @@ function BudgetBar({ label, value, max, color }: { label: string; value: number;
           <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>{value} M€</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{label}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, color, fontFamily: "var(--font-mono)" }}>{value}{unit ? " " + unit : ""}</span>
     </div>
   );
 }

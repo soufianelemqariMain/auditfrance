@@ -14,6 +14,7 @@ const LAYERS: LayerDef[] = [
   { key: "data_centers",   label: "⬟ Data Centers" },
   { key: "telco_hubs",     label: "◉ Hubs Télécoms" },
   { key: "departments",    label: "▭ Départements" },
+  { key: "heatmap_elus",   label: "🗳 Activité Élus" },
   { key: "weather_alerts", label: "⚠ Alertes Météo" },
   { key: "seismic",        label: "〜 Sismique" },
 ];
