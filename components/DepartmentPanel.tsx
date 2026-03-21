@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getDeptInfo, fmtPop } from "@/lib/deptData";
-import { getPresidentCD, getPresidentCR } from "@/lib/elusData";
+import { getPresidentCR } from "@/lib/elusData";
 import { MARCHES_SAMPLE } from "@/lib/auditData";
 
 interface DeptContract {
@@ -252,7 +252,6 @@ interface DeputeInfo {
 }
 
 function ElusTab({ code, region }: { code: string; region: string }) {
-  const presidentCD = getPresidentCD(code);
   const presidentCR = getPresidentCR(region);
   const [deputes, setDeputes] = useState<DeputeInfo[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -282,30 +281,6 @@ function ElusTab({ code, region }: { code: string; region: string }) {
 
   return (
     <div>
-      {/* Conseil Départemental president */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
-          Président·e du Conseil Départemental
-        </div>
-        {presidentCD ? (
-          <EluCard
-            nom={presidentCD.nom}
-            role="Président·e CD"
-            parti={presidentCD.parti}
-            partiColor={presidentCD.partiColor}
-            depuis={presidentCD.enPosteDepuis}
-            url={presidentCD.profileUrl}
-          />
-        ) : (
-          <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "8px 0" }}>
-            Données non disponibles —{" "}
-            <a href={`https://www.departements-regions.fr/departement/${code}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)" }}>
-              voir site officiel
-            </a>
-          </div>
-        )}
-      </div>
-
       {/* Conseil Régional president */}
       {region && (
         <div style={{ marginBottom: 14 }}>
