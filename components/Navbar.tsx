@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import VigipirateBadge from "./VigipirateBadge";
 
 function formatUTC(date: Date): string {
@@ -17,6 +18,8 @@ function formatUTC(date: Date): string {
 export default function Navbar() {
   const [clock, setClock] = useState("");
   const [copied, setCopied] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     // Set immediately on mount to avoid server/client mismatch (hydration)
@@ -55,8 +58,8 @@ export default function Navbar() {
         flexShrink: 0,
       }}
     >
-      {/* Left: brand + rooster */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Left: brand + rooster + nav tabs */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <span style={{ fontSize: 18, lineHeight: 1 }}>🐓</span>
         <div>
           <span
@@ -68,12 +71,45 @@ export default function Navbar() {
               textTransform: "uppercase",
             }}
           >
-            France{" "}
-            <span style={{ color: "var(--accent-red)" }}>Monitor</span>
+            Audit{" "}
+            <span style={{ color: "var(--accent-red)" }}>France</span>
           </span>
           <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
             LIBERTÉ · ÉGALITÉ · INFORMATION
           </div>
+        </div>
+
+        {/* Section tabs */}
+        <div style={{ display: "flex", gap: 0, marginLeft: 12 }}>
+          {[
+            { path: "/", label: "Monitor" },
+            { path: "/audit", label: "Audit" },
+          ].map(({ path, label }) => {
+            const active = path === "/" ? pathname === "/" : pathname?.startsWith(path);
+            return (
+              <button
+                key={path}
+                onClick={() => router.push(path)}
+                style={{
+                  padding: "4px 14px",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: "none",
+                  borderBottom: active ? "2px solid var(--accent-blue)" : "2px solid transparent",
+                  fontFamily: "inherit",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  background: "transparent",
+                  color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                  transition: "all 0.15s",
+                  height: 44,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
