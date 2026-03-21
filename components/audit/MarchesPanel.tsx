@@ -19,9 +19,6 @@ interface MarchesData {
   attributaires: Attributaire[];
 }
 
-const DECP_API = "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets";
-const DECP_DATASET = "decp-v3-marches-valides";
-
 const SECTOR_COLORS: Record<string, string> = {
   "BTP": "#f97316",
   "Défense / Électronique": "#ef4444",
@@ -73,64 +70,19 @@ export default function MarchesPanel() {
 
   async function fetchLive() {
     setApiStatus("loading");
-    setApiMessage("Connexion à data.economie.gouv.fr…");
+    setApiMessage("Agrégation DECP en cours (serveur)…");
     try {
-      const byCompany: Record<string, Attributaire & { _buyers: Record<string, number> }> = {};
-      let totalMontant = 0;
-      let apiTotalCount = 0;
-      const PAGE_SIZE_API = 100;
-      const MAX_PAGES = 20;
-
-      for (let p = 0; p < MAX_PAGES; p++) {
-        const offset = p * PAGE_SIZE_API;
-        setApiMessage(`Chargement… ${offset} marchés récupérés`);
-        const url = `${DECP_API}/${DECP_DATASET}/records?select=titulaire_denominationsociale_2,titulaire_id_1,montant,acheteur_nom&order_by=montant%20DESC&limit=${PAGE_SIZE_API}&offset=${offset}&where=montant%3E25000`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (!json.results?.length) break;
-        if (p === 0 && json.total_count) apiTotalCount = json.total_count;
-
-        json.results.forEach((r: Record<string, unknown>) => {
-          const name = (String(r.titulaire_denominationsociale_2 || "")).trim();
-          if (!name || name === "Inconnu") return;
-          const montant = Number(r.montant) || 0;
-          totalMontant += montant;
-          if (!byCompany[name]) {
-            byCompany[name] = { nom: name, siret: String(r.titulaire_id_1 || ""), montantTotal: 0, nbMarches: 0, secteur: "N/A", acheteursPrincipaux: [], _buyers: {} };
-          }
-          byCompany[name].montantTotal += montant;
-          byCompany[name].nbMarches++;
-          const buyer = String(r.acheteur_nom || "").trim();
-          if (buyer) byCompany[name]._buyers[buyer] = (byCompany[name]._buyers[buyer] || 0) + montant;
-        });
-
-        if (json.results.length < PAGE_SIZE_API) break;
-      }
-
-      const sectorRules: [RegExp, string][] = [
-        [/vinci|bouygues|eiffage|colas|eurovia|spie|construction|bâtiment|génie civil/i, "BTP"],
-        [/thales|airbus|naval group|mbda|safran|nexter|dassault/i, "Défense / Aéronautique"],
-        [/capgemini|sopra|atos|accenture|cgi|ibm|oracle|microsoft/i, "IT / Conseil"],
-        [/deloitte|ernst|mckinsey|kpmg|pwc|bcg/i, "Conseil / Audit"],
-        [/engie|edf|dalkia|veolia|suez/i, "Énergie / Environnement"],
-        [/orange|sfr|bouygues telecom|free/i, "Télécom"],
-        [/sodexo|elior|compass/i, "Restauration collective"],
-      ];
-
-      const attributaires = Object.values(byCompany)
-        .map((c) => {
-          const buyers = Object.entries(c._buyers).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n]) => n);
-          for (const [re, sec] of sectorRules) if (re.test(c.nom)) { c.secteur = sec; break; }
-          const { _buyers, ...rest } = c;
-          void _buyers;
-          return { ...rest, acheteursPrincipaux: buyers };
-        })
-        .sort((a, b) => b.montantTotal - a.montantTotal);
-
-      setData({ totalMontant, totalMarches: apiTotalCount, periodeLabel: "Live — DECP data.economie.gouv.fr", attributaires });
+      const res = await fetch("/api/marches/national");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData({
+        totalMontant: json.totalMontant,
+        totalMarches: json.totalMarches,
+        periodeLabel: json.periodeLabel,
+        attributaires: json.attributaires,
+      });
       setApiStatus("live");
-      setApiMessage(`${attributaires.length} entreprises — données live DECP`);
+      setApiMessage(`${json.attributaires.length} entreprises — données live DECP`);
     } catch (err) {
       setApiStatus("error");
       setApiMessage(String(err instanceof Error ? err.message : err));

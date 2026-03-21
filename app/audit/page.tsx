@@ -4,9 +4,18 @@ import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import BudgetPanel from "@/components/audit/BudgetPanel";
 import MarchesPanel from "@/components/audit/MarchesPanel";
+import ConsultationsPanel from "@/components/audit/ConsultationsPanel";
+import SubventionsPanel from "@/components/audit/SubventionsPanel";
 import { BUDGET } from "@/lib/auditData";
 
-type AuditTab = "budget" | "marches";
+type AuditTab = "budget" | "marches-attribues" | "marches-ouverts" | "subventions";
+
+const TABS: { key: AuditTab; label: string }[] = [
+  { key: "budget", label: `Budget PLF ${BUDGET.year}` },
+  { key: "marches-attribues", label: "Marchés attribués" },
+  { key: "marches-ouverts", label: "Marchés ouverts" },
+  { key: "subventions", label: "Subventions" },
+];
 
 export default function AuditPage() {
   const [tab, setTab] = useState<AuditTab>("budget");
@@ -18,10 +27,7 @@ export default function AuditPage() {
       {/* Section header */}
       <div style={{ background: "var(--bg-secondary)", borderBottom: "1px solid var(--border)", padding: "0 16px", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", gap: 0 }}>
-          {([
-            { key: "budget", label: `Budget PLF ${BUDGET.year}` },
-            { key: "marches", label: "Marchés Publics DECP" },
-          ] as { key: AuditTab; label: string }[]).map(({ key, label }) => (
+          {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -73,7 +79,9 @@ export default function AuditPage() {
       {/* Main content */}
       <div style={{ flex: 1, overflow: "hidden" }}>
         {tab === "budget" && <BudgetPanel />}
-        {tab === "marches" && <MarchesPanel />}
+        {tab === "marches-attribues" && <MarchesPanel />}
+        {tab === "marches-ouverts" && <ConsultationsPanel />}
+        {tab === "subventions" && <SubventionsPanel />}
       </div>
     </div>
   );

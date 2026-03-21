@@ -3,28 +3,11 @@
 import { useEffect, useState } from "react";
 import { useAppStore, NewsItem } from "../lib/store";
 
-const TABS = ["TOUS", "BFM", "FRANCE INFO", "LE MONDE", "LE FIGARO", "RFI", "FRANCE 24"];
-
-const SOURCE_MAP: Record<string, string> = {
-  "FRANCE INFO": "FRANCE INFO",
-  "LE MONDE": "LE MONDE",
-  "LE FIGARO": "LE FIGARO",
-  "FRANCE 24": "FRANCE 24",
-};
-
 function formatTime(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "--:--";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function matchesTab(item: NewsItem, tab: string): boolean {
-  if (tab === "TOUS") return true;
-  const src = item.source.toUpperCase();
-  if (tab === "BFM") return src.includes("BFM");
-  const mapped = SOURCE_MAP[tab];
-  return mapped ? src.includes(mapped) : src.includes(tab);
 }
 
 function buildTickerString(items: NewsItem[]): string {
@@ -36,32 +19,9 @@ function SkeletonList() {
   return (
     <ul style={{ listStyle: "none", padding: "8px 0" }}>
       {[1, 2, 3, 4].map((n) => (
-        <li
-          key={n}
-          style={{
-            padding: "8px 12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-          }}
-        >
-          <div
-            style={{
-              height: 10,
-              width: "60%",
-              background: "var(--border)",
-              borderRadius: 2,
-            }}
-          />
-          <div
-            style={{
-              height: 8,
-              width: "85%",
-              background: "var(--border)",
-              borderRadius: 2,
-              opacity: 0.6,
-            }}
-          />
+        <li key={n} style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ height: 10, width: "60%", background: "var(--border)", borderRadius: 2 }} />
+          <div style={{ height: 8, width: "85%", background: "var(--border)", borderRadius: 2, opacity: 0.6 }} />
         </li>
       ))}
     </ul>
@@ -72,7 +32,6 @@ export default function NewsTickerPanel() {
   const newsItems = useAppStore((s) => s.newsItems);
   const setNewsItems = useAppStore((s) => s.setNewsItems);
   const [loading, setLoading] = useState(newsItems.length === 0);
-  const [activeTab, setActiveTab] = useState("TOUS");
 
   async function fetchNews() {
     try {
@@ -95,8 +54,8 @@ export default function NewsTickerPanel() {
     return () => clearInterval(id);
   }, []);
 
-  const filteredItems = (Array.isArray(newsItems) ? newsItems : []).filter((item) => matchesTab(item, activeTab));
-  const tickerText = buildTickerString(newsItems);
+  const items = Array.isArray(newsItems) ? newsItems : [];
+  const tickerText = buildTickerString(items);
   const doubledTicker = tickerText + tickerText;
 
   return (
@@ -142,12 +101,12 @@ export default function NewsTickerPanel() {
             fontWeight: 700,
           }}
         >
-          {newsItems.length}
+          {items.length}
         </span>
       </div>
 
       {/* Ticker */}
-      {newsItems.length > 0 && (
+      {items.length > 0 && (
         <div
           style={{
             overflow: "hidden",
@@ -162,56 +121,17 @@ export default function NewsTickerPanel() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          overflowX: "auto",
-          borderBottom: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              background: "transparent",
-              border: "none",
-              borderRight: "1px solid var(--border)",
-              color: activeTab === tab ? "var(--accent-green)" : "var(--text-secondary)",
-              fontSize: 10,
-              padding: "5px 8px",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              letterSpacing: "0.05em",
-              fontFamily: "inherit",
-              borderBottom: activeTab === tab ? "2px solid var(--accent-green)" : "2px solid transparent",
-            }}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Article list */}
+      {/* Article list — full feed, all sources */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {loading ? (
           <SkeletonList />
-        ) : filteredItems.length === 0 ? (
-          <div
-            style={{
-              padding: 16,
-              fontSize: 11,
-              color: "var(--text-secondary)",
-              textAlign: "center",
-            }}
-          >
+        ) : items.length === 0 ? (
+          <div style={{ padding: 16, fontSize: 11, color: "var(--text-secondary)", textAlign: "center" }}>
             Aucun article
           </div>
         ) : (
           <ul style={{ listStyle: "none" }}>
-            {filteredItems.map((item) => (
+            {items.map((item) => (
               <li
                 key={item.id}
                 onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
