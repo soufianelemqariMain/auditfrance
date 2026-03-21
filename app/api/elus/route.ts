@@ -33,7 +33,9 @@ const DEPT_CODE_TO_NAME: Record<string, string> = {
   "91": "Essonne", "92": "Hauts-de-Seine", "93": "Seine-Saint-Denis",
   "94": "Val-de-Marne", "95": "Val-d'Oise",
   "971": "Guadeloupe", "972": "Martinique", "973": "Guyane",
-  "974": "La Réunion", "976": "Mayotte",
+  "974": "Réunion", "976": "Mayotte",
+  "975": "Saint-Pierre-et-Miquelon", "977": "Saint-Barthélemy et Saint-Martin",
+  "986": "Wallis-et-Futuna", "987": "Polynésie Française", "988": "Nouvelle-Calédonie",
 };
 
 interface Deputy {
@@ -122,7 +124,7 @@ export async function GET(request: NextRequest) {
         nbMandats: null,
         profession: d.profession || null,
         mandatDebut: "2024-07-07",
-        url: `https://www.assemblee-nationale.fr/dyn/deputes/${d.identifiant}`,
+        url: `https://www.assemblee-nationale.fr/dyn/deputes/PA${d.identifiant}`,
         urlAN: null,
         twitter: null,
         score: null, // No activity scoring for 17th legislature yet

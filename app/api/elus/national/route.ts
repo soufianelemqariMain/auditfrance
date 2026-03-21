@@ -90,7 +90,7 @@ export async function GET() {
         dept: d.departement,
         circo: `${d.departement} · circ. ${d.numCirco}`,
         score: null, // No activity scoring available for 17th legislature
-        url: `https://www.assemblee-nationale.fr/dyn/deputes/${d.identifiant}`,
+        url: `https://www.assemblee-nationale.fr/dyn/deputes/PA${d.identifiant}`,
       })),
       total: all.length,
       legislature: "17ème (depuis 2024)",
