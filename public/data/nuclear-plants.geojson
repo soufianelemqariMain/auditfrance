@@ -1,0 +1,203 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [0.6517, 46.4575] },
+      "properties": {
+        "name": "Civaux",
+        "reactors": 2,
+        "power_mw": 2700,
+        "region": "Nouvelle-Aquitaine",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.8675, 47.5092] },
+      "properties": {
+        "name": "Belleville",
+        "reactors": 2,
+        "power_mw": 2700,
+        "region": "Centre-Val de Loire",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.6897, 45.2547] },
+      "properties": {
+        "name": "Blayais",
+        "reactors": 4,
+        "power_mw": 3600,
+        "region": "Nouvelle-Aquitaine",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [5.2711, 45.7975] },
+      "properties": {
+        "name": "Bugey",
+        "reactors": 4,
+        "power_mw": 3600,
+        "region": "Auvergne-Rhône-Alpes",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.2189, 49.4025] },
+      "properties": {
+        "name": "Cattenom",
+        "reactors": 4,
+        "power_mw": 5200,
+        "region": "Grand Est",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [0.1625, 47.2322] },
+      "properties": {
+        "name": "Chinon",
+        "reactors": 4,
+        "power_mw": 3584,
+        "region": "Centre-Val de Loire",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [4.7847, 50.0900] },
+      "properties": {
+        "name": "Chooz",
+        "reactors": 2,
+        "power_mw": 2900,
+        "region": "Grand Est",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [4.7603, 44.6300] },
+      "properties": {
+        "name": "Cruas",
+        "reactors": 4,
+        "power_mw": 3600,
+        "region": "Auvergne-Rhône-Alpes",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.5158, 47.7342] },
+      "properties": {
+        "name": "Dampierre",
+        "reactors": 4,
+        "power_mw": 3568,
+        "region": "Centre-Val de Loire",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [7.5606, 47.9025] },
+      "properties": {
+        "name": "Fessenheim",
+        "reactors": 0,
+        "power_mw": 0,
+        "region": "Grand Est",
+        "operator": "EDF (fermée 2020)"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-1.8839, 49.5347] },
+      "properties": {
+        "name": "Flamanville",
+        "reactors": 3,
+        "power_mw": 4400,
+        "region": "Normandie",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [0.8456, 44.1053] },
+      "properties": {
+        "name": "Golfech",
+        "reactors": 2,
+        "power_mw": 2700,
+        "region": "Occitanie",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.1353, 50.9986] },
+      "properties": {
+        "name": "Gravelines",
+        "reactors": 6,
+        "power_mw": 5460,
+        "region": "Hauts-de-France",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [3.5178, 48.5147] },
+      "properties": {
+        "name": "Nogent",
+        "reactors": 2,
+        "power_mw": 2700,
+        "region": "Grand Est",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [0.6239, 49.8628] },
+      "properties": {
+        "name": "Paluel",
+        "reactors": 4,
+        "power_mw": 5320,
+        "region": "Normandie",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [1.2100, 49.9775] },
+      "properties": {
+        "name": "Penly",
+        "reactors": 2,
+        "power_mw": 2700,
+        "region": "Normandie",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [4.8117, 45.4239] },
+      "properties": {
+        "name": "Saint-Alban",
+        "reactors": 2,
+        "power_mw": 2700,
+        "region": "Auvergne-Rhône-Alpes",
+        "operator": "EDF"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [4.7336, 44.3303] },
+      "properties": {
+        "name": "Tricastin",
+        "reactors": 4,
+        "power_mw": 3600,
+        "region": "Provence-Alpes-Côte d'Azur",
+        "operator": "EDF"
+      }
+    }
+  ]
+}

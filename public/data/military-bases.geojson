@@ -1,0 +1,155 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [4.9000, 48.6400] },
+      "properties": {
+        "name": "Base aérienne 113 Saint-Dizier",
+        "type": "armée de l'air",
+        "city": "Saint-Dizier",
+        "region": "Grand Est"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-0.5500, 43.9000] },
+      "properties": {
+        "name": "Base aérienne 118 Mont-de-Marsan",
+        "type": "armée de l'air",
+        "city": "Mont-de-Marsan",
+        "region": "Nouvelle-Aquitaine"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-1.1250, 44.5328] },
+      "properties": {
+        "name": "Base aérienne 120 Cazaux",
+        "type": "armée de l'air",
+        "city": "Cazaux",
+        "region": "Nouvelle-Aquitaine"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [5.9287, 43.1200] },
+      "properties": {
+        "name": "Base navale de Toulon",
+        "type": "marine nationale",
+        "city": "Toulon",
+        "region": "PACA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-4.4903, 48.3730] },
+      "properties": {
+        "name": "Base navale de Brest",
+        "type": "marine nationale",
+        "city": "Brest",
+        "region": "Bretagne"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-1.9456, 47.8031] },
+      "properties": {
+        "name": "École Spéciale Militaire Saint-Cyr",
+        "type": "armée de terre",
+        "city": "Coëtquidan",
+        "region": "Bretagne"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.4369, 48.8431] },
+      "properties": {
+        "name": "Fort de Vincennes",
+        "type": "armée de terre",
+        "city": "Vincennes",
+        "region": "Île-de-France"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.3514, 48.8566] },
+      "properties": {
+        "name": "Quartier général CRR-FR",
+        "type": "armée de terre",
+        "city": "Paris",
+        "region": "Île-de-France"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.3833, 43.7167] },
+      "properties": {
+        "name": "Camp de Canjuers",
+        "type": "armée de terre",
+        "city": "Canjuers",
+        "region": "PACA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [6.3636, 47.7831] },
+      "properties": {
+        "name": "Base aérienne 116 Luxeuil",
+        "type": "armée de l'air",
+        "city": "Luxeuil",
+        "region": "Bourgogne-Franche-Comté"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [2.3066, 48.8742] },
+      "properties": {
+        "name": "Quartier Frère-Moreau",
+        "type": "gendarmerie",
+        "city": "Paris",
+        "region": "Île-de-France"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [9.4044, 41.9242] },
+      "properties": {
+        "name": "Base aérienne 126 Solenzara",
+        "type": "armée de l'air",
+        "city": "Solenzara",
+        "region": "Corse"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [5.0153, 45.8344] },
+      "properties": {
+        "name": "Camp de la Valbonne",
+        "type": "armée de terre",
+        "city": "Bourg-en-Bresse",
+        "region": "Auvergne-Rhône-Alpes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-1.6178, 49.6336] },
+      "properties": {
+        "name": "Base navale de Cherbourg",
+        "type": "marine nationale",
+        "city": "Cherbourg",
+        "region": "Normandie"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [3.0000, 47.1667] },
+      "properties": {
+        "name": "1er Régiment de Spahis",
+        "type": "armée de terre",
+        "city": "Valence",
+        "region": "Auvergne-Rhône-Alpes"
+      }
+    }
+  ]
+}
