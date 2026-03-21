@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="6" fill="#0d1117"/>
+  <!-- French tricolor stripe accent at top -->
+  <rect x="0" y="0" width="10.67" height="3" rx="0" fill="#002395"/>
+  <rect x="10.67" y="0" width="10.66" height="3" fill="#ffffff"/>
+  <rect x="21.33" y="0" width="10.67" height="3" rx="0" fill="#ED2939"/>
+  <!-- Scales of justice icon -->
+  <!-- Central pillar -->
+  <rect x="15.5" y="6" width="1" height="16" fill="#8b949e"/>
+  <!-- Base -->
+  <rect x="11" y="22" width="10" height="1.5" rx="0.75" fill="#8b949e"/>
+  <!-- Top horizontal beam -->
+  <rect x="8" y="7" width="16" height="1" rx="0.5" fill="#c9d1d9"/>
+  <!-- Left pan chain -->
+  <line x1="9" y1="8" x2="9" y2="13" stroke="#8b949e" stroke-width="0.8"/>
+  <!-- Right pan chain -->
+  <line x1="23" y1="8" x2="23" y2="13" stroke="#8b949e" stroke-width="0.8"/>
+  <!-- Left pan -->
+  <path d="M6.5 13 Q9 15 11.5 13" stroke="#4493f8" stroke-width="1" fill="rgba(68,147,248,0.2)"/>
+  <!-- Right pan -->
+  <path d="M20.5 13 Q23 15 25.5 13" stroke="#4493f8" stroke-width="1" fill="rgba(68,147,248,0.2)"/>
+</svg>

@@ -1,32 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { getDeptInfo, fmtPop } from "@/lib/deptData";
 import { getPresidentCR } from "@/lib/elusData";
-import { MARCHES_SAMPLE } from "@/lib/auditData";
-
-interface DeptContract {
-  titulaire: string;
-  siret?: string;
-  montant: number;
-  acheteur: string;
-  objet: string;
-  date: string;
-  procedure: string;
-}
 
 interface Props {
   code: string;
   nom: string;
   onClose: () => void;
-}
-
-
-function fmtEur(n: number): string {
-  if (n >= 1e9) return (n / 1e9).toFixed(2).replace(".", ",") + " Md€";
-  if (n >= 1e6) return (n / 1e6).toFixed(1).replace(".", ",") + " M€";
-  if (n >= 1e3) return Math.round(n / 1000) + " k€";
-  return n + " €";
 }
 
 function fmtDate(s: string): string {
@@ -36,47 +17,7 @@ function fmtDate(s: string): string {
 
 export default function DepartmentPanel({ code, nom, onClose }: Props) {
   const info = getDeptInfo(code);
-  const [contracts, setContracts] = useState<DeptContract[] | null>(null);
-  const [loadStatus, setLoadStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [loadMsg, setLoadMsg] = useState("");
-  const [tab, setTab] = useState<"apercu" | "marches" | "consultations" | "subventions" | "budget" | "elus">("apercu");
-
-  // National sample procurement data relevant to this department's key buyers
-  const sampleContracts = getSampleContracts(code);
-
-  const fetchDecp = useCallback(async () => {
-    setLoadStatus("loading");
-    setLoadMsg("Interrogation DECP via proxy…");
-    try {
-      const res = await fetch(`/api/marches?dept=${code}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      const results: DeptContract[] = (json.marches || []).map((r: Record<string, unknown>) => ({
-        titulaire: String(r.titulaire || "Titulaire non renseigné"),
-        siret: String(r.siret || ""),
-        montant: Number(r.montant) || 0,
-        acheteur: String(r.acheteur || ""),
-        objet: String(r.objet || ""),
-        date: String(r.date || ""),
-        procedure: String(r.procedure || ""),
-      }));
-      setContracts(results);
-      setLoadStatus("done");
-      setLoadMsg(`${results.length} marchés trouvés — DECP live`);
-    } catch (err) {
-      setLoadStatus("error");
-      setLoadMsg(String(err instanceof Error ? err.message : err));
-    }
-  }, [code]);
-
-  // Auto-fetch DECP when switching to marchés tab
-  useEffect(() => {
-    if (tab === "marches" && loadStatus === "idle") {
-      fetchDecp();
-    }
-  }, [tab, loadStatus, fetchDecp]);
-
-  const displayContracts = contracts ?? sampleContracts;
+  const [tab, setTab] = useState<"apercu" | "consultations" | "budget" | "elus">("apercu");
 
   return (
     <div
@@ -137,12 +78,12 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10 }}>
-          {(["apercu", "elus", "marches", "consultations", "subventions", "budget"] as const).map((t) => (
+          {(["apercu", "elus", "consultations", "budget"] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => setTab(t as typeof tab)}
               style={{
-                padding: "5px 12px",
+                padding: "5px 14px",
                 fontSize: 10,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -155,7 +96,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
                 transition: "all 0.15s",
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "marches" ? "Marchés att." : t === "consultations" ? "AO ouverts" : t === "subventions" ? "Subventions" : "Budget"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "consultations" ? "Appels d'offres" : "Budget"}
             </button>
           ))}
         </div>
@@ -169,17 +110,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
         {tab === "elus" && (
           <ElusTab code={code} region={info?.region ?? ""} />
         )}
-        {tab === "marches" && (
-          <MarchesTab
-            contracts={displayContracts}
-            loadStatus={loadStatus}
-            loadMsg={loadMsg}
-            isLive={contracts !== null}
-            onRefresh={fetchDecp}
-          />
-        )}
         {tab === "consultations" && <ConsultationsTab code={code} />}
-        {tab === "subventions" && <SubventionsTab code={code} />}
         {tab === "budget" && (
           <BudgetTab code={code} nom={nom} />
         )}
@@ -401,80 +332,6 @@ function EluCard({ nom, role, parti, partiColor, depuis, url }: {
   );
 }
 
-function MarchesTab({ contracts, loadStatus, loadMsg, isLive, onRefresh }: {
-  contracts: DeptContract[];
-  loadStatus: string;
-  loadMsg: string;
-  isLive: boolean;
-  onRefresh: () => void;
-}) {
-  return (
-    <div>
-      {/* Status bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <div style={{
-          width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-          background: loadStatus === "done" ? (isLive ? "#22c55e" : "var(--accent-yellow)") : loadStatus === "loading" ? "#eab308" : loadStatus === "error" ? "#ef4444" : "var(--border)",
-          boxShadow: (loadStatus === "done" && isLive) ? "0 0 6px rgba(34,197,94,0.5)" : undefined,
-        }} />
-        <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1 }}>
-          {loadMsg || (isLive ? "Données live DECP" : "Données nationales — cliquer Rafraîchir pour données locales")}
-        </span>
-        <button
-          onClick={onRefresh}
-          disabled={loadStatus === "loading"}
-          style={{
-            background: "var(--accent-blue)",
-            color: "#fff",
-            border: "none",
-            padding: "3px 10px",
-            fontSize: 10,
-            fontWeight: 600,
-            cursor: loadStatus === "loading" ? "default" : "pointer",
-            opacity: loadStatus === "loading" ? 0.5 : 1,
-            letterSpacing: "0.05em",
-          }}
-        >
-          {loadStatus === "loading" ? "…" : "↻ DECP"}
-        </button>
-      </div>
-
-      {contracts.length === 0 && loadStatus !== "loading" && (
-        <div style={{ fontSize: 12, color: "var(--text-secondary)", textAlign: "center", padding: "24px 0" }}>
-          Aucun marché trouvé
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {contracts.map((c, i) => (
-          <div key={i} style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid var(--border)",
-            borderRadius: 5,
-            padding: "8px 10px",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3, flex: 1 }}>
-                {c.titulaire}
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: "var(--accent-yellow)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
-                {fmtEur(c.montant)}
-              </div>
-            </div>
-            <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {c.objet || c.acheteur}
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
-              {c.date && <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>{fmtDate(c.date)}</span>}
-              {c.acheteur && <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{c.acheteur.slice(0, 40)}</span>}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function BudgetTab({ code, nom }: { code: string; nom: string }) {
   // Departmental council budget estimates — OFGL 2022/2023 national averages scaled by population
   const info = getDeptInfo(code);
@@ -682,88 +539,3 @@ function ConsultationsTab({ code }: { code: string }) {
   );
 }
 
-// --- Subventions tab (open programs for this region) ---
-interface Aide {
-  id: number;
-  name: string;
-  description: string;
-  url: string;
-  financers: string[];
-  submission_deadline: string | null;
-}
-
-function SubventionsTab({ code }: { code: string }) {
-  const [aides, setAides] = useState<Aide[]>([]);
-  const [total, setTotal] = useState(0);
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [errMsg, setErrMsg] = useState("");
-
-  useEffect(() => {
-    setStatus("loading");
-    setErrMsg("");
-    fetch("/api/subventions?type=ouvertes")
-      .then((r) => r.json())
-      .then((d) => {
-        setAides((d.aides ?? []).slice(0, 20));
-        setTotal(d.total ?? 0);
-        setStatus("done");
-      })
-      .catch((e) => { setStatus("error"); setErrMsg(String(e?.message ?? e)); });
-  }, [code]);
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        <div style={{ width: 7, height: 7, borderRadius: "50%", background: status === "done" ? "#22c55e" : status === "loading" ? "#eab308" : status === "error" ? "#ef4444" : "var(--border)" }} />
-        <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
-          {status === "loading" && "Chargement aides-territoires…"}
-          {status === "done" && `${total.toLocaleString("fr-FR")} programmes de subventions ouverts`}
-          {status === "error" && `Erreur : ${errMsg}`}
-        </span>
-      </div>
-
-      {status === "done" && aides.length === 0 && (
-        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Aucun programme disponible actuellement.</div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {aides.map((a) => (
-          <div key={a.id}
-            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "8px 10px", cursor: a.url ? "pointer" : "default" }}
-            onClick={() => a.url && window.open(a.url, "_blank", "noopener,noreferrer")}
-          >
-            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3 }}>{a.name}</div>
-            {a.financers.length > 0 && (
-              <div style={{ fontSize: 10, color: "var(--accent-blue)", marginTop: 2 }}>{a.financers.slice(0, 2).join(" · ")}</div>
-            )}
-            {a.description && (
-              <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 3, lineHeight: 1.4 }}>{a.description.slice(0, 100)}…</div>
-            )}
-            {a.submission_deadline && (
-              <div style={{ fontSize: 9, color: "var(--accent-yellow)", marginTop: 2, fontFamily: "var(--font-mono)" }}>Clôture : {a.submission_deadline}</div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {total > aides.length && (
-        <div style={{ marginTop: 10 }}>
-          <ExtLink href="https://aides-territoires.beta.gouv.fr" label={`Voir tous les ${total} programmes →`} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Sample procurement entries from national data — filtered loosely by dept profile
-function getSampleContracts(code: string): DeptContract[] {
-  // Use national MARCHES_SAMPLE to show top attributaires relevant to this region's profile
-  return MARCHES_SAMPLE.attributaires.slice(0, 12).map(a => ({
-    titulaire: a.nom,
-    montant: Math.round(a.montantTotal / a.nbMarches),
-    acheteur: a.acheteursPrincipaux[0] || "Acheteur public",
-    objet: `Marchés ${a.secteur}`,
-    date: "2023-2024",
-    procedure: "Appel d'offres ouvert",
-  }));
-}

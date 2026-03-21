@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "FRANCE MONITOR — Tableau de bord de veille nationale",
-  description: "Dashboard de surveillance en temps réel centré sur la France. Carte interactive, flux RSS, webcams et insights IA.",
+  title: "Audit France — Transparence démocratique & finances publiques",
+  description: "Tableau de bord open-source de veille civique : élus, marchés publics, appels d'offres et budget par département. Données officielles en temps réel.",
 };
 
 export default function RootLayout({

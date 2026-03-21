@@ -2,96 +2,100 @@
 
 # Audit France
 
-**Real-time intelligence dashboard for French public finances, procurement, and civic data**
+**Tableau de bord open-source pour la transparence des finances publiques et la séparation des pouvoirs**
 
-[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
-[![Deploy with Vercel](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
+[![Deploy with Vercel](https://img.shields.io/badge/déployer-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
 [![Open Source](https://img.shields.io/badge/open%20source-%E2%9D%A4-red)]()
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-bienvenues-brightgreen.svg)](CONTRIBUTING.md)
 
-[Live Demo](https://auditfrance.vercel.app) · [Report a Bug](https://github.com/soufianelemqariMain/auditfrance/issues) · [Request a Feature](https://github.com/soufianelemqariMain/auditfrance/issues)
+[Démo live](https://auditfrance.vercel.app) · [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) · [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues)
 
 </div>
 
 ---
 
-## What is Audit France?
+## À propos
 
-Audit France is an open-source intelligence dashboard that aggregates French public data into a single, real-time operator interface. Click any department on the map to instantly access:
+Audit France est un tableau de bord de veille civique inspiré de [worldmonitor.app](https://worldmonitor.app) — mais ancré dans la réalité française, avec une obsession pour la **transparence démocratique** et l'**équilibre des pouvoirs**.
 
-- Who your elected officials are and their parliamentary activity scores
-- Every public contract over €25,000 awarded in your department (live from DECP)
-- Active procurement tenders still accepting bids (live from BOAMP)
-- Open grant programs and subsidies available in your territory
-- Local budget estimates based on official OFGL data
+Là où d'autres tableaux de bord agrègent de l'information générale, Audit France se concentre sur une question précise : **qui décide quoi, avec quel argent public, et au profit de qui ?**
 
-The national audit view covers the full picture: the PLF 2025 budget breakdown by ministry, the top 100 companies receiving public contracts, and a live feed of all ongoing procurement across France.
+Données officielles uniquement. Aucune base de données privée. Aucun scraping.
 
 ---
 
-## Features
+## Ce que ça fait
 
-### Live Map Dashboard
+### Carte nationale interactive
 
-| Panel | Source | Description |
-|---|---|---|
-| France map | GeoJSON | Click any of the 101 departments to open its intelligence panel |
-| News feed | BFM, France Info, Le Monde, Le Figaro, RFI, France 24 | Live headlines, refreshed every 5 minutes |
-| AI Brief | Mistral API | Daily intelligence brief synthesized from live news |
-| CAC 40 | Yahoo Finance proxy | Live French stock market index |
-| Parlement | AN + Sénat RSS | Latest parliamentary work from both chambers |
+Cliquez sur n'importe lequel des 101 départements pour accéder instantanément à son tableau de bord local :
 
-### Department Intelligence Panel
-
-When you click a department on the map, you get 6 tabs:
-
-| Tab | What it shows |
+| Onglet | Ce qu'il montre |
 |---|---|
-| **Aperçu** | Population, area, density, prefecture, regional links |
-| **Élus** | Président du Conseil Régional + all deputies with activity scores |
-| **Marchés att.** | Awarded public contracts >€25k — live from DECP |
-| **AO ouverts** | Active tender notices still accepting bids — live from BOAMP |
-| **Subventions** | Open grant programs available — live from aides-territoires.beta.gouv.fr |
-| **Budget** | Departmental budget estimates (OFGL ratios) with official source links |
+| **Aperçu** | Population, superficie, densité, préfecture, liens régionaux |
+| **Élus** | Président·e du Conseil Régional + tous les député·e·s avec leurs scores d'activité parlementaire |
+| **Appels d'offres** | Avis de marchés publics actifs encore ouverts aux candidatures — en direct depuis BOAMP |
+| **Budget** | Estimations budgétaires du conseil départemental (ratios OFGL) avec liens vers les sources officielles |
 
-### National Audit Page (`/audit`)
+### Flux d'information en temps réel
 
-Four tabs with full national visibility:
-
-| Tab | Source | Description |
+| Panneau | Source | Fréquence |
 |---|---|---|
-| **Budget PLF** | budget.gouv.fr | PLF 2025 breakdown by ministry |
-| **Marchés attribués** | DECP | Top companies by public contract volume |
-| **Marchés ouverts** | BOAMP | All active tender notices, filterable by dept |
-| **Subventions** | data-subventions.beta.gouv.fr + aides-territoires | Awarded subsidies + open grant programs |
+| Fil d'actualité | BFM, France Info, Le Monde, Le Figaro, RFI, France 24 | Toutes les 5 min |
+| Brief IA | API Mistral | À la demande |
+| CAC 40 | Yahoo Finance proxy | Temps réel |
+| Parlement | RSS Assemblée Nationale + Sénat | En direct |
+
+### Page audit national (`/audit`)
+
+Quatre onglets pour une vision nationale complète :
+
+| Onglet | Source | Contenu |
+|---|---|---|
+| **Budget PLF** | budget.gouv.fr | Répartition du PLF 2025 par ministère |
+| **Marchés attribués** | DECP | Classement des entreprises par volume de marchés publics |
+| **Marchés ouverts** | BOAMP | Tous les appels d'offres actifs, filtrables par département |
+| **Subventions** | data-subventions.beta.gouv.fr + aides-territoires | Subventions attribuées + programmes de financement ouverts |
 
 ---
 
-## Data Sources
+## Sources de données
 
-All data is fetched live from official French government open data APIs — no database, no scraping.
+Toutes les données sont récupérées en direct depuis les API officielles de l'État français — sans base de données, sans scraping.
 
-| Data | API | Update frequency |
+| Donnée | API | Cache |
 |---|---|---|
-| Awarded contracts | [DECP v3 — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min cache |
-| Open tenders | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min cache |
-| State subsidies | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min cache |
-| Open grant programs | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min cache |
-| Deputies activity | [nosdeputes.fr](https://www.nosdeputes.fr) | 1 hour cache |
-| News | RSS (BFM, Le Monde, France Info, Le Figaro, RFI, France 24) | 5 min |
-| AI brief | [Mistral API](https://mistral.ai) | On demand |
+| Marchés attribués | [DECP v3 — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min |
+| Appels d'offres ouverts | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min |
+| Subventions État | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min |
+| Programmes de financement | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min |
+| Activité des député·e·s | [nosdeputes.fr](https://www.nosdeputes.fr) | 1 heure |
+| Actualité | RSS (BFM, Le Monde, France Info, Le Figaro, RFI, France 24) | 5 min |
+| Brief IA | [API Mistral](https://mistral.ai) | À la demande |
 
 ---
 
-## Getting Started
+## Stack technique
 
-### Prerequisites
+- **[Next.js 16](https://nextjs.org)** — App Router, routes API serveur
+- **[React 19](https://react.dev)** — interface utilisateur
+- **[TypeScript](https://www.typescriptlang.org)** — typage strict bout en bout
+- **[MapLibre GL](https://maplibre.org)** — carte interactive
+- **[Zustand](https://zustand-demo.pmnd.rs)** — état client
+- **[Tailwind CSS](https://tailwindcss.com)** — styles utilitaires
+
+---
+
+## Lancer en local
+
+### Prérequis
 
 - Node.js 18+
-- A free [Mistral API key](https://console.mistral.ai) (optional — enables the AI brief panel)
+- Une [clé API Mistral](https://console.mistral.ai) gratuite (optionnelle — active le brief IA)
 
-### Local setup
+### Installation
 
 ```bash
 git clone https://github.com/soufianelemqariMain/auditfrance.git
@@ -99,66 +103,55 @@ cd auditfrance
 npm install
 ```
 
-Create `.env.local`:
+Créer un `.env.local` :
 
 ```env
-MISTRAL_API_KEY=your_key_here   # optional
+MISTRAL_API_KEY=votre_clé_ici   # optionnel
 ```
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Ouvrir [http://localhost:3000](http://localhost:3000).
 
-### Deploy to Vercel
+### Déployer sur Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
 
-After deploying, add `MISTRAL_API_KEY` in your Vercel project's environment variables to enable the AI brief.
+Après déploiement, ajoutez `MISTRAL_API_KEY` dans les variables d'environnement Vercel pour activer le brief IA.
 
 ---
 
-## Tech Stack
+## Contribuer
 
-- **[Next.js 16](https://nextjs.org)** — App Router, server-side API routes
-- **[React 19](https://react.dev)** — UI
-- **[TypeScript](https://www.typescriptlang.org)** — type-safe throughout
-- **[MapLibre GL](https://maplibre.org)** — interactive map
-- **[Zustand](https://zustand-demo.pmnd.rs)** — client state
-- **[Tailwind CSS](https://tailwindcss.com)** — utility styles
+Les contributions sont les bienvenues. Chaque panneau et chaque route API sont isolés — c'est facile à étendre.
 
----
+**Bonnes premières issues :**
+- Ajouter une nouvelle source de données au panneau département
+- Améliorer l'algorithme de score d'activité des député·e·s
+- Ajouter un flux d'actualité régional filtré par département
+- Améliorer la responsivité mobile
+- Ajouter un thème clair / sombre
 
-## Contributing
+**Pour contribuer :**
 
-Contributions are very welcome. This project is designed to be easy to extend — each panel and API route is isolated.
+1. Forkez le dépôt
+2. Créez une branche : `git checkout -b feature/ma-fonctionnalite`
+3. Faites vos modifications
+4. Poussez : `git push origin feature/ma-fonctionnalite`
+5. Ouvrez une pull request
 
-**Good first issues:**
-- Add a new data source to the department panel
-- Improve the deputy activity scoring algorithm
-- Add a regional news feed filtered by department
-- Add a dark/light theme toggle
-- Improve mobile responsiveness
-
-**To contribute:**
-
-1. Fork the repo
-2. Create a branch: `git checkout -b feature/my-feature`
-3. Make your changes
-4. Push: `git push origin feature/my-feature`
-5. Open a pull request
-
-Please keep PRs focused — one feature per PR. Follow the existing code style (TypeScript, inline styles matching the CSS variable system).
+Une fonctionnalité par PR. Suivez le style existant (TypeScript, styles inline avec les variables CSS du système).
 
 ---
 
-## License
+## Licence
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT — voir [LICENSE](LICENSE) pour les détails.
 
 ---
 
 <div align="center">
-Built with public data, for the public interest.
+Construit avec des données publiques, dans l'intérêt général.
 </div>
