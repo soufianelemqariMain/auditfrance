@@ -1,87 +1,104 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// nosdeputes.fr synthese endpoint — includes full activity stats
-const SYNTHESE_URL = "https://www.nosdeputes.fr/synthese/data/json";
-const BULK_URL = "https://www.nosdeputes.fr/deputes/json";
+// Official AN open data — 17th legislature (2024-present)
+const AN_CSV_URL =
+  "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_actifs_csv_opendata/liste_deputes_libre_office.csv";
 
-interface DeputeRaw {
-  id: number;
-  nom: string;
-  nom_de_famille: string;
+// Map dept code → official dept name (as it appears in the AN CSV)
+const DEPT_CODE_TO_NAME: Record<string, string> = {
+  "01": "Ain", "02": "Aisne", "03": "Allier", "04": "Alpes-de-Haute-Provence",
+  "05": "Hautes-Alpes", "06": "Alpes-Maritimes", "07": "Ardèche", "08": "Ardennes",
+  "09": "Ariège", "10": "Aube", "11": "Aude", "12": "Aveyron",
+  "13": "Bouches-du-Rhône", "14": "Calvados", "15": "Cantal", "16": "Charente",
+  "17": "Charente-Maritime", "18": "Cher", "19": "Corrèze",
+  "2A": "Corse-du-Sud", "2B": "Haute-Corse",
+  "21": "Côte-d'Or", "22": "Côtes-d'Armor", "23": "Creuse",
+  "24": "Dordogne", "25": "Doubs", "26": "Drôme", "27": "Eure",
+  "28": "Eure-et-Loir", "29": "Finistère", "30": "Gard", "31": "Haute-Garonne",
+  "32": "Gers", "33": "Gironde", "34": "Hérault", "35": "Ille-et-Vilaine",
+  "36": "Indre", "37": "Indre-et-Loire", "38": "Isère", "39": "Jura",
+  "40": "Landes", "41": "Loir-et-Cher", "42": "Loire", "43": "Haute-Loire",
+  "44": "Loire-Atlantique", "45": "Loiret", "46": "Lot", "47": "Lot-et-Garonne",
+  "48": "Lozère", "49": "Maine-et-Loire", "50": "Manche", "51": "Marne",
+  "52": "Haute-Marne", "53": "Mayenne", "54": "Meurthe-et-Moselle", "55": "Meuse",
+  "56": "Morbihan", "57": "Moselle", "58": "Nièvre", "59": "Nord",
+  "60": "Oise", "61": "Orne", "62": "Pas-de-Calais", "63": "Puy-de-Dôme",
+  "64": "Pyrénées-Atlantiques", "65": "Hautes-Pyrénées", "66": "Pyrénées-Orientales",
+  "67": "Bas-Rhin", "68": "Haut-Rhin", "69": "Rhône", "70": "Haute-Saône",
+  "71": "Saône-et-Loire", "72": "Sarthe", "73": "Savoie", "74": "Haute-Savoie",
+  "75": "Paris", "76": "Seine-Maritime", "77": "Seine-et-Marne", "78": "Yvelines",
+  "79": "Deux-Sèvres", "80": "Somme", "81": "Tarn", "82": "Tarn-et-Garonne",
+  "83": "Var", "84": "Vaucluse", "85": "Vendée", "86": "Vienne",
+  "87": "Haute-Vienne", "88": "Vosges", "89": "Yonne", "90": "Territoire de Belfort",
+  "91": "Essonne", "92": "Hauts-de-Seine", "93": "Seine-Saint-Denis",
+  "94": "Val-de-Marne", "95": "Val-d'Oise",
+  "971": "Guadeloupe", "972": "Martinique", "973": "Guyane",
+  "974": "La Réunion", "976": "Mayotte",
+};
+
+interface Deputy {
+  identifiant: string;
   prenom: string;
-  num_deptmt: string;
-  nom_circo: string;
-  num_circo: number;
-  groupe_sigle: string;
-  mandat_debut: string;
-  mandat_fin: string;
-  ancien_depute?: boolean;
-  nb_mandats: number;
-  slug: string;
-  url_an: string;
-  url_nosdeputes: string;
-  profession?: string;
-  twitter?: string;
-  // Activity stats (from synthese)
-  semaines_presence?: number;
-  hemicycle_interventions?: number;
-  commission_interventions?: number;
-  amendements_proposes?: number;
-  amendements_adoptes?: number;
-  questions_ecrites?: number;
-  questions_orales?: number;
-  propositions_ecrites?: number;
-  rapports?: number;
-  nb_mois?: number;
+  nom: string;
+  region: string;
+  departement: string;
+  numCirco: string;
+  profession: string;
+  groupeComplet: string;
+  groupeAbrege: string;
 }
 
-interface CacheEntry { deputes: DeputeRaw[]; fetchedAt: number }
+interface CacheEntry { deputes: Deputy[]; fetchedAt: number }
 let cache: CacheEntry | null = null;
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const CACHE_TTL = 2 * 60 * 60 * 1000;
 
-async function getAllDeputies(): Promise<DeputeRaw[]> {
+function parseCSV(text: string): Deputy[] {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const sep = lines[0].includes(";") ? ";" : ",";
+  return lines.slice(1).map((line) => {
+    const v = line.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+    return {
+      identifiant: v[0] ?? "",
+      prenom: v[1] ?? "",
+      nom: v[2] ?? "",
+      region: v[3] ?? "",
+      departement: v[4] ?? "",
+      numCirco: v[5] ?? "",
+      profession: v[6] ?? "",
+      groupeComplet: v[7] ?? "",
+      groupeAbrege: v[8] ?? "",
+    };
+  }).filter((d) => d.identifiant && d.nom);
+}
+
+async function getAllDeputies(): Promise<Deputy[]> {
   if (cache && Date.now() - cache.fetchedAt < CACHE_TTL) return cache.deputes;
 
-  // Try synthese first (includes full activity stats)
-  try {
-    const res = await fetch(SYNTHESE_URL, {
-      headers: { "User-Agent": "AuditFrance/1.0" },
-      signal: AbortSignal.timeout(12000),
-    });
-    if (res.ok) {
-      const json = await res.json();
-      // nosdeputes.fr currently covers 16th legislature (2022-2024); include all mandates
-      const deputes: DeputeRaw[] = (json.deputes as Array<{ depute: DeputeRaw }>)
-        .map((d) => d.depute);
-      cache = { deputes, fetchedAt: Date.now() };
-      return deputes;
-    }
-  } catch {
-    // fallthrough to bulk
-  }
-
-  // Fallback to bulk (no activity stats)
-  const res = await fetch(BULK_URL, {
+  const res = await fetch(AN_CSV_URL, {
     headers: { "User-Agent": "AuditFrance/1.0" },
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(15000),
   });
-  if (!res.ok) throw new Error(`nosdeputes.fr HTTP ${res.status}`);
-  const json = await res.json();
-  const deputes: DeputeRaw[] = (json.deputes as Array<{ depute: DeputeRaw }>)
-    .map((d) => d.depute);
+  if (!res.ok) throw new Error(`AN CSV HTTP ${res.status}`);
+  const text = await res.text();
+  const deputes = parseCSV(text);
   cache = { deputes, fetchedAt: Date.now() };
   return deputes;
 }
 
-function computeScore(d: DeputeRaw): number {
-  const mois = d.nb_mois ?? 1;
-  const presence = (d.semaines_presence ?? 0) / mois;
-  const interventions = ((d.hemicycle_interventions ?? 0) + (d.commission_interventions ?? 0)) / mois;
-  const amendments = ((d.amendements_proposes ?? 0) + (d.amendements_adoptes ?? 0) * 3) / mois;
-  const questions = ((d.questions_ecrites ?? 0) + (d.questions_orales ?? 0) * 2) / mois;
-  const props = ((d.propositions_ecrites ?? 0) + (d.rapports ?? 0) * 5) / mois;
-  // Weighted score (0-100)
-  return Math.min(100, Math.round(presence * 2 + interventions * 0.5 + amendments * 1 + questions * 0.3 + props * 2));
+function matchesDept(csvDept: string, code: string): boolean {
+  const normalized = csvDept.trim();
+  const paddedCode = code.toUpperCase().padStart(2, "0");
+
+  // If the CSV dept field looks like a numeric code (e.g. "59" or "2A")
+  if (/^\d{1,3}$|^2[AB]$/i.test(normalized)) {
+    return normalized.toUpperCase().padStart(2, "0") === paddedCode;
+  }
+
+  // Otherwise match by name
+  const expected = DEPT_CODE_TO_NAME[paddedCode] ?? DEPT_CODE_TO_NAME[code.toUpperCase()];
+  if (!expected) return false;
+  return normalized.toLowerCase() === expected.toLowerCase();
 }
 
 export async function GET(request: NextRequest) {
@@ -90,40 +107,36 @@ export async function GET(request: NextRequest) {
 
   try {
     const all = await getAllDeputies();
-    const query = dept.toUpperCase();
-    const filtered = all.filter((d) => {
-      const dCode = String(d.num_deptmt || "").padStart(2, "0").toUpperCase();
-      return dCode === query.padStart(2, "0");
-    });
+    const filtered = all.filter((d) => matchesDept(d.departement, dept));
 
     return NextResponse.json({
       dept,
       count: filtered.length,
-      legislature: "16ème (2022-2024) — nosdeputes.fr",
+      legislature: "17ème (2024) — assemblee-nationale.fr",
       deputes: filtered.map((d) => ({
-        nom: d.nom_de_famille,
+        nom: d.nom,
         prenom: d.prenom,
-        groupe: d.groupe_sigle,
-        circo: d.nom_circo,
-        numCirco: d.num_circo,
-        nbMandats: d.nb_mandats,
-        profession: d.profession ?? null,
-        mandatDebut: d.mandat_debut,
-        url: `https://www.nosdeputes.fr/${d.slug}`,
-        urlAN: d.url_an,
-        twitter: d.twitter ?? null,
-        score: computeScore(d),
+        groupe: d.groupeAbrege || "NI",
+        circo: d.departement,
+        numCirco: parseInt(d.numCirco, 10) || 0,
+        nbMandats: null,
+        profession: d.profession || null,
+        mandatDebut: "2024-07-07",
+        url: `https://www.assemblee-nationale.fr/dyn/deputes/${d.identifiant}`,
+        urlAN: null,
+        twitter: null,
+        score: null, // No activity scoring for 17th legislature yet
         activite: {
-          presenceSemaines: d.semaines_presence ?? null,
-          interventionsHemicycle: d.hemicycle_interventions ?? null,
-          interventionsCommission: d.commission_interventions ?? null,
-          amendementsProposes: d.amendements_proposes ?? null,
-          amendementsAdoptes: d.amendements_adoptes ?? null,
-          questionsEcrites: d.questions_ecrites ?? null,
-          questionsOrales: d.questions_orales ?? null,
-          propositionsEcrites: d.propositions_ecrites ?? null,
-          rapports: d.rapports ?? null,
-          nbMois: d.nb_mois ?? null,
+          presenceSemaines: null,
+          interventionsHemicycle: null,
+          interventionsCommission: null,
+          amendementsProposes: null,
+          amendementsAdoptes: null,
+          questionsEcrites: null,
+          questionsOrales: null,
+          propositionsEcrites: null,
+          rapports: null,
+          nbMois: null,
         },
       })),
     });

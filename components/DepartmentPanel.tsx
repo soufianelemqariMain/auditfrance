@@ -167,13 +167,13 @@ interface DeputeInfo {
   groupe: string;
   circo: string;
   numCirco: number;
-  nbMandats: number;
+  nbMandats: number | null;
   profession: string | null;
   mandatDebut: string;
   url: string;
-  urlAN: string;
+  urlAN: string | null;
   twitter: string | null;
-  score: number;
+  score: number | null;
   activite: DeputeActivite;
 }
 
@@ -199,10 +199,13 @@ function ElusTab({ code, region }: { code: string; region: string }) {
       });
   }, [code]);
 
+  // 17th legislature groups
   const GROUPE_COLORS: Record<string, string> = {
-    RN: "#142B6F", LFI: "#CC0000", SOC: "#FF8083", RE: "#FFEB3B",
-    LIOT: "#78716c", HOR: "#3DAADC", LR: "#006EB7", GDR: "#DD051D",
-    ECO: "#6CB33F", UDI: "#3DAADC", DEM: "#F4A81F",
+    RN: "#1F3A8A", EPR: "#FF7900", "LFI-NFP": "#CC0000", SOC: "#FF8083",
+    DR: "#003189", EcoS: "#6CB33F", Dem: "#F4A81F", HOR: "#3DAADC",
+    LIOT: "#78716c", GDR: "#DD051D", UDR: "#7C3AED", NI: "#555555",
+    // Legacy
+    LFI: "#CC0000", RE: "#FFEB3B", LR: "#006EB7",
   };
 
   return (
@@ -233,7 +236,7 @@ function ElusTab({ code, region }: { code: string; region: string }) {
         <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
           <span>Député·e·s à l'Assemblée Nationale</span>
           {status === "loading" && <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>chargement…</span>}
-          {status === "done" && <span style={{ fontSize: 9, color: "#22c55e" }}>● {legislature || "nosdeputes.fr"}</span>}
+          {status === "done" && <span style={{ fontSize: 9, color: "#22c55e" }}>● {legislature || "assemblee-nationale.fr"}</span>}
           {status === "error" && <span style={{ fontSize: 9, color: "#ef4444" }} title={errMsg}>● erreur</span>}
         </div>
 
@@ -245,11 +248,10 @@ function ElusTab({ code, region }: { code: string; region: string }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {deputes.map((d, i) => {
-            const scoreColor = d.score >= 70 ? "#22c55e" : d.score >= 40 ? "#eab308" : "#ef4444";
             const gc = GROUPE_COLORS[d.groupe] ?? "#555";
             return (
               <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "10px 10px" }}>
-                {/* Name + group + score */}
+                {/* Name + group */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{d.prenom} {d.nom}</div>
@@ -258,35 +260,18 @@ function ElusTab({ code, region }: { code: string; region: string }) {
                       {d.profession && <span style={{ marginLeft: 6 }}>· {d.profession}</span>}
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>{d.groupe}</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>Score</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor, fontFamily: "var(--font-mono)" }}>{d.score}</span>
-                    </div>
-                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: gc + "22", color: gc, border: `1px solid ${gc}44`, flexShrink: 0 }}>{d.groupe}</span>
                 </div>
 
-                {/* Activity mini-bars */}
-                {d.activite.presenceSemaines !== null && (
-                  <div style={{ marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 12px" }}>
-                    <MiniStat label="Présence" value={d.activite.presenceSemaines} unit="sem." color="#22c55e" />
-                    <MiniStat label="Interventions" value={(d.activite.interventionsHemicycle ?? 0) + (d.activite.interventionsCommission ?? 0)} unit="" color="var(--accent-blue)" />
-                    <MiniStat label="Amendements" value={d.activite.amendementsProposes ?? 0} unit="proposés" color="var(--accent-yellow)" />
-                    <MiniStat label="Questions" value={(d.activite.questionsEcrites ?? 0) + (d.activite.questionsOrales ?? 0)} unit="" color="#a855f7" />
-                  </div>
-                )}
-
-                {/* Links + Phase 2b: profession de foi */}
+                {/* Links */}
                 <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité</a>
-                  {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ AN</a>}
+                  <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Profil AN</a>
                   <a
                     href={`https://www.data.gouv.fr/fr/datasets/professions-de-foi-des-candidats-aux-elections-legislatives-2024/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: 10, color: "#22c55e", textDecoration: "none" }}
-                    title="Profession de foi — élections législatives 2024 (17ème legislature)"
+                    title="Profession de foi — législatives 2024"
                   >
                     → Profession de foi
                   </a>

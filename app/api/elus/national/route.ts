@@ -1,71 +1,100 @@
 import { NextResponse } from "next/server";
 
-const SYNTHESE_URL = "https://www.nosdeputes.fr/synthese/data/json";
+// Official AN open data — 17th legislature (2024-present)
+const AN_CSV_URL =
+  "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_actifs_csv_opendata/liste_deputes_libre_office.csv";
 
-interface DeputeRaw {
-  nom_de_famille: string;
+interface Deputy {
+  identifiant: string;
   prenom: string;
-  num_deptmt: string;
-  nom_circo: string;
-  groupe_sigle: string;
-  slug: string;
-  url_an: string;
-  semaines_presence?: number;
-  hemicycle_interventions?: number;
-  commission_interventions?: number;
-  amendements_proposes?: number;
-  amendements_adoptes?: number;
-  questions_ecrites?: number;
-  questions_orales?: number;
-  propositions_ecrites?: number;
-  rapports?: number;
-  nb_mois?: number;
+  nom: string;
+  region: string;
+  departement: string;
+  numCirco: string;
+  profession: string;
+  groupeComplet: string;
+  groupeAbrege: string;
 }
 
-interface CacheEntry { deputes: DeputeRaw[]; fetchedAt: number }
+interface CacheEntry { deputes: Deputy[]; fetchedAt: number }
 let cache: CacheEntry | null = null;
-const CACHE_TTL = 60 * 60 * 1000;
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
 
-function computeScore(d: DeputeRaw): number {
-  const mois = d.nb_mois ?? 1;
-  const presence = (d.semaines_presence ?? 0) / mois;
-  const interventions = ((d.hemicycle_interventions ?? 0) + (d.commission_interventions ?? 0)) / mois;
-  const amendments = ((d.amendements_proposes ?? 0) + (d.amendements_adoptes ?? 0) * 3) / mois;
-  const questions = ((d.questions_ecrites ?? 0) + (d.questions_orales ?? 0) * 2) / mois;
-  const props = ((d.propositions_ecrites ?? 0) + (d.rapports ?? 0) * 5) / mois;
-  return Math.min(100, Math.round(presence * 2 + interventions * 0.5 + amendments * 1 + questions * 0.3 + props * 2));
+function parseCSV(text: string): Deputy[] {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const sep = lines[0].includes(";") ? ";" : ",";
+  return lines.slice(1).map((line) => {
+    const v = line.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+    return {
+      identifiant: v[0] ?? "",
+      prenom: v[1] ?? "",
+      nom: v[2] ?? "",
+      region: v[3] ?? "",
+      departement: v[4] ?? "",
+      numCirco: v[5] ?? "",
+      profession: v[6] ?? "",
+      groupeComplet: v[7] ?? "",
+      groupeAbrege: v[8] ?? "",
+    };
+  }).filter((d) => d.identifiant && d.nom);
+}
+
+async function fetchDeputies(): Promise<Deputy[]> {
+  if (cache && Date.now() - cache.fetchedAt < CACHE_TTL) return cache.deputes;
+
+  const res = await fetch(AN_CSV_URL, {
+    headers: { "User-Agent": "AuditFrance/1.0" },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`AN CSV HTTP ${res.status}`);
+  const text = await res.text();
+  const deputes = parseCSV(text);
+  cache = { deputes, fetchedAt: Date.now() };
+  return deputes;
 }
 
 export async function GET() {
   try {
-    if (!cache || Date.now() - cache.fetchedAt > CACHE_TTL) {
-      const res = await fetch(SYNTHESE_URL, {
-        headers: { "User-Agent": "AuditFrance/1.0" },
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!res.ok) throw new Error(`nosdeputes.fr HTTP ${res.status}`);
-      const json = await res.json();
-      const deputes: DeputeRaw[] = (json.deputes as Array<{ depute: DeputeRaw }>).map((d) => d.depute);
-      cache = { deputes, fetchedAt: Date.now() };
+    const all = await fetchDeputies();
+
+    // Proportional cross-section: 1 deputy per group cycling until 15
+    const byGroup: Record<string, Deputy[]> = {};
+    for (const d of all) {
+      const g = d.groupeAbrege || "NI";
+      if (!byGroup[g]) byGroup[g] = [];
+      byGroup[g].push(d);
     }
 
-    const scored = cache.deputes
-      .filter((d) => !!(d.nb_mois && d.nb_mois > 0))
-      .map((d) => ({ ...d, score: computeScore(d) }))
-      .sort((a, b) => a.score - b.score) // ascending = worst first
-      .slice(0, 15);
+    // Sort groups by size descending for representative sample
+    const groups = Object.entries(byGroup).sort((a, b) => b[1].length - a[1].length);
+    const sample: Deputy[] = [];
+    let round = 0;
+    while (sample.length < 15) {
+      let added = false;
+      for (const [, members] of groups) {
+        if (sample.length >= 15) break;
+        if (round < members.length) {
+          sample.push(members[round]);
+          added = true;
+        }
+      }
+      if (!added) break;
+      round++;
+    }
 
     return NextResponse.json({
-      deputes: scored.map((d) => ({
-        nom: `${d.prenom} ${d.nom_de_famille}`,
-        groupe: d.groupe_sigle,
-        dept: d.num_deptmt,
-        circo: d.nom_circo,
-        score: d.score,
-        url: `https://www.nosdeputes.fr/${d.slug}`,
-        urlAN: d.url_an,
+      deputes: sample.map((d) => ({
+        nom: `${d.prenom} ${d.nom}`,
+        groupe: d.groupeAbrege || "NI",
+        dept: d.departement,
+        circo: `${d.departement} · circ. ${d.numCirco}`,
+        score: null, // No activity scoring available for 17th legislature
+        url: `https://www.assemblee-nationale.fr/dyn/deputes/${d.identifiant}`,
       })),
-      total: cache.deputes.length,
+      total: all.length,
+      legislature: "17ème (depuis 2024)",
+      source: "data.assemblee-nationale.fr",
       fetchedAt: new Date().toISOString(),
     });
   } catch (err) {
