@@ -11,18 +11,8 @@ export default function Map() {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    let map: {
-      remove: () => void;
-      on: (event: string, cb: () => void) => void;
-      getCenter: () => { lng: number; lat: number };
-      getZoom: () => number;
-      setPitch: (v: number) => void;
-      addSource: (id: string, source: object) => void;
-      getSource: (id: string) => unknown;
-      addLayer: (layer: object) => void;
-      setLayoutProperty: (layer: string, prop: string, val: unknown) => void;
-      getLayer: (id: string) => unknown;
-    } | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let map: any = null;
 
     const initMap = async () => {
       const maplibregl = (await import("maplibre-gl")).default;
@@ -40,7 +30,33 @@ export default function Map() {
       mapRef.current = map;
 
       map!.on("load", () => {
-        loadLayers(map!);
+        loadLayers(map!, maplibregl);
+      });
+
+      // Cursor pointer on department hover
+      map!.on("mouseenter", "departments-fill", () => {
+        map!.getCanvas().style.cursor = "pointer";
+      });
+      map!.on("mouseleave", "departments-fill", () => {
+        map!.getCanvas().style.cursor = "";
+      });
+
+      // Click on department → open data popup
+      map!.on("click", "departments-fill", (e: { features?: Array<{properties: {code: string, nom: string}}>, lngLat: {lng: number, lat: number} }) => {
+        if (!e.features?.length) return;
+        const { code, nom } = e.features[0].properties;
+        new maplibregl.Popup({ closeButton: true, maxWidth: "220px" })
+          .setLngLat([e.lngLat.lng, e.lngLat.lat])
+          .setHTML(`
+            <div style="font-size:12px;line-height:1.8">
+              <strong style="font-size:13px">${nom}</strong>
+              <div style="color:#5e7d99;margin-bottom:6px">Département ${code}</div>
+              <a href="https://www.data.gouv.fr/fr/territories/department/${code}/" target="_blank" rel="noopener" style="color:#0055A4;display:block">→ data.gouv.fr</a>
+              <a href="https://www.insee.fr/fr/metadonnees/cog/departement/DEP${code}" target="_blank" rel="noopener" style="color:#0055A4;display:block">→ INSEE fiche</a>
+              <a href="https://www.prefectures-regions.gouv.fr" target="_blank" rel="noopener" style="color:#0055A4;display:block">→ Préfecture</a>
+            </div>
+          `)
+          .addTo(map!);
       });
 
       map!.on("moveend", () => {
@@ -65,23 +81,24 @@ export default function Map() {
   // Update layer visibility when layers state changes
   useEffect(() => {
     if (!mapRef.current) return;
-    const map = mapRef.current as {
-      getLayer: (id: string) => unknown;
-      setLayoutProperty: (layer: string, prop: string, val: string) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const map = mapRef.current as any;
+
+    const LAYER_MAP: Record<string, string[]> = {
+      nuclear_plants:  ["nuclear-plants-circle", "nuclear-plants-label"],
+      military_bases:  ["military-bases-circle", "military-bases-label"],
+      data_centers:    ["data-centers-circle", "data-centers-label"],
+      telco_hubs:      ["telco-hubs-circle", "telco-hubs-label"],
+      departments:     ["departments-fill", "departments-line"],
     };
 
-    const layerIds = [
-      "nuclear-plants-circle",
-      "nuclear-plants-label",
-      "military-bases-circle",
-      "military-bases-label",
-    ];
-
-    layerIds.forEach((id) => {
-      if (map.getLayer(id)) {
-        const key = id.startsWith("nuclear") ? "nuclear_plants" : "military_bases";
-        map.setLayoutProperty(id, "visibility", layers[key] ? "visible" : "none");
-      }
+    Object.entries(LAYER_MAP).forEach(([key, ids]) => {
+      const visible = layers[key] !== false; // default on
+      ids.forEach((id) => {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+        }
+      });
     });
   }, [layers]);
 
@@ -127,7 +144,9 @@ export default function Map() {
         <div style={{ color: "var(--accent-yellow)" }}>☢ Centrale nucléaire</div>
         <div style={{ color: "var(--accent-blue)" }}>⬟ Base militaire</div>
         <div style={{ color: "var(--accent-red)" }}>● Ville principale</div>
-        <div style={{ color: "var(--accent-blue)", opacity: 0.7 }}>▭ Département</div>
+        <div style={{ color: "#C9A227" }}>⬟ Data center</div>
+        <div style={{ color: "#00aaff" }}>◉ Hub télécoms / IXP</div>
+        <div style={{ color: "rgba(0,85,164,0.6)" }}>▭ Dép. (clic → opendata)</div>
       </div>
     </div>
   );
@@ -163,12 +182,9 @@ function MapButton({
 }
 
 
-function loadLayers(map: {
-  addSource: (id: string, source: object) => void;
-  getSource: (id: string) => unknown;
-  addLayer: (layer: object) => void;
-  getLayer: (id: string) => unknown;
-}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function loadLayers(map: any, maplibregl: any) {
+  void maplibregl; // available for future popup use inside layers
   // Nuclear plants
   fetch("/data/nuclear-plants.geojson")
     .then((r) => r.json())
@@ -296,6 +312,84 @@ function loadLayers(map: {
       { type: "Feature" as const, properties: { name: "Dijon",       pop: 157431  }, geometry: { type: "Point" as const, coordinates: [5.0415, 47.3220] } },
     ],
   };
+
+  // Data centers
+  fetch("/data/data-centers.geojson")
+    .then((r) => r.json())
+    .then((data) => {
+      if (!map.getSource("data-centers")) {
+        map.addSource("data-centers", { type: "geojson", data });
+        map.addLayer({
+          id: "data-centers-circle",
+          type: "circle",
+          source: "data-centers",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": "#C9A227",
+            "circle-stroke-color": "#F5F5F5",
+            "circle-stroke-width": 1,
+            "circle-opacity": 0.9,
+          },
+        });
+        map.addLayer({
+          id: "data-centers-label",
+          type: "symbol",
+          source: "data-centers",
+          layout: {
+            "text-field": ["get", "name"],
+            "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+            "text-size": 9,
+            "text-offset": [0, 1.4],
+            "text-anchor": "top",
+          },
+          paint: {
+            "text-color": "#C9A227",
+            "text-halo-color": "#0c1c2e",
+            "text-halo-width": 1,
+          },
+        });
+      }
+    })
+    .catch(() => {});
+
+  // Telco hubs / internet exchanges
+  fetch("/data/telco-hubs.geojson")
+    .then((r) => r.json())
+    .then((data) => {
+      if (!map.getSource("telco-hubs")) {
+        map.addSource("telco-hubs", { type: "geojson", data });
+        map.addLayer({
+          id: "telco-hubs-circle",
+          type: "circle",
+          source: "telco-hubs",
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#00aaff",
+            "circle-stroke-color": "#F5F5F5",
+            "circle-stroke-width": 1,
+            "circle-opacity": 0.85,
+          },
+        });
+        map.addLayer({
+          id: "telco-hubs-label",
+          type: "symbol",
+          source: "telco-hubs",
+          layout: {
+            "text-field": ["get", "name"],
+            "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+            "text-size": 9,
+            "text-offset": [0, 1.4],
+            "text-anchor": "top",
+          },
+          paint: {
+            "text-color": "#00aaff",
+            "text-halo-color": "#0c1c2e",
+            "text-halo-width": 1,
+          },
+        });
+      }
+    })
+    .catch(() => {});
 
   if (!map.getSource("cities")) {
     map.addSource("cities", { type: "geojson", data: CITIES_GEOJSON });

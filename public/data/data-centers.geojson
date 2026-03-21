@@ -1,0 +1,17 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.3589, 48.9356] }, "properties": { "name": "Equinix PA2/PA3", "operator": "Equinix", "tier": "Tier 3+", "city": "Saint-Denis" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.5578, 49.0144] }, "properties": { "name": "Equinix PA1", "operator": "Equinix", "tier": "Tier 3+", "city": "Roissy" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.3867, 48.9143] }, "properties": { "name": "Equinix PA5", "operator": "Equinix", "tier": "Tier 3+", "city": "Aubervilliers" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.4030, 48.9249] }, "properties": { "name": "Interxion PAR7/PAR8", "operator": "Digital Realty", "tier": "Tier 3+", "city": "La Courneuve" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.2470, 48.6330] }, "properties": { "name": "Data4 Campus", "operator": "Data4", "tier": "Tier 3+", "city": "Marcoussis" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.0470, 49.0610] }, "properties": { "name": "Scaleway DC5", "operator": "Scaleway/Iliad", "tier": "Tier 3", "city": "Saint-Ouen l'Aumône" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.2540, 48.8960] }, "properties": { "name": "Digital Realty PAR6", "operator": "Digital Realty", "tier": "Tier 3+", "city": "Courbevoie" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [7.7521, 48.5734] }, "properties": { "name": "OVH SBG (Strasbourg)", "operator": "OVHcloud", "tier": "Tier 3", "city": "Strasbourg" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [2.1332, 51.0141] }, "properties": { "name": "OVH GRA (Gravelines)", "operator": "OVHcloud", "tier": "Tier 3", "city": "Gravelines" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [4.8357, 45.7640] }, "properties": { "name": "Interxion LYO1", "operator": "Digital Realty", "tier": "Tier 3", "city": "Lyon" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [5.3698, 43.2965] }, "properties": { "name": "Interxion MRS1/MRS3", "operator": "Digital Realty", "tier": "Tier 3+", "city": "Marseille" } },
+    { "type": "Feature", "geometry": { "type": "Point", "coordinates": [1.4442, 43.6047] }, "properties": { "name": "SFR Datacenter", "operator": "SFR Business", "tier": "Tier 3", "city": "Toulouse" } }
+  ]
+}

@@ -11,10 +11,11 @@ interface LayerDef {
 const LAYERS: LayerDef[] = [
   { key: "nuclear_plants", label: "☢ Centrales Nucl." },
   { key: "military_bases", label: "⬟ Bases Militaires" },
-  { key: "prefectures", label: "⬤ Préfectures" },
+  { key: "data_centers",   label: "⬟ Data Centers" },
+  { key: "telco_hubs",     label: "◉ Hubs Télécoms" },
+  { key: "departments",    label: "▭ Départements" },
   { key: "weather_alerts", label: "⚠ Alertes Météo" },
-  { key: "seismic", label: "〜 Sismique" },
-  { key: "social_unrest", label: "⚡ Troubles Sociaux" },
+  { key: "seismic",        label: "〜 Sismique" },
 ];
 
 export default function LayerPanel() {

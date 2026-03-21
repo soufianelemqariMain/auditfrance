@@ -48,14 +48,15 @@ export interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  // Layers: all on except social_unrest
+  // Layers
   layers: {
     nuclear_plants: true,
     military_bases: true,
-    prefectures: true,
-    weather_alerts: true,
-    seismic: true,
-    social_unrest: false,
+    data_centers:   true,
+    telco_hubs:     true,
+    departments:    true,
+    weather_alerts: false,
+    seismic:        false,
   },
   toggleLayer: (key: string) =>
     set((state) => ({
