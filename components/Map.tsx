@@ -125,9 +125,9 @@ export default function Map() {
         }}
       >
         <div style={{ color: "var(--accent-yellow)" }}>☢ Centrale nucléaire</div>
-        <div style={{ color: "var(--accent-green)" }}>⬟ Base militaire</div>
-        <div style={{ color: "var(--accent-blue)" }}>⬤ Préfecture</div>
-        <div style={{ color: "var(--accent-red)" }}>⚠ Alerte météo</div>
+        <div style={{ color: "var(--accent-blue)" }}>⬟ Base militaire</div>
+        <div style={{ color: "var(--accent-red)" }}>● Ville principale</div>
+        <div style={{ color: "var(--accent-blue)", opacity: 0.7 }}>▭ Département</div>
       </div>
     </div>
   );
@@ -232,8 +232,8 @@ function loadLayers(map: {
             "text-anchor": "top",
           },
           paint: {
-            "text-color": "#00ff41",
-            "text-halo-color": "#0a0a0a",
+            "text-color": "#0055A4",
+            "text-halo-color": "#0c1c2e",
             "text-halo-width": 1,
           },
         });
@@ -241,4 +241,99 @@ function loadLayers(map: {
     })
     .catch(() => {});
 
+  // French departments — subtle fill + border
+  fetch("/data/departments.geojson")
+    .then((r) => r.json())
+    .then((data) => {
+      if (!map.getSource("departments")) {
+        map.addSource("departments", { type: "geojson", data });
+
+        // Filled regions (very subtle blue tint)
+        map.addLayer({
+          id: "departments-fill",
+          type: "fill",
+          source: "departments",
+          paint: {
+            "fill-color": "#0055A4",
+            "fill-opacity": 0.06,
+          },
+        });
+
+        // Department borders (French blue)
+        map.addLayer({
+          id: "departments-line",
+          type: "line",
+          source: "departments",
+          paint: {
+            "line-color": "#0055A4",
+            "line-width": 0.8,
+            "line-opacity": 0.5,
+          },
+        });
+      }
+    })
+    .catch(() => {});
+
+  // Major French cities
+  const CITIES_GEOJSON = {
+    type: "FeatureCollection" as const,
+    features: [
+      { type: "Feature" as const, properties: { name: "Paris",       pop: 2161000 }, geometry: { type: "Point" as const, coordinates: [2.3522, 48.8566] } },
+      { type: "Feature" as const, properties: { name: "Marseille",   pop: 861635  }, geometry: { type: "Point" as const, coordinates: [5.3698, 43.2965] } },
+      { type: "Feature" as const, properties: { name: "Lyon",        pop: 522250  }, geometry: { type: "Point" as const, coordinates: [4.8357, 45.7640] } },
+      { type: "Feature" as const, properties: { name: "Toulouse",    pop: 479553  }, geometry: { type: "Point" as const, coordinates: [1.4442, 43.6047] } },
+      { type: "Feature" as const, properties: { name: "Nice",        pop: 342669  }, geometry: { type: "Point" as const, coordinates: [7.2620, 43.7102] } },
+      { type: "Feature" as const, properties: { name: "Nantes",      pop: 314138  }, geometry: { type: "Point" as const, coordinates: [-1.5534, 47.2184] } },
+      { type: "Feature" as const, properties: { name: "Strasbourg",  pop: 284677  }, geometry: { type: "Point" as const, coordinates: [7.7521, 48.5734] } },
+      { type: "Feature" as const, properties: { name: "Bordeaux",    pop: 257804  }, geometry: { type: "Point" as const, coordinates: [-0.5792, 44.8378] } },
+      { type: "Feature" as const, properties: { name: "Lille",       pop: 232741  }, geometry: { type: "Point" as const, coordinates: [3.0573, 50.6292] } },
+      { type: "Feature" as const, properties: { name: "Rennes",      pop: 216268  }, geometry: { type: "Point" as const, coordinates: [-1.6778, 48.1173] } },
+      { type: "Feature" as const, properties: { name: "Reims",       pop: 183522  }, geometry: { type: "Point" as const, coordinates: [4.0317, 49.2583] } },
+      { type: "Feature" as const, properties: { name: "Le Havre",    pop: 172074  }, geometry: { type: "Point" as const, coordinates: [0.1079, 49.4944] } },
+      { type: "Feature" as const, properties: { name: "Brest",       pop: 140064  }, geometry: { type: "Point" as const, coordinates: [-4.4860, 48.3904] } },
+      { type: "Feature" as const, properties: { name: "Clermont",    pop: 143886  }, geometry: { type: "Point" as const, coordinates: [3.0863, 45.7772] } },
+      { type: "Feature" as const, properties: { name: "Grenoble",    pop: 158198  }, geometry: { type: "Point" as const, coordinates: [5.7245, 45.1885] } },
+      { type: "Feature" as const, properties: { name: "Dijon",       pop: 157431  }, geometry: { type: "Point" as const, coordinates: [5.0415, 47.3220] } },
+    ],
+  };
+
+  if (!map.getSource("cities")) {
+    map.addSource("cities", { type: "geojson", data: CITIES_GEOJSON });
+
+    map.addLayer({
+      id: "cities-dot",
+      type: "circle",
+      source: "cities",
+      paint: {
+        "circle-radius": [
+          "interpolate", ["linear"], ["get", "pop"],
+          100000, 3,
+          500000, 5,
+          2000000, 8,
+        ],
+        "circle-color": "#EF4135",
+        "circle-opacity": 0.85,
+        "circle-stroke-color": "#F5F5F5",
+        "circle-stroke-width": 1,
+      },
+    });
+
+    map.addLayer({
+      id: "cities-label",
+      type: "symbol",
+      source: "cities",
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+        "text-size": 10,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+      },
+      paint: {
+        "text-color": "#F5F5F5",
+        "text-halo-color": "#0c1c2e",
+        "text-halo-width": 1,
+      },
+    });
+  }
 }

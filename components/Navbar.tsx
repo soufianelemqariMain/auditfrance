@@ -39,6 +39,10 @@ export default function Navbar() {
   }
 
   return (
+    <>
+      {/* French tricolor stripe */}
+      <div className="tricolor-bar" />
+
     <nav
       style={{
         height: 44,
@@ -51,18 +55,27 @@ export default function Navbar() {
         flexShrink: 0,
       }}
     >
-      {/* Left: brand */}
-      <span
-        style={{
-          color: "var(--accent-green)",
-          fontWeight: 700,
-          letterSpacing: "0.2em",
-          fontSize: 14,
-          textTransform: "uppercase",
-        }}
-      >
-        FRANCE MONITOR
-      </span>
+      {/* Left: brand + rooster */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 18, lineHeight: 1 }}>🐓</span>
+        <div>
+          <span
+            style={{
+              color: "var(--accent-white)",
+              fontWeight: 700,
+              letterSpacing: "0.2em",
+              fontSize: 13,
+              textTransform: "uppercase",
+            }}
+          >
+            France{" "}
+            <span style={{ color: "var(--accent-red)" }}>Monitor</span>
+          </span>
+          <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
+            LIBERTÉ · ÉGALITÉ · INFORMATION
+          </div>
+        </div>
+      </div>
 
       {/* Center: live UTC clock — suppressHydrationWarning prevents #418 mismatch */}
       <span
@@ -114,5 +127,6 @@ export default function Navbar() {
         </button>
       </div>
     </nav>
+    </>
   );
 }

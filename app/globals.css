@@ -1,17 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Marianne:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ——— French Cocorico palette ——— */
 :root {
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #111111;
-  --bg-panel: #0d0d0d;
-  --border: #1f1f1f;
-  --accent-green: #00ff41;
-  --accent-red: #ff2020;
-  --accent-yellow: #ffcc00;
-  --accent-blue: #0088ff;
-  --text-primary: #e0e0e0;
-  --text-secondary: #666666;
+  /* Backgrounds — deep French navy, not black */
+  --bg-primary:   #0c1c2e;
+  --bg-secondary: #112030;
+  --bg-panel:     #0f1e30;
+  --border:       #1e3a5a;
+
+  /* Tricolor accents */
+  --accent-blue:   #0055A4;   /* French flag blue  */
+  --accent-white:  #F5F5F5;   /* French flag white */
+  --accent-red:    #EF4135;   /* French flag red   */
+
+  /* Repurpose old variables to tricolor equivalents */
+  --accent-green:  #0055A4;   /* was hacker green → now French blue */
+  --accent-yellow: #C9A227;   /* gold / Marianne   */
+
+  /* Text */
+  --text-primary:   #EEF2F7;
+  --text-secondary: #5e7d99;
+
+  /* Kept for compatibility */
+  --font-mono: 'JetBrains Mono', 'DM Mono', monospace;
 }
 
 * {
@@ -23,33 +36,41 @@
 html, body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
   height: 100%;
   overflow: hidden;
 }
 
+/* MapLibre popup */
 .maplibregl-popup-content {
   background: var(--bg-panel) !important;
   border: 1px solid var(--border) !important;
   color: var(--text-primary) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--font-mono) !important;
   font-size: 12px !important;
   border-radius: 2px !important;
   padding: 8px 12px !important;
 }
 
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb { background: var(--border); }
 
+/* Animations */
 @keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
+  0%   { transform: scale(0.8); opacity: 1; }
   100% { transform: scale(2.5); opacity: 0; }
 }
 
 @keyframes scroll-left {
-  0% { transform: translateX(0); }
+  0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
 .ticker-track {
@@ -59,4 +80,15 @@ html, body {
 
 .ticker-track:hover {
   animation-play-state: paused;
+}
+
+/* ——— Thin French tricolor top bar ——— */
+.tricolor-bar {
+  height: 4px;
+  background: linear-gradient(to right,
+    var(--accent-blue)  33.33%,
+    var(--accent-white) 33.33% 66.66%,
+    var(--accent-red)   66.66%
+  );
+  flex-shrink: 0;
 }
