@@ -6,8 +6,15 @@ interface Consultation {
   id: string;
   objet: string;
   acheteur: string;
+  typeMarche?: string;
+  departement?: string;
   dateLimite: string;
   url: string;
+}
+
+function fmtDate(s: string): string {
+  if (!s) return "—";
+  return s.slice(0, 10);
 }
 
 function daysLeft(dateLimite: string): { n: number; color: string } | null {
@@ -41,7 +48,7 @@ export default function AoOuvertsPanel() {
       {/* Header */}
       <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent-blue)" }}>📋 AO OUVERTS</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent-blue)" }}>📋 AO OUVERTS</span>
           {status === "loading" && <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>…</span>}
           {status === "done" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 4px rgba(34,197,94,0.6)" }} />}
           {status === "error" && <span style={{ fontSize: 9, color: "#ef4444" }}>err</span>}
@@ -53,10 +60,21 @@ export default function AoOuvertsPanel() {
         >↻</button>
       </div>
 
+      {/* Sub-header */}
+      {status === "done" && (
+        <div style={{ padding: "5px 12px", borderBottom: "1px solid var(--border)", fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.08em", flexShrink: 0 }}>
+          APPELS D'OFFRES — NATIONAL · BOAMP
+        </div>
+      )}
+
       {/* Body */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "6px 8px", display: "flex", flexDirection: "column", gap: 4 }}>
         {status === "loading" && (
-          <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>Chargement BOAMP…</div>
+          <>
+            {[1,2,3,4].map((n) => (
+              <div key={n} style={{ height: 64, background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 4 }} />
+            ))}
+          </>
         )}
         {status === "error" && (
           <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>
@@ -66,35 +84,46 @@ export default function AoOuvertsPanel() {
         {status === "done" && items.length === 0 && (
           <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>Aucun appel d'offres actif.</div>
         )}
-        {status === "done" && items.length > 0 && (
-          <div>
-            <div style={{ padding: "5px 10px", fontSize: 9, color: "var(--text-secondary)", borderBottom: "1px solid var(--border)", letterSpacing: "0.08em" }}>
-              APPELS D'OFFRES — NATIONAL
-            </div>
-            {items.map((c) => {
-              const rem = daysLeft(c.dateLimite);
-              return (
-                <div
-                  key={c.id}
-                  style={{ padding: "5px 10px", borderBottom: "1px solid var(--border)", cursor: c.url ? "pointer" : "default", transition: "background 0.1s" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                  onClick={() => c.url && window.open(c.url, "_blank", "noopener,noreferrer")}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.objet || "Objet non précisé"}
-                    </div>
-                    {rem && <span style={{ fontSize: 9, fontWeight: 700, color: rem.color, fontFamily: "var(--font-mono)", flexShrink: 0 }}>J-{rem.n}</span>}
-                  </div>
-                  <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {c.acheteur}
-                  </div>
+        {status === "done" && items.map((c) => {
+          const rem = daysLeft(c.dateLimite);
+          return (
+            <div
+              key={c.id}
+              onClick={() => c.url && window.open(c.url, "_blank", "noopener,noreferrer")}
+              style={{
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                padding: "8px 10px",
+                cursor: c.url ? "pointer" : "default",
+                transition: "border-color 0.15s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"; }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.35, flex: 1 }}>
+                  {c.objet || "Objet non précisé"}
                 </div>
-              );
-            })}
-          </div>
-        )}
+                {rem && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: rem.color, fontFamily: "var(--font-mono)", flexShrink: 0, lineHeight: 1 }}>
+                    J-{rem.n}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 3 }}>
+                {c.acheteur}
+                {c.departement && <span style={{ marginLeft: 6, color: "var(--accent-blue)", fontFamily: "var(--font-mono)" }}>Dépt {c.departement}</span>}
+              </div>
+              {c.dateLimite && (
+                <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 3, fontFamily: "var(--font-mono)" }}>
+                  Limite {fmtDate(c.dateLimite)}
+                  {c.typeMarche && <span style={{ marginLeft: 8, padding: "0px 4px", border: "1px solid var(--border)", borderRadius: 2 }}>{c.typeMarche.slice(0, 18)}</span>}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Footer */}
