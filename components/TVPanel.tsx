@@ -1,56 +1,49 @@
 "use client";
 
 import { useState } from "react";
+import HLSPlayer from "./HLSPlayer";
 
 interface TVChannel {
   name: string;
   short: string;
-  // YouTube nocookie embed URL for the channel's live stream
-  embedUrl: string;
-  // Official live stream page
-  url: string;
+  hlsUrl: string;
   color: string;
 }
 
-// Open/public French TV live streams via official YouTube channels
+// Official / publicly available HLS live streams (via iptv-org & official CDNs)
 const CHANNELS: TVChannel[] = [
   {
     name: "France 24",
     short: "F24",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/l8PMl7tUDIE?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0",
-    url: "https://www.france24.com/fr/direct",
+    hlsUrl:
+      "https://live.france24.com/hls/live/2037179/F24_FR_HI_HLS/master_5000.m3u8",
     color: "#0066cc",
   },
   {
     name: "BFM TV",
     short: "BFM",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/MRxHZaBPAZI?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0",
-    url: "https://www.bfmtv.com/en-direct/",
+    hlsUrl:
+      "https://live-cdn-stream-euw1.bfmtv.bct.nextradiotv.com/master.m3u8",
     color: "#e60000",
   },
   {
-    name: "LCI",
-    short: "LCI",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/Pkh8UtuejOw?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0",
-    url: "https://www.lci.fr/direct/",
-    color: "#003399",
+    name: "Arte",
+    short: "ART",
+    hlsUrl:
+      "https://artesimulcast.akamaized.net/hls/live/2031003/artelive_fr/index.m3u8",
+    color: "#cc6600",
   },
   {
     name: "Euronews FR",
     short: "EUR",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/V1W6Z5_G5Lo?autoplay=1&mute=1&controls=1&modestbranding=1&rel=0",
-    url: "https://fr.euronews.com/direct-live",
+    hlsUrl:
+      "https://2f6c5bf4.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmxheHhUVi1ldV9FdXJvbmV3c0ZyYW5jYWlzX0hMUw/playlist.m3u8",
     color: "#0099cc",
   },
 ];
 
 export default function TVPanel() {
   const [active, setActive] = useState(0);
-  const [loaded, setLoaded] = useState(false);
   const ch = CHANNELS[active];
 
   return (
@@ -114,7 +107,7 @@ export default function TVPanel() {
         {CHANNELS.map((c, i) => (
           <button
             key={c.short}
-            onClick={() => { setActive(i); setLoaded(false); }}
+            onClick={() => setActive(i)}
             style={{
               flex: 1,
               background: "transparent",
@@ -135,45 +128,12 @@ export default function TVPanel() {
         ))}
       </div>
 
-      {/* Video embed */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden", background: "#000" }}>
-        <iframe
-          key={ch.embedUrl}
-          src={ch.embedUrl}
-          allow="autoplay; encrypted-media; fullscreen"
-          allowFullScreen
-          onLoad={() => setLoaded(true)}
-          style={{
-            width: "100%",
-            height: "100%",
-            border: "none",
-            display: "block",
-            position: "absolute",
-            inset: 0,
-          }}
-          title={ch.name}
-        />
-        {!loaded && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#000",
-              fontSize: 10,
-              color: "var(--text-secondary)",
-              letterSpacing: "0.1em",
-              pointerEvents: "none",
-            }}
-          >
-            CONNEXION...
-          </div>
-        )}
+      {/* HLS video */}
+      <div style={{ flex: 1, overflow: "hidden", background: "#000" }}>
+        <HLSPlayer key={ch.hlsUrl} hlsUrl={ch.hlsUrl} />
       </div>
 
-      {/* Channel info bar */}
+      {/* Channel info */}
       <div
         style={{
           padding: "4px 10px",
@@ -184,31 +144,12 @@ export default function TVPanel() {
           flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            letterSpacing: "0.05em",
-          }}
-        >
+        <span style={{ fontSize: 10, fontWeight: 700, color: ch.color, letterSpacing: "0.05em" }}>
           {ch.name}
         </span>
-        <button
-          onClick={() => window.open(ch.url, "_blank", "noopener,noreferrer")}
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--accent-blue)",
-            fontSize: 9,
-            padding: "2px 6px",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            letterSpacing: "0.08em",
-          }}
-        >
-          ↗ PLEIN ÉCRAN
-        </button>
+        <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.08em" }}>
+          HLS DIRECT
+        </span>
       </div>
     </div>
   );

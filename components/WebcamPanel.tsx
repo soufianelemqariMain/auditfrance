@@ -1,69 +1,60 @@
 "use client";
 
 import { useState } from "react";
+import HLSPlayer from "./HLSPlayer";
 
 interface WebcamEntry {
   name: string;
   region: string;
+  // HLS m3u8 stream — regional French broadcast as live feed
+  hlsUrl: string;
+  // Official page to open on click for full view
   url: string;
-  // YouTube embed URL — if set, shows an iframe instead of SIGNAL PERDU
-  embedUrl?: string;
 }
 
-// Real French public webcams. For embeds we use YouTube nocookie format.
-// Clickthrough URLs go to official webcam/camera pages.
+// Live HLS streams sourced from official broadcasters / iptv-org (fr.m3u)
 const WEBCAMS: WebcamEntry[] = [
   {
-    name: "Tour Eiffel",
+    name: "Paris — Île-de-France",
     region: "ÎLE-DE-FRANCE",
-    url: "https://www.earthcam.com/world/france/paris/?cam=eiffeltower_paris",
-    // EarthCam Paris live — publicly viewable
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/ByXw-RV0pUQ?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
+    hlsUrl: "https://figarotv-live.freecaster.com/live/freecaster/figarotv.m3u8",
+    url: "https://www.lefigaro.fr/idf",
   },
   {
-    name: "Arc de Triomphe",
+    name: "Paris Direct",
     region: "ÎLE-DE-FRANCE",
-    url: "https://www.earthcam.com/world/france/paris/?cam=arcdetriomphe",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/N_OD0NK_OAg?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
+    hlsUrl: "https://live.france24.com/hls/live/2037179/F24_FR_HI_HLS/master_5000.m3u8",
+    url: "https://www.france24.com/fr/direct",
   },
   {
-    name: "Port de Marseille",
+    name: "Côte d'Azur",
     region: "PACA",
-    url: "https://www.marseille-port.fr/le-port/webcam",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/2DgSBMEBSaY?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
+    hlsUrl: "https://vdo2.pro-fhi.net:3628/live/uppodsfqlive.m3u8",
+    url: "https://www.lerendezvous.tv",
   },
   {
-    name: "Promenade des Anglais",
+    name: "Marseille / PACA",
     region: "PACA",
-    url: "https://www.nice.fr/fr/nice-pratique/webcam",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/HklFPX2VyD8?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
+    hlsUrl: "https://live-cdn-stream-euw1.bfmtv.bct.nextradiotv.com/master.m3u8",
+    url: "https://www.bfmtv.com/en-direct/",
   },
   {
     name: "Mont Saint-Michel",
     region: "NORMANDIE",
-    url: "https://www.earthcam.com/world/france/normandy/",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/Z2VDVDR4Rdo?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
+    hlsUrl: "https://streamtv.cdn.dvmr.fr/TVR/ngrp:tvr.stream_all/master.m3u8",
+    url: "https://www.tvr-bretagne.fr/direct",
   },
   {
-    name: "Port de Brest",
+    name: "Brest — Bretagne",
     region: "BRETAGNE",
-    url: "https://www.brest.fr/webcam-port",
-    embedUrl:
-      "https://www.youtube-nocookie.com/embed/qp4oCJ6PKXY?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
+    hlsUrl: "https://streamtv.cdn.dvmr.fr/TVR/ngrp:tvr.stream_all/master.m3u8",
+    url: "https://www.tvr-bretagne.fr/direct",
   },
 ];
 
 const FILTER_TABS = ["TOUS", "ÎLE-DE-FRANCE", "NORMANDIE", "PACA", "BRETAGNE"];
 
 function WebcamCard({ cam }: { cam: WebcamEntry }) {
-  const [loaded, setLoaded] = useState(false);
-  const [errored, setErrored] = useState(false);
-
   return (
     <div
       style={{
@@ -76,80 +67,9 @@ function WebcamCard({ cam }: { cam: WebcamEntry }) {
         minHeight: 90,
       }}
     >
-      {/* Stream area */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 68 }}>
-        {cam.embedUrl && !errored ? (
-          <>
-            {/* Iframe embed */}
-            <iframe
-              src={cam.embedUrl}
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              onLoad={() => setLoaded(true)}
-              onError={() => setErrored(true)}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-                display: "block",
-                position: "absolute",
-                inset: 0,
-              }}
-              title={cam.name}
-            />
-            {/* Spinner while loading */}
-            {!loaded && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 10,
-                  color: "var(--text-secondary)",
-                  letterSpacing: "0.1em",
-                  background: "#000",
-                }}
-              >
-                CONNEXION...
-              </div>
-            )}
-          </>
-        ) : (
-          /* Fallback — SIGNAL PERDU with clickthrough */
-          <div
-            onClick={() => window.open(cam.url, "_blank", "noopener,noreferrer")}
-            style={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 10,
-              color: "var(--text-secondary)",
-              letterSpacing: "0.1em",
-              padding: "12px 8px",
-              gap: 4,
-              textAlign: "center",
-              cursor: "pointer",
-            }}
-          >
-            <span>SIGNAL PERDU</span>
-            <span
-              style={{
-                color: "var(--accent-red)",
-                fontWeight: 700,
-                animation: "blink-cursor 1s step-start infinite",
-              }}
-            >
-              _
-            </span>
-            <span style={{ fontSize: 9, marginTop: 4, color: "var(--accent-blue)" }}>
-              ▶ VOIR DIRECT
-            </span>
-          </div>
-        )}
+      {/* HLS stream */}
+      <div style={{ flex: 1, overflow: "hidden", position: "relative", minHeight: 68 }}>
+        <HLSPlayer hlsUrl={cam.hlsUrl} />
       </div>
 
       {/* Bottom bar */}
@@ -243,7 +163,7 @@ export default function WebcamPanel() {
             color: "var(--accent-green)",
           }}
         >
-          LIVE WEBCAMS
+          LIVE FEEDS
         </span>
         <div
           style={{
@@ -274,9 +194,7 @@ export default function WebcamPanel() {
               border: "none",
               borderRight: "1px solid var(--border)",
               color:
-                activeFilter === tab
-                  ? "var(--accent-green)"
-                  : "var(--text-secondary)",
+                activeFilter === tab ? "var(--accent-green)" : "var(--text-secondary)",
               fontSize: 10,
               padding: "5px 8px",
               cursor: "pointer",
@@ -284,9 +202,7 @@ export default function WebcamPanel() {
               letterSpacing: "0.05em",
               fontFamily: "inherit",
               borderBottom:
-                activeFilter === tab
-                  ? "2px solid var(--accent-green)"
-                  : "2px solid transparent",
+                activeFilter === tab ? "2px solid var(--accent-green)" : "2px solid transparent",
             }}
           >
             {tab}
@@ -320,7 +236,7 @@ export default function WebcamPanel() {
               textAlign: "center",
             }}
           >
-            Aucune webcam pour cette région
+            Aucun flux pour cette région
           </div>
         )}
       </div>
