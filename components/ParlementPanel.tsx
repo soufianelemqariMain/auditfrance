@@ -2,254 +2,238 @@
 
 import { useEffect, useState } from "react";
 
-interface ParlItem {
-  id: string;
-  source: string;
-  title: string;
+interface DeputeScore {
+  nom: string;
+  groupe: string;
+  dept: string;
+  circo: string;
+  score: number;
   url: string;
-  publishedAt: string;
-  chamber: "AN" | "Sénat";
+  urlAN: string;
+}
+
+interface Consultation {
+  id: string;
+  objet: string;
+  acheteur: string;
+  dateLimite: string;
+  url: string;
+}
+
+const GROUPE_COLORS: Record<string, string> = {
+  RN: "#142B6F", LFI: "#CC0000", SOC: "#FF8083", RE: "#FFEB3B",
+  LIOT: "#78716c", HOR: "#3DAADC", LR: "#006EB7", GDR: "#DD051D",
+  ECO: "#6CB33F", UDI: "#3DAADC", DEM: "#F4A81F",
+};
+
+function daysLeft(dateLimite: string): { n: number; color: string } | null {
+  if (!dateLimite) return null;
+  const d = new Date(dateLimite);
+  if (isNaN(d.getTime())) return null;
+  const n = Math.ceil((d.getTime() - Date.now()) / 86400000);
+  return { n, color: n <= 3 ? "#ef4444" : n <= 7 ? "#eab308" : "#22c55e" };
 }
 
 export default function ParlementPanel() {
-  const [items, setItems] = useState<ParlItem[]>([]);
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [fetchedAt, setFetchedAt] = useState<string>("");
+  const [tab, setTab] = useState<"deputes" | "marches">("deputes");
+  const [deputes, setDeputes] = useState<DeputeScore[]>([]);
+  const [deputesStatus, setDeputesStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [marchesItems, setMarchesItems] = useState<Consultation[]>([]);
+  const [marchesStatus, setMarchesStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [totalDeputes, setTotalDeputes] = useState(0);
 
-  async function load() {
-    setStatus("loading");
+  async function loadDeputes() {
+    setDeputesStatus("loading");
     try {
-      const res = await fetch("/api/parlement");
+      const res = await fetch("/api/elus/national");
       const json = await res.json();
-      setItems(json.items ?? []);
-      setFetchedAt(json.fetchedAt ?? "");
-      setStatus("done");
+      setDeputes(json.deputes ?? []);
+      setTotalDeputes(json.total ?? 0);
+      setDeputesStatus("done");
     } catch {
-      setStatus("error");
+      setDeputesStatus("error");
     }
   }
 
-  useEffect(() => { load(); }, []);
+  async function loadMarches() {
+    setMarchesStatus("loading");
+    try {
+      const res = await fetch("/api/consultations");
+      const json = await res.json();
+      setMarchesItems((json.consultations ?? []).slice(0, 15));
+      setMarchesStatus("done");
+    } catch {
+      setMarchesStatus("error");
+    }
+  }
 
-  const anItems = items.filter((i) => i.chamber === "AN");
-  const senatItems = items.filter((i) => i.chamber === "Sénat");
+  useEffect(() => {
+    loadDeputes();
+    loadMarches();
+  }, []);
+
+  const activeStatus = tab === "deputes" ? deputesStatus : marchesStatus;
 
   return (
-    <div
-      style={{
-        background: "var(--bg-panel)",
-        borderLeft: "1px solid var(--border)",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div style={{ background: "var(--bg-panel)", borderLeft: "1px solid var(--border)", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       {/* Header */}
-      <div
-        style={{
-          padding: "8px 12px",
-          borderBottom: "1px solid var(--border)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexShrink: 0,
-        }}
-      >
+      <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: "var(--accent-blue)",
-            }}
-          >
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent-blue)" }}>
             PARLEMENT
           </span>
-          {status === "loading" && (
-            <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>chargement…</span>
-          )}
-          {status === "done" && (
-            <span
-              style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: "#22c55e",
-                display: "inline-block",
-                boxShadow: "0 0 4px rgba(34,197,94,0.6)",
-              }}
-            />
-          )}
-          {status === "error" && (
-            <span style={{ fontSize: 9, color: "#ef4444" }}>hors ligne</span>
-          )}
+          {activeStatus === "loading" && <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>chargement…</span>}
+          {activeStatus === "done" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 4px rgba(34,197,94,0.6)" }} />}
+          {activeStatus === "error" && <span style={{ fontSize: 9, color: "#ef4444" }}>erreur</span>}
         </div>
         <button
-          onClick={load}
+          onClick={() => { loadDeputes(); loadMarches(); }}
           title="Rafraîchir"
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--text-secondary)",
-            fontSize: 10,
-            padding: "2px 6px",
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          ↻
-        </button>
+          style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: 10, padding: "2px 6px", cursor: "pointer", fontFamily: "inherit" }}
+        >↻</button>
       </div>
 
-      {/* Body — split AN / Sénat */}
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 0 }}>
-        {/* AN section */}
-        <SectionBlock
-          label="AN"
-          labelColor="#0055A4"
-          items={anItems.length > 0 ? anItems : fallbackAN}
-          showFallback={anItems.length === 0 && status === "done"}
-        />
-        {/* Divider */}
-        <div style={{ height: 1, background: "var(--border)", flexShrink: 0 }} />
-        {/* Sénat section */}
-        <SectionBlock
-          label="SÉNAT"
-          labelColor="#8B1A1A"
-          items={senatItems.length > 0 ? senatItems : fallbackSenat}
-          showFallback={senatItems.length === 0 && status === "done"}
-        />
+      {/* Tabs */}
+      <div style={{ display: "flex", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+        <TabBtn active={tab === "deputes"} onClick={() => setTab("deputes")} color="#ef4444">
+          ⚠ Sous-actifs
+        </TabBtn>
+        <TabBtn active={tab === "marches"} onClick={() => setTab("marches")} color="var(--accent-blue)">
+          📋 AO ouverts
+        </TabBtn>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {tab === "deputes" && (
+          <DeputesTab deputes={deputes} status={deputesStatus} total={totalDeputes} />
+        )}
+        {tab === "marches" && (
+          <MarchesTab items={marchesItems} status={marchesStatus} />
+        )}
       </div>
 
       {/* Footer */}
-      {fetchedAt && (
-        <div
-          style={{
-            padding: "4px 10px",
-            borderTop: "1px solid var(--border)",
-            fontSize: 9,
-            color: "var(--text-secondary)",
-            flexShrink: 0,
-          }}
-        >
-          {new Date(fetchedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-          {" · "}
-          <a
-            href="https://www.assemblee-nationale.fr"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "var(--accent-blue)", textDecoration: "none" }}
-          >
-            AN
-          </a>
-          {" / "}
-          <a
-            href="https://www.senat.fr"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#8B1A1A", textDecoration: "none" }}
-          >
-            Sénat
-          </a>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SectionBlock({
-  label,
-  labelColor,
-  items,
-  showFallback,
-}: {
-  label: string;
-  labelColor: string;
-  items: ParlItem[];
-  showFallback: boolean;
-}) {
-  return (
-    <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <div
-        style={{
-          padding: "4px 10px",
-          fontSize: 9,
-          fontWeight: 700,
-          letterSpacing: "0.12em",
-          color: labelColor,
-          textTransform: "uppercase",
-          borderBottom: `1px solid ${labelColor}33`,
-          flexShrink: 0,
-          background: `${labelColor}0a`,
-        }}
-      >
-        {label}
-        {showFallback && (
-          <span style={{ fontWeight: 400, color: "var(--text-secondary)", marginLeft: 6 }}>
-            — liens directs
-          </span>
-        )}
+      <div style={{ padding: "4px 10px", borderTop: "1px solid var(--border)", fontSize: 9, color: "var(--text-secondary)", flexShrink: 0 }}>
+        <a href="https://www.nosdeputes.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)", textDecoration: "none" }}>nosdeputes.fr</a>
+        {" · "}
+        <a href="https://www.boamp.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)", textDecoration: "none" }}>BOAMP</a>
       </div>
-      <ul
-        style={{
-          listStyle: "none",
-          flex: 1,
-          overflowY: "auto",
-          margin: 0,
-          padding: "4px 0",
-        }}
-      >
-        {items.slice(0, 8).map((item) => (
-          <li key={item.id} style={{ padding: "3px 10px" }}>
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "block",
-                fontSize: 10,
-                color: "var(--text-primary)",
-                textDecoration: "none",
-                lineHeight: 1.35,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-              title={item.title}
-            >
-              {item.title}
-            </a>
-            <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>
-              {item.source} · {fmtDate(item.publishedAt)}
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
 
-function fmtDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-  } catch {
-    return "";
-  }
+function TabBtn({ active, onClick, color, children }: { active: boolean; onClick: () => void; color: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, background: "transparent", border: "none",
+        borderBottom: active ? `2px solid ${color}` : "2px solid transparent",
+        color: active ? "var(--text-primary)" : "var(--text-secondary)",
+        fontSize: 10, padding: "5px 4px", cursor: "pointer",
+        fontFamily: "inherit", letterSpacing: "0.05em", fontWeight: active ? 700 : 400,
+        transition: "all 0.15s",
+      }}
+    >
+      {children}
+    </button>
+  );
 }
 
-// Fallback links when RSS is unavailable — top-level pages only (sub-pages vary by legislature)
-const fallbackAN: ParlItem[] = [
-  { id: "an1", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Actualités — Assemblée Nationale", url: "https://www.assemblee-nationale.fr/actualites/" },
-  { id: "an2", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Travaux législatifs en cours", url: "https://www.assemblee-nationale.fr/travaux-legislatifs/textes-en-discussion.asp" },
-  { id: "an3", chamber: "AN", source: "nosdeputes.fr", publishedAt: new Date().toISOString(), title: "Activité des député·e·s — nosdeputes.fr", url: "https://www.nosdeputes.fr" },
-  { id: "an4", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Flux RSS indisponible — voir AN", url: "https://www.assemblee-nationale.fr" },
-];
+function DeputesTab({ deputes, status, total }: { deputes: DeputeScore[]; status: string; total: number }) {
+  if (status === "loading") {
+    return <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>Chargement nosdeputes.fr…</div>;
+  }
+  if (status === "error") {
+    return (
+      <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>
+        Données indisponibles. <a href="https://www.nosdeputes.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)" }}>→ nosdeputes.fr</a>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div style={{ padding: "6px 10px", fontSize: 9, color: "var(--text-secondary)", borderBottom: "1px solid var(--border)", letterSpacing: "0.08em" }}>
+        15 DÉPUTÉ·E·S LES MOINS ACTIF·VE·S · sur {total} au total
+      </div>
+      {deputes.map((d, i) => {
+        const gc = GROUPE_COLORS[d.groupe] ?? "#555";
+        const scoreColor = d.score <= 10 ? "#ef4444" : d.score <= 25 ? "#eab308" : "#f97316";
+        return (
+          <div
+            key={i}
+            style={{ padding: "5px 10px", borderBottom: "1px solid var(--border)", cursor: "pointer", transition: "background 0.1s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+            onClick={() => window.open(d.url, "_blank", "noopener,noreferrer")}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {d.nom}
+                </div>
+                <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 1 }}>
+                  Dépt {d.dept} · {d.circo}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 2, background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>
+                  {d.groupe}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: scoreColor, fontFamily: "var(--font-mono)", minWidth: 24, textAlign: "right" }}>
+                  {d.score}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-const fallbackSenat: ParlItem[] = [
-  { id: "s1", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Actualités du Sénat", url: "https://www.senat.fr/actualites-senatoriales/" },
-  { id: "s2", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Travaux parlementaires", url: "https://www.senat.fr/travaux-parlementaires/" },
-  { id: "s3", chamber: "Sénat", source: "nossenateurs.fr", publishedAt: new Date().toISOString(), title: "Activité des sénateurs — nossenateurs.fr", url: "https://www.nossenateurs.fr" },
-  { id: "s4", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Flux RSS indisponible — voir Sénat", url: "https://www.senat.fr" },
-];
+function MarchesTab({ items, status }: { items: Consultation[]; status: string }) {
+  if (status === "loading") {
+    return <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>Chargement BOAMP…</div>;
+  }
+  if (status === "error") {
+    return (
+      <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>
+        Données indisponibles. <a href="https://www.boamp.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)" }}>→ BOAMP</a>
+      </div>
+    );
+  }
+  if (items.length === 0) {
+    return <div style={{ padding: 12, fontSize: 10, color: "var(--text-secondary)" }}>Aucun appel d'offres actif.</div>;
+  }
+  return (
+    <div>
+      <div style={{ padding: "6px 10px", fontSize: 9, color: "var(--text-secondary)", borderBottom: "1px solid var(--border)", letterSpacing: "0.08em" }}>
+        APPELS D'OFFRES OUVERTS — NATIONAL
+      </div>
+      {items.map((c) => {
+        const rem = daysLeft(c.dateLimite);
+        return (
+          <div
+            key={c.id}
+            style={{ padding: "5px 10px", borderBottom: "1px solid var(--border)", cursor: c.url ? "pointer" : "default", transition: "background 0.1s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+            onClick={() => c.url && window.open(c.url, "_blank", "noopener,noreferrer")}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {c.objet || "Objet non précisé"}
+              </div>
+              {rem && <span style={{ fontSize: 9, fontWeight: 700, color: rem.color, fontFamily: "var(--font-mono)", flexShrink: 0 }}>J-{rem.n}</span>}
+            </div>
+            <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {c.acheteur}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
