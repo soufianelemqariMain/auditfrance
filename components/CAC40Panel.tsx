@@ -2,44 +2,80 @@
 
 import { useEffect, useRef } from "react";
 
-// TradingView Mini Symbol Overview widget — free, no API key needed
-// Renders a real-time CAC40 (PX1) chart inline
+// Top CAC40 components by market cap
+const CAC40_SYMBOLS = [
+  { s: "EURONEXT:PX1",  d: "CAC 40"         },
+  { s: "EURONEXT:MC",   d: "LVMH"           },
+  { s: "EURONEXT:TTE",  d: "TotalEnergies"  },
+  { s: "EURONEXT:SAN",  d: "Sanofi"         },
+  { s: "EURONEXT:AI",   d: "Air Liquide"    },
+  { s: "EURONEXT:BNP",  d: "BNP Paribas"    },
+  { s: "EURONEXT:OR",   d: "L'Oréal"        },
+  { s: "EURONEXT:SU",   d: "Schneider"      },
+  { s: "EURONEXT:AIR",  d: "Airbus"         },
+  { s: "EURONEXT:CS",   d: "AXA"            },
+  { s: "EURONEXT:DG",   d: "Vinci"          },
+  { s: "EURONEXT:RMS",  d: "Hermès"         },
+];
+
+const WIDGET_CONFIG = {
+  colorTheme: "dark",
+  dateRange: "1D",
+  showChart: true,
+  locale: "fr",
+  width: "100%",
+  height: "100%",
+  largeChartUrl: "",
+  isTransparent: true,
+  showSymbolLogo: false,
+  showFloatingTooltip: false,
+  plotLineColorGrowing: "rgba(0, 255, 65, 1)",
+  plotLineColorFalling: "rgba(255, 32, 32, 1)",
+  gridLineColor: "rgba(31, 31, 31, 0)",
+  scaleFontColor: "rgba(102, 102, 102, 1)",
+  belowLineFillColorGrowing: "rgba(0, 255, 65, 0.08)",
+  belowLineFillColorFalling: "rgba(255, 32, 32, 0.08)",
+  symbolActiveColor: "rgba(0, 255, 65, 0.08)",
+  tabs: [
+    {
+      title: "CAC 40",
+      symbols: CAC40_SYMBOLS,
+      originalTitle: "CAC 40",
+    },
+  ],
+};
+
 export default function CAC40Panel() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const outer = outerRef.current;
+    if (!outer) return;
 
-    // Clear any previous widget
-    containerRef.current.innerHTML = "";
+    outer.innerHTML = "";
 
-    const widgetContainer = document.createElement("div");
-    widgetContainer.className = "tradingview-widget-container__widget";
-    containerRef.current.appendChild(widgetContainer);
+    // TradingView's embed pattern requires:
+    //   <div class="tradingview-widget-container">
+    //     <div class="tradingview-widget-container__widget"></div>
+    //     <script src="..." async>{ json config }</script>
+    //   </div>
+    // The external script reads its own inline JSON from the DOM.
+    // Plain appendChild with script.innerHTML does NOT execute scripts —
+    // use createContextualFragment instead, which does.
+    const widgetHTML = `
+      <div class="tradingview-widget-container__widget" style="width:100%;height:100%;"></div>
+      <script type="text/javascript"
+        src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js"
+        async="true">
+        ${JSON.stringify(WIDGET_CONFIG)}
+      </script>
+    `;
 
-    const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      symbol: "EURONEXT:PX1",
-      width: "100%",
-      height: "100%",
-      locale: "fr",
-      dateRange: "1D",
-      colorTheme: "dark",
-      isTransparent: true,
-      autosize: true,
-      largeChartUrl: "https://fr.tradingview.com/symbols/EURONEXT-PX1/",
-      noTimeScale: false,
-    });
-
-    containerRef.current.appendChild(script);
+    const fragment = document.createRange().createContextualFragment(widgetHTML);
+    outer.appendChild(fragment);
 
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
+      outer.innerHTML = "";
     };
   }, []);
 
@@ -47,8 +83,8 @@ export default function CAC40Panel() {
     <div
       style={{
         background: "var(--bg-panel)",
+        borderTop: "1px solid var(--border)",
         borderLeft: "1px solid var(--border)",
-        borderBottom: "1px solid var(--border)",
         height: "100%",
         display: "flex",
         flexDirection: "column",
@@ -61,7 +97,7 @@ export default function CAC40Panel() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "5px 12px",
+          padding: "6px 12px",
           borderBottom: "1px solid var(--border)",
           flexShrink: 0,
         }}
@@ -92,11 +128,17 @@ export default function CAC40Panel() {
         </div>
       </div>
 
-      {/* TradingView widget mount point */}
+      {/* TradingView widget mount — must have explicit class for TradingView to target */}
       <div
-        ref={containerRef}
+        ref={outerRef}
         className="tradingview-widget-container"
-        style={{ flex: 1, overflow: "hidden", minHeight: 0 }}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden",
+          width: "100%",
+          height: "100%",
+        }}
       />
     </div>
   );
