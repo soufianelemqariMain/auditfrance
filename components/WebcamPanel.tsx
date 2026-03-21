@@ -6,58 +6,69 @@ interface WebcamEntry {
   name: string;
   region: string;
   url: string;
-  thumb: string;
+  // YouTube embed URL — if set, shows an iframe instead of SIGNAL PERDU
+  embedUrl?: string;
 }
 
+// Real French public webcams. For embeds we use YouTube nocookie format.
+// Clickthrough URLs go to official webcam/camera pages.
 const WEBCAMS: WebcamEntry[] = [
   {
     name: "Tour Eiffel",
     region: "ÎLE-DE-FRANCE",
     url: "https://www.earthcam.com/world/france/paris/?cam=eiffeltower_paris",
-    thumb: "",
+    // EarthCam Paris live — publicly viewable
+    embedUrl:
+      "https://www.youtube-nocookie.com/embed/ByXw-RV0pUQ?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
   },
   {
     name: "Arc de Triomphe",
     region: "ÎLE-DE-FRANCE",
     url: "https://www.earthcam.com/world/france/paris/?cam=arcdetriomphe",
-    thumb: "",
+    embedUrl:
+      "https://www.youtube-nocookie.com/embed/N_OD0NK_OAg?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
   },
   {
     name: "Port de Marseille",
     region: "PACA",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    thumb: "",
+    url: "https://www.marseille-port.fr/le-port/webcam",
+    embedUrl:
+      "https://www.youtube-nocookie.com/embed/2DgSBMEBSaY?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
   },
   {
-    name: "Côte d'Azur Nice",
+    name: "Promenade des Anglais",
     region: "PACA",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    thumb: "",
+    url: "https://www.nice.fr/fr/nice-pratique/webcam",
+    embedUrl:
+      "https://www.youtube-nocookie.com/embed/HklFPX2VyD8?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
   },
   {
     name: "Mont Saint-Michel",
     region: "NORMANDIE",
     url: "https://www.earthcam.com/world/france/normandy/",
-    thumb: "",
+    embedUrl:
+      "https://www.youtube-nocookie.com/embed/Z2VDVDR4Rdo?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
   },
   {
     name: "Port de Brest",
     region: "BRETAGNE",
-    url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    thumb: "",
+    url: "https://www.brest.fr/webcam-port",
+    embedUrl:
+      "https://www.youtube-nocookie.com/embed/qp4oCJ6PKXY?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0",
   },
 ];
 
 const FILTER_TABS = ["TOUS", "ÎLE-DE-FRANCE", "NORMANDIE", "PACA", "BRETAGNE"];
 
 function WebcamCard({ cam }: { cam: WebcamEntry }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
   return (
     <div
-      onClick={() => window.open(cam.url, "_blank", "noopener,noreferrer")}
       style={{
         background: "#000",
         border: "1px solid var(--border)",
-        cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -65,39 +76,87 @@ function WebcamCard({ cam }: { cam: WebcamEntry }) {
         minHeight: 90,
       }}
     >
-      {/* Placeholder area — SIGNAL PERDU */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 10,
-          color: "var(--text-secondary)",
-          letterSpacing: "0.1em",
-          padding: "12px 8px",
-          gap: 4,
-          textAlign: "center",
-        }}
-      >
-        <span>SIGNAL PERDU</span>
-        <span
-          style={{
-            color: "var(--accent-red)",
-            fontWeight: 700,
-            animation: "blink-cursor 1s step-start infinite",
-          }}
-        >
-          _
-        </span>
+      {/* Stream area */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden", minHeight: 68 }}>
+        {cam.embedUrl && !errored ? (
+          <>
+            {/* Iframe embed */}
+            <iframe
+              src={cam.embedUrl}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              onLoad={() => setLoaded(true)}
+              onError={() => setErrored(true)}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                display: "block",
+                position: "absolute",
+                inset: 0,
+              }}
+              title={cam.name}
+            />
+            {/* Spinner while loading */}
+            {!loaded && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 10,
+                  color: "var(--text-secondary)",
+                  letterSpacing: "0.1em",
+                  background: "#000",
+                }}
+              >
+                CONNEXION...
+              </div>
+            )}
+          </>
+        ) : (
+          /* Fallback — SIGNAL PERDU with clickthrough */
+          <div
+            onClick={() => window.open(cam.url, "_blank", "noopener,noreferrer")}
+            style={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 10,
+              color: "var(--text-secondary)",
+              letterSpacing: "0.1em",
+              padding: "12px 8px",
+              gap: 4,
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+          >
+            <span>SIGNAL PERDU</span>
+            <span
+              style={{
+                color: "var(--accent-red)",
+                fontWeight: 700,
+                animation: "blink-cursor 1s step-start infinite",
+              }}
+            >
+              _
+            </span>
+            <span style={{ fontSize: 9, marginTop: 4, color: "var(--accent-blue)" }}>
+              ▶ VOIR DIRECT
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Bottom bar */}
       <div
         style={{
           padding: "4px 8px",
-          background: "rgba(0,0,0,0.8)",
+          background: "rgba(0,0,0,0.9)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -107,6 +166,7 @@ function WebcamCard({ cam }: { cam: WebcamEntry }) {
         }}
       >
         <span
+          onClick={() => window.open(cam.url, "_blank", "noopener,noreferrer")}
           style={{
             fontSize: 9,
             color: "var(--text-primary)",
@@ -114,6 +174,7 @@ function WebcamCard({ cam }: { cam: WebcamEntry }) {
             overflow: "hidden",
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
+            cursor: "pointer",
           }}
         >
           {cam.name}

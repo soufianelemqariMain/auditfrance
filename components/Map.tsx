@@ -30,75 +30,7 @@ export default function Map() {
 
       map = new maplibregl.Map({
         container: mapContainer.current!,
-        style: {
-          version: 8,
-          sources: {
-            "protomaps-tiles": {
-              type: "vector",
-              url: "https://api.protomaps.com/tiles/v4.json?key=public",
-              attribution: "© Protomaps © OpenStreetMap",
-            },
-          },
-          layers: [
-            {
-              id: "background",
-              type: "background",
-              paint: { "background-color": "#0a0a0a" },
-            },
-            {
-              id: "water",
-              type: "fill",
-              source: "protomaps-tiles",
-              "source-layer": "water",
-              paint: { "fill-color": "#0d1a2a" },
-            },
-            {
-              id: "land",
-              type: "fill",
-              source: "protomaps-tiles",
-              "source-layer": "earth",
-              paint: { "fill-color": "#111111" },
-            },
-            {
-              id: "roads",
-              type: "line",
-              source: "protomaps-tiles",
-              "source-layer": "roads",
-              paint: {
-                "line-color": "#1f1f1f",
-                "line-width": 0.5,
-              },
-            },
-            {
-              id: "boundaries",
-              type: "line",
-              source: "protomaps-tiles",
-              "source-layer": "boundaries",
-              paint: {
-                "line-color": "#333333",
-                "line-width": 1,
-              },
-            },
-            {
-              id: "places",
-              type: "symbol",
-              source: "protomaps-tiles",
-              "source-layer": "places",
-              layout: {
-                "text-field": ["get", "name"],
-                "text-font": ["Noto Sans Regular"],
-                "text-size": 11,
-              },
-              paint: {
-                "text-color": "#666666",
-                "text-halo-color": "#0a0a0a",
-                "text-halo-width": 1,
-              },
-            },
-          ],
-          glyphs:
-            "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
-        },
+        style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         center: [mapState.lon, mapState.lat],
         zoom: mapState.zoom,
         pitch: is3D ? 45 : 0,
@@ -294,6 +226,7 @@ function loadLayers(map: {
           source: "military-bases",
           layout: {
             "text-field": ["get", "name"],
+            "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
             "text-size": 10,
             "text-offset": [0, 1.5],
             "text-anchor": "top",

@@ -6,6 +6,8 @@ import LayerPanel from "@/components/LayerPanel";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
 import WebcamPanel from "@/components/WebcamPanel";
 import InsightsPanel from "@/components/InsightsPanel";
+import TVPanel from "@/components/TVPanel";
+import CAC40Panel from "@/components/CAC40Panel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -36,28 +38,41 @@ export default function Home() {
             <Map />
           </div>
 
-          {/* Bottom panels row */}
+          {/* Bottom panels row — two tiers */}
+          {/* Tier 1: News · Webcams · TV Direct */}
           <div
             style={{
-              height: 220,
+              height: 230,
               display: "flex",
               borderTop: "1px solid var(--border)",
               flexShrink: 0,
             }}
           >
-            {/* News ticker — left 40% */}
-            <div style={{ flex: "0 0 40%", overflow: "hidden" }}>
+            {/* News ticker — 35% */}
+            <div style={{ flex: "0 0 35%", overflow: "hidden" }}>
               <NewsTickerPanel />
             </div>
 
-            {/* Webcams — center 35% */}
-            <div style={{ flex: "0 0 35%", overflow: "hidden" }}>
+            {/* Webcams — 30% */}
+            <div style={{ flex: "0 0 30%", overflow: "hidden" }}>
               <WebcamPanel />
             </div>
 
-            {/* AI Insights — right 25% */}
-            <div style={{ flex: "0 0 25%", overflow: "hidden" }}>
-              <InsightsPanel />
+            {/* TV Direct — 20% */}
+            <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
+              <TVPanel />
+            </div>
+
+            {/* AI Insights + CAC40 — remaining 15% split vertically */}
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              {/* CAC40 top half */}
+              <div style={{ flex: "0 0 50%", overflow: "hidden" }}>
+                <CAC40Panel />
+              </div>
+              {/* AI Insights bottom half */}
+              <div style={{ flex: 1, overflow: "hidden" }}>
+                <InsightsPanel />
+              </div>
             </div>
           </div>
         </div>
