@@ -3,9 +3,9 @@
 import { useAppStore, VigipiratLevel } from "../lib/store";
 
 const LEVEL_MAP: Record<VigipiratLevel, { color: string; label: string }> = {
-  VIGILANCE_RENFORCEE: { color: "#00ff41", label: "VIGILANCE RENFORCÉE" },
-  SECURITE_RENFORCEE: { color: "#ffcc00", label: "SÉCURITÉ RENFORCÉE" },
-  URGENCE_ATTENTAT: { color: "#ff2020", label: "URGENCE ATTENTAT" },
+  VIGILANCE_RENFORCEE: { color: "#00ff41", label: "Vigilance Renforcée" },
+  SECURITE_RENFORCEE: { color: "#ffcc00", label: "Sécurité Renforcée" },
+  URGENCE_ATTENTAT: { color: "#ff2020", label: "Urgence Attentat" },
 };
 
 export default function VigipirateBadge() {
@@ -18,21 +18,22 @@ export default function VigipirateBadge() {
         display: "flex",
         alignItems: "center",
         gap: 6,
-        fontSize: 11,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
+        fontSize: 10,
+        letterSpacing: "0.08em",
         color: color,
       }}
     >
       <div
         style={{
-          width: 8,
-          height: 8,
+          width: 7,
+          height: 7,
           backgroundColor: color,
           flexShrink: 0,
+          boxShadow: `0 0 5px ${color}88`,
         }}
       />
-      <span>{label}</span>
+      <span style={{ color: "var(--text-secondary)", textTransform: "uppercase" }}>Vigipirate</span>
+      <span style={{ fontWeight: 700, textTransform: "uppercase" }}>{label}</span>
     </div>
   );
 }

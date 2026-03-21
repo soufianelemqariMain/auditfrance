@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getDeptInfo, fmtPop, DEPT_SEARCH_TERMS } from "@/lib/deptData";
+import { getPresidentCD, getPresidentCR } from "@/lib/elusData";
 import { MARCHES_SAMPLE } from "@/lib/auditData";
 
 interface DeptContract {
@@ -38,7 +39,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
   const [contracts, setContracts] = useState<DeptContract[] | null>(null);
   const [loadStatus, setLoadStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [loadMsg, setLoadMsg] = useState("");
-  const [tab, setTab] = useState<"apercu" | "marches" | "budget">("apercu");
+  const [tab, setTab] = useState<"apercu" | "marches" | "budget" | "elus">("apercu");
 
   // National sample procurement data relevant to this department's key buyers
   const sampleContracts = getSampleContracts(code);
@@ -138,7 +139,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10 }}>
-          {(["apercu", "marches", "budget"] as const).map((t) => (
+          {(["apercu", "elus", "marches", "budget"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -156,7 +157,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
                 transition: "all 0.15s",
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "marches" ? "Marchés" : "Budget"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "marches" ? "Marchés" : "Budget"}
             </button>
           ))}
         </div>
@@ -166,6 +167,9 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
       <div style={{ flex: 1, overflow: "auto", padding: "14px 16px" }}>
         {tab === "apercu" && info && (
           <ApercuTab info={info} code={code} />
+        )}
+        {tab === "elus" && (
+          <ElusTab code={code} region={info?.region ?? ""} />
         )}
         {tab === "marches" && (
           <MarchesTab
@@ -214,6 +218,167 @@ function ApercuTab({ info, code }: { info: ReturnType<typeof getDeptInfo> & obje
         <ExtLink href="https://www.ofgl.fr/les-chiffres-des-departements" label="OFGL — finances des départements" />
         <ExtLink href={`https://data.economie.gouv.fr/explore/dataset/decp-v3-marches-valides/table/?refine.acheteur_id=${code}`} label="DECP — marchés publics locaux" />
       </div>
+    </div>
+  );
+}
+
+interface DeputeInfo {
+  nom: string;
+  prenom: string;
+  groupe: string;
+  circo: string;
+  nbMandats: number;
+  url: string;
+  urlAN: string;
+}
+
+function ElusTab({ code, region }: { code: string; region: string }) {
+  const presidentCD = getPresidentCD(code);
+  const presidentCR = getPresidentCR(region);
+  const [deputes, setDeputes] = useState<DeputeInfo[]>([]);
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
+
+  useEffect(() => {
+    setStatus("loading");
+    fetch(`/api/elus?dept=${code}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setDeputes(d.deputes ?? []);
+        setStatus("done");
+      })
+      .catch((e) => {
+        setStatus("error");
+        setErrMsg(String(e?.message ?? e));
+      });
+  }, [code]);
+
+  const GROUPE_COLORS: Record<string, string> = {
+    RN: "#142B6F", LFI: "#CC0000", SOC: "#FF8083", RE: "#FFEB3B",
+    LIOT: "#78716c", HOR: "#3DAADC", LR: "#006EB7", GDR: "#DD051D",
+    ECO: "#6CB33F", UDI: "#3DAADC", DEM: "#F4A81F",
+  };
+
+  return (
+    <div>
+      {/* Conseil Départemental president */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+          Président·e du Conseil Départemental
+        </div>
+        {presidentCD ? (
+          <EluCard
+            nom={presidentCD.nom}
+            role="Président·e CD"
+            parti={presidentCD.parti}
+            partiColor={presidentCD.partiColor}
+            depuis={presidentCD.enPosteDepuis}
+            url={presidentCD.profileUrl}
+          />
+        ) : (
+          <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "8px 0" }}>
+            Données non disponibles —{" "}
+            <a href={`https://www.departements-regions.fr/departement/${code}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)" }}>
+              voir site officiel
+            </a>
+          </div>
+        )}
+      </div>
+
+      {/* Conseil Régional president */}
+      {region && (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+            Président·e du Conseil Régional · {region}
+          </div>
+          {presidentCR ? (
+            <EluCard
+              nom={presidentCR.nom}
+              role="Président·e CR"
+              parti={presidentCR.parti}
+              partiColor={presidentCR.partiColor}
+              depuis={presidentCR.enPosteDepuis}
+              url={presidentCR.profileUrl}
+            />
+          ) : (
+            <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Données non disponibles</div>
+          )}
+        </div>
+      )}
+
+      {/* Deputies */}
+      <div>
+        <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+          <span>Député·e·s à l'Assemblée Nationale</span>
+          {status === "loading" && <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>chargement…</span>}
+          {status === "done" && <span style={{ fontSize: 9, color: "#22c55e" }}>● live nosdeputes.fr</span>}
+          {status === "error" && <span style={{ fontSize: 9, color: "#ef4444" }} title={errMsg}>● erreur</span>}
+        </div>
+
+        {status === "done" && deputes.length === 0 && (
+          <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+            Aucun·e député·e trouvé·e. <a href="https://www.assemblee-nationale.fr/dyn/deputes" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)" }}>→ Assemblée Nationale</a>
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {deputes.map((d, i) => (
+            <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "8px 10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{d.prenom} {d.nom}</div>
+                  <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>{d.circo}</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
+                    background: (GROUPE_COLORS[d.groupe] ?? "#555") + "22",
+                    color: GROUPE_COLORS[d.groupe] ?? "var(--text-secondary)",
+                    border: `1px solid ${(GROUPE_COLORS[d.groupe] ?? "#555")}44`,
+                  }}>{d.groupe}</span>
+                  {d.nbMandats > 0 && (
+                    <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{d.nbMandats} mandat{d.nbMandats > 1 ? "s" : ""}</span>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité</a>
+                {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ Fiche AN</a>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Senate link */}
+        <div style={{ marginTop: 12 }}>
+          <ExtLink href={`https://www.senat.fr/elus-locaux/departement.html`} label="Sénateurs du département → Sénat.fr" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EluCard({ nom, role, parti, partiColor, depuis, url }: {
+  nom: string; role: string; parti: string; partiColor: string; depuis: string; url?: string;
+}) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "8px 10px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{nom}</div>
+          <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>{role} · depuis {depuis}</div>
+        </div>
+        <span style={{
+          fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 3,
+          background: partiColor + "22", color: partiColor,
+          border: `1px solid ${partiColor}44`,
+        }}>{parti}</span>
+      </div>
+      {url && (
+        <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none", display: "block", marginTop: 6 }}>
+          → Site officiel
+        </a>
+      )}
     </div>
   );
 }
