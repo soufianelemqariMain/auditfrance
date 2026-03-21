@@ -1,83 +1,49 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
+import type { StockQuote } from "@/app/api/stocks/route";
 
-// Top CAC40 components by market cap
-const CAC40_SYMBOLS = [
-  { s: "EURONEXT:PX1",  d: "CAC 40"         },
-  { s: "EURONEXT:MC",   d: "LVMH"           },
-  { s: "EURONEXT:TTE",  d: "TotalEnergies"  },
-  { s: "EURONEXT:SAN",  d: "Sanofi"         },
-  { s: "EURONEXT:AI",   d: "Air Liquide"    },
-  { s: "EURONEXT:BNP",  d: "BNP Paribas"    },
-  { s: "EURONEXT:OR",   d: "L'Oréal"        },
-  { s: "EURONEXT:SU",   d: "Schneider"      },
-  { s: "EURONEXT:AIR",  d: "Airbus"         },
-  { s: "EURONEXT:CS",   d: "AXA"            },
-  { s: "EURONEXT:DG",   d: "Vinci"          },
-  { s: "EURONEXT:RMS",  d: "Hermès"         },
-];
+const REFRESH_MS = 60_000;
 
-const WIDGET_CONFIG = {
-  colorTheme: "dark",
-  dateRange: "1D",
-  showChart: true,
-  locale: "fr",
-  width: "100%",
-  height: "100%",
-  largeChartUrl: "",
-  isTransparent: true,
-  showSymbolLogo: false,
-  showFloatingTooltip: false,
-  plotLineColorGrowing: "rgba(0, 255, 65, 1)",
-  plotLineColorFalling: "rgba(255, 32, 32, 1)",
-  gridLineColor: "rgba(31, 31, 31, 0)",
-  scaleFontColor: "rgba(102, 102, 102, 1)",
-  belowLineFillColorGrowing: "rgba(0, 255, 65, 0.08)",
-  belowLineFillColorFalling: "rgba(255, 32, 32, 0.08)",
-  symbolActiveColor: "rgba(0, 255, 65, 0.08)",
-  tabs: [
-    {
-      title: "CAC 40",
-      symbols: CAC40_SYMBOLS,
-      originalTitle: "CAC 40",
-    },
-  ],
-};
+function fmt(n: number, decimals = 2) {
+  return n.toLocaleString("fr-FR", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
 
 export default function CAC40Panel() {
-  const outerRef = useRef<HTMLDivElement>(null);
+  const [quotes, setQuotes] = useState<StockQuote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState("");
+
+  const fetchQuotes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/stocks");
+      const data = await res.json();
+      if (Array.isArray(data.quotes)) {
+        setQuotes(data.quotes);
+        const d = new Date(data.fetchedAt);
+        setUpdatedAt(
+          d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        );
+      }
+    } catch {
+      // keep stale data
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const outer = outerRef.current;
-    if (!outer) return;
+    fetchQuotes();
+    const id = setInterval(fetchQuotes, REFRESH_MS);
+    return () => clearInterval(id);
+  }, [fetchQuotes]);
 
-    outer.innerHTML = "";
-
-    // TradingView's embed pattern requires:
-    //   <div class="tradingview-widget-container">
-    //     <div class="tradingview-widget-container__widget"></div>
-    //     <script src="..." async>{ json config }</script>
-    //   </div>
-    // The external script reads its own inline JSON from the DOM.
-    // Plain appendChild with script.innerHTML does NOT execute scripts —
-    // use createContextualFragment instead, which does.
-    const widgetHTML = `
-      <div class="tradingview-widget-container__widget" style="width:100%;height:100%;"></div>
-      <script type="text/javascript"
-        src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js"
-        async="true">
-        ${JSON.stringify(WIDGET_CONFIG)}
-      </script>
-    `;
-
-    const fragment = document.createRange().createContextualFragment(widgetHTML);
-    outer.appendChild(fragment);
-
-    return () => {
-      outer.innerHTML = "";
-    };
-  }, []);
+  // Separate index from company rows
+  const index = quotes.find((q) => q.symbol === "^FCHI");
+  const stocks = quotes.filter((q) => q.symbol !== "^FCHI");
 
   return (
     <div
@@ -89,6 +55,7 @@ export default function CAC40Panel() {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        fontFamily: "var(--font-mono)",
       }}
     >
       {/* Header */}
@@ -97,49 +64,122 @@ export default function CAC40Panel() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "6px 12px",
+          padding: "6px 10px",
           borderBottom: "1px solid var(--border)",
           flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.15em",
-            color: "var(--accent-yellow)",
-          }}
-        >
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", color: "var(--accent-yellow)" }}>
           CAC 40
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: "var(--accent-green)",
-              boxShadow: "0 0 4px var(--accent-green)",
-            }}
-          />
-          <span style={{ fontSize: 9, color: "var(--accent-green)", letterSpacing: "0.1em" }}>
-            EURONEXT
-          </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          {updatedAt && (
+            <span style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>
+              {updatedAt}
+            </span>
+          )}
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent-green)", boxShadow: "0 0 4px var(--accent-green)" }} />
         </div>
       </div>
 
-      {/* TradingView widget mount — must have explicit class for TradingView to target */}
+      {/* CAC40 index row */}
+      {index && (
+        <div
+          style={{
+            padding: "6px 10px",
+            borderBottom: "1px solid var(--border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexShrink: 0,
+            background: "rgba(255,204,0,0.05)",
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-yellow)", letterSpacing: "0.05em" }}>
+            {fmt(index.price, 0)}
+          </span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: index.changePercent >= 0 ? "var(--accent-green)" : "var(--accent-red)",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {index.changePercent >= 0 ? "+" : ""}
+            {fmt(index.changePercent)}%
+          </span>
+        </div>
+      )}
+
+      {/* Stock list */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {loading && quotes.length === 0 ? (
+          <div style={{ padding: "12px 10px", fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>
+            CHARGEMENT...
+          </div>
+        ) : stocks.length === 0 ? (
+          <div style={{ padding: "12px 10px", fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>
+            DONNÉES INDISPONIBLES
+          </div>
+        ) : (
+          stocks.map((q) => {
+            const up = q.changePercent >= 0;
+            const color = up ? "var(--accent-green)" : "var(--accent-red)";
+            return (
+              <div
+                key={q.symbol}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "4px 10px",
+                  borderBottom: "1px solid rgba(31,31,31,0.6)",
+                }}
+              >
+                {/* Name */}
+                <span
+                  style={{
+                    fontSize: 9,
+                    color: "var(--text-primary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    flex: 1,
+                    paddingRight: 6,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {q.name}
+                </span>
+                {/* Price + change */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                  <span style={{ fontSize: 9, color: "var(--text-primary)", letterSpacing: "0.04em" }}>
+                    {fmt(q.price)}
+                  </span>
+                  <span style={{ fontSize: 9, color, fontWeight: 600, minWidth: 52, textAlign: "right", letterSpacing: "0.04em" }}>
+                    {up ? "▲" : "▼"} {fmt(Math.abs(q.changePercent))}%
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
       <div
-        ref={outerRef}
-        className="tradingview-widget-container"
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflow: "hidden",
-          width: "100%",
-          height: "100%",
+          padding: "3px 10px",
+          borderTop: "1px solid var(--border)",
+          fontSize: 8,
+          color: "var(--text-secondary)",
+          letterSpacing: "0.08em",
+          flexShrink: 0,
         }}
-      />
+      >
+        EURONEXT PARIS · DIFF. 60S
+      </div>
     </div>
   );
 }

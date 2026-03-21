@@ -29,18 +29,18 @@ export default function Home() {
         <LayerPanel />
 
         <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-          {/* Map */}
-          <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+          {/* Map — 50% of available height */}
+          <div style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
             <Map />
           </div>
 
-          {/* Bottom panels — News · TV Direct · CAC40 · Insights */}
+          {/* Bottom panels — 50% of available height: News · TV Direct · CAC40 · Insights */}
           <div
             style={{
-              height: 240,
+              flex: "0 0 50%",
               display: "flex",
               borderTop: "1px solid var(--border)",
-              flexShrink: 0,
+              overflow: "hidden",
             }}
           >
             {/* News — 35% */}
