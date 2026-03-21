@@ -64,8 +64,9 @@ export default function Navbar() {
         FRANCE MONITOR
       </span>
 
-      {/* Center: live UTC clock */}
+      {/* Center: live UTC clock — suppressHydrationWarning prevents #418 mismatch */}
       <span
+        suppressHydrationWarning
         style={{
           fontSize: 12,
           color: "var(--text-secondary)",
