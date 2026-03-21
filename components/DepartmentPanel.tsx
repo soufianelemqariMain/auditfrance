@@ -141,13 +141,8 @@ function ApercuTab({ info, code }: { info: ReturnType<typeof getDeptInfo> & obje
         </div>
       </div>
 
-      {/* Links that actually work */}
-      <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" }}>Sources officielles</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <ExtLink href={`https://www.insee.fr/fr/statistiques/2011101?geo=DEP-${code}`} label="INSEE — population légale" />
-        <ExtLink href={`https://fr.wikipedia.org/wiki/D%C3%A9partement_${info.nom.replace(/ /g, "_")}`} label="Wikipedia — fiche département" />
-        <ExtLink href={`https://data.ofgl.fr/explore/dataset/ofgl-base-dep-consolidee/table/?refine.code_dep=${code}`} label="OFGL — données budgétaires" />
-        <ExtLink href={`https://data.economie.gouv.fr/explore/dataset/decp-v3-marches-valides/`} label="DECP — marchés publics" />
+      <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 8, letterSpacing: "0.05em" }}>
+        Sources : INSEE · OFGL · DECP · Wikipedia
       </div>
     </div>
   );
@@ -362,15 +357,8 @@ function BudgetTab({ code, nom }: { code: string; nom: string }) {
       <BudgetBar label="Voirie" value={estVoirie} max={estDépenses} color="var(--accent-yellow)" />
       <BudgetBar label="Éducation (collèges)" value={estEducation} max={estDépenses} color="#22c55e" />
 
-      <div style={{ marginTop: 16 }}>
-        <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" }}>Sources officielles</div>
-        <ExtLink href={`https://data.ofgl.fr/explore/dataset/ofgl-base-dep-consolidee/table/?refine.code_dep=${code}`} label="OFGL — données consolidées dépt" />
-        <div style={{ marginTop: 6 }}>
-          <ExtLink href={`https://www.data.gouv.fr/fr/datasets/balances-comptables-des-departements/`} label="data.gouv.fr — balances comptables" />
-        </div>
-        <div style={{ marginTop: 6 }}>
-          <ExtLink href={`https://www.collectivites-locales.gouv.fr/`} label="DGCL — collectivités locales" />
-        </div>
+      <div style={{ marginTop: 14, fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.05em" }}>
+        Sources : OFGL · data.gouv.fr · DGCL collectivités-locales.gouv.fr
       </div>
     </div>
   );
