@@ -249,19 +249,37 @@ function ElusTab({ code, region }: { code: string; region: string }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {deputes.map((d, i) => {
             const gc = GROUPE_COLORS[d.groupe] ?? "#555";
+            const score = d.score ?? null;
+            const scoreColor = score === null ? "var(--text-secondary)" : score >= 60 ? "#22c55e" : score >= 35 ? "#eab308" : "#ef4444";
+            const qo = d.activite?.questionsOrales ?? null;
             return (
               <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 5, padding: "10px 10px" }}>
-                {/* Name + group */}
+                {/* Name + group + score */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{d.prenom} {d.nom}</div>
                     <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 1 }}>
                       Circ. {d.numCirco} · {d.circo}
                       {d.profession && <span style={{ marginLeft: 6 }}>· {d.profession}</span>}
                     </div>
                   </div>
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: gc + "22", color: gc, border: `1px solid ${gc}44`, flexShrink: 0 }}>{d.groupe}</span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>{d.groupe}</span>
+                    {score !== null && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>Activité</span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: scoreColor, fontFamily: "var(--font-mono)" }}>{score}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Activity stats */}
+                {qo !== null && (
+                  <div style={{ marginTop: 6, display: "flex", gap: 12 }}>
+                    <MiniStat label="Questions orales" value={qo} unit="" color="#a855f7" />
+                  </div>
+                )}
 
                 {/* Links */}
                 <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
@@ -275,7 +293,6 @@ function ElusTab({ code, region }: { code: string; region: string }) {
                   >
                     → Profession de foi
                   </a>
-                  {d.twitter && <a href={`https://twitter.com/${d.twitter}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "#1DA1F2", textDecoration: "none" }}>→ X</a>}
                 </div>
               </div>
             );

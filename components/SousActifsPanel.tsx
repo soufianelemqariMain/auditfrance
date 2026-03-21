@@ -8,10 +8,12 @@ interface DeputeScore {
   dept: string;
   circo: string;
   score: number | null;
+  questionsOrales: number;
+  votesParticipes: number;
   url: string;
 }
 
-// 17th legislature group colors
+// 17th legislature group colours
 const GROUPE_COLORS: Record<string, string> = {
   RN: "#1F3A8A",
   EPR: "#FF7900",
@@ -25,7 +27,7 @@ const GROUPE_COLORS: Record<string, string> = {
   GDR: "#DD051D",
   UDR: "#7C3AED",
   NI: "#555555",
-  // Legacy
+  // legacy
   LFI: "#CC0000", RE: "#FFEB3B", LR: "#006EB7",
 };
 
@@ -56,7 +58,7 @@ export default function SousActifsPanel() {
       {/* Header */}
       <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent-blue)" }}>HÉMICYCLE</span>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent-yellow)" }}>TRANSPARENCE</span>
           {status === "loading" && <span style={{ fontSize: 9, color: "var(--accent-yellow)" }}>…</span>}
           {status === "done" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 4px rgba(34,197,94,0.6)" }} />}
           {status === "error" && <span style={{ fontSize: 9, color: "#ef4444" }}>err</span>}
@@ -71,7 +73,7 @@ export default function SousActifsPanel() {
       {/* Sub-header */}
       {status === "done" && (
         <div style={{ padding: "5px 12px", borderBottom: "1px solid var(--border)", fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.08em", flexShrink: 0 }}>
-          {total} DÉPUTÉ·E·S · {legislature}
+          15 MOINS ACTIF·VE·S · {total} DÉPUTÉ·E·S · {legislature}
         </div>
       )}
 
@@ -91,6 +93,8 @@ export default function SousActifsPanel() {
         )}
         {status === "done" && deputes.map((d, i) => {
           const gc = GROUPE_COLORS[d.groupe] ?? "#555";
+          const score = d.score ?? null;
+          const scoreColor = score === null ? "var(--text-secondary)" : score <= 20 ? "#ef4444" : score <= 35 ? "#eab308" : "#f97316";
           return (
             <div
               key={i}
@@ -115,9 +119,16 @@ export default function SousActifsPanel() {
                     {d.circo}
                   </div>
                 </div>
-                <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 2, background: gc + "22", color: gc, border: `1px solid ${gc}44`, flexShrink: 0 }}>
-                  {d.groupe}
-                </span>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                  {score !== null && (
+                    <span style={{ fontSize: 14, fontWeight: 800, color: scoreColor, fontFamily: "var(--font-mono)", lineHeight: 1 }}>
+                      {score}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 2, background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>
+                    {d.groupe}
+                  </span>
+                </div>
               </div>
             </div>
           );
@@ -126,7 +137,7 @@ export default function SousActifsPanel() {
 
       {/* Footer */}
       <div style={{ padding: "4px 10px", borderTop: "1px solid var(--border)", fontSize: 9, color: "var(--text-secondary)", flexShrink: 0 }}>
-        <a href="https://data.assemblee-nationale.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)", textDecoration: "none" }}>data.assemblee-nationale.fr</a>
+        Score = participation votes + questions orales · <a href="https://data.assemblee-nationale.fr" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent-blue)", textDecoration: "none" }}>data.assemblee-nationale.fr</a>
       </div>
     </div>
   );

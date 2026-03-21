@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readFile } from "fs/promises";
+import path from "path";
 
-// Official AN open data — 17th legislature (2024-present)
-const AN_CSV_URL =
-  "https://data.assemblee-nationale.fr/static/openData/repository/17/amo/deputes_actifs_csv_opendata/liste_deputes_libre_office.csv";
-
-// Map dept code → official dept name (as it appears in the AN CSV)
+// Map dept code → official dept name as it appears in the AN CSV
 const DEPT_CODE_TO_NAME: Record<string, string> = {
   "01": "Ain", "02": "Aisne", "03": "Allier", "04": "Alpes-de-Haute-Provence",
   "05": "Hautes-Alpes", "06": "Alpes-Maritimes", "07": "Ardèche", "08": "Ardennes",
@@ -38,8 +36,8 @@ const DEPT_CODE_TO_NAME: Record<string, string> = {
   "986": "Wallis-et-Futuna", "987": "Polynésie Française", "988": "Nouvelle-Calédonie",
 };
 
-interface Deputy {
-  identifiant: string;
+interface DeputyRecord {
+  id: string;
   prenom: string;
   nom: string;
   region: string;
@@ -48,56 +46,35 @@ interface Deputy {
   profession: string;
   groupeComplet: string;
   groupeAbrege: string;
+  questionsOrales: number;
+  votesParticipes: number;
+  score: number;
 }
 
-interface CacheEntry { deputes: Deputy[]; fetchedAt: number }
-let cache: CacheEntry | null = null;
-const CACHE_TTL = 2 * 60 * 60 * 1000;
-
-function parseCSV(text: string): Deputy[] {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const sep = lines[0].includes(";") ? ";" : ",";
-  return lines.slice(1).map((line) => {
-    const v = line.split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
-    return {
-      identifiant: v[0] ?? "",
-      prenom: v[1] ?? "",
-      nom: v[2] ?? "",
-      region: v[3] ?? "",
-      departement: v[4] ?? "",
-      numCirco: v[5] ?? "",
-      profession: v[6] ?? "",
-      groupeComplet: v[7] ?? "",
-      groupeAbrege: v[8] ?? "",
-    };
-  }).filter((d) => d.identifiant && d.nom);
+interface ScoresFile {
+  deputies: Record<string, DeputyRecord>;
+  generatedAt: string;
+  sources: string[];
 }
 
-async function getAllDeputies(): Promise<Deputy[]> {
-  if (cache && Date.now() - cache.fetchedAt < CACHE_TTL) return cache.deputes;
+let scoresCache: ScoresFile | null = null;
 
-  const res = await fetch(AN_CSV_URL, {
-    headers: { "User-Agent": "AuditFrance/1.0" },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) throw new Error(`AN CSV HTTP ${res.status}`);
-  const text = await res.text();
-  const deputes = parseCSV(text);
-  cache = { deputes, fetchedAt: Date.now() };
-  return deputes;
+async function loadScores(): Promise<ScoresFile> {
+  if (scoresCache) return scoresCache;
+  const filePath = path.join(process.cwd(), "public", "deputy-scores.json");
+  const raw = await readFile(filePath, "utf-8");
+  scoresCache = JSON.parse(raw) as ScoresFile;
+  return scoresCache;
 }
 
 function matchesDept(csvDept: string, code: string): boolean {
   const normalized = csvDept.trim();
   const paddedCode = code.toUpperCase().padStart(2, "0");
 
-  // If the CSV dept field looks like a numeric code (e.g. "59" or "2A")
   if (/^\d{1,3}$|^2[AB]$/i.test(normalized)) {
     return normalized.toUpperCase().padStart(2, "0") === paddedCode;
   }
 
-  // Otherwise match by name
   const expected = DEPT_CODE_TO_NAME[paddedCode] ?? DEPT_CODE_TO_NAME[code.toUpperCase()];
   if (!expected) return false;
   return normalized.toLowerCase() === expected.toLowerCase();
@@ -108,13 +85,14 @@ export async function GET(request: NextRequest) {
   if (!dept) return NextResponse.json({ error: "dept param required" }, { status: 400 });
 
   try {
-    const all = await getAllDeputies();
+    const data = await loadScores();
+    const all = Object.values(data.deputies);
     const filtered = all.filter((d) => matchesDept(d.departement, dept));
 
     return NextResponse.json({
       dept,
       count: filtered.length,
-      legislature: "17ème (2024) — assemblee-nationale.fr",
+      legislature: "17ème (2024) — data.assemblee-nationale.fr",
       deputes: filtered.map((d) => ({
         nom: d.nom,
         prenom: d.prenom,
@@ -124,10 +102,10 @@ export async function GET(request: NextRequest) {
         nbMandats: null,
         profession: d.profession || null,
         mandatDebut: "2024-07-07",
-        url: `https://www.assemblee-nationale.fr/dyn/deputes/PA${d.identifiant}`,
+        url: `https://www.assemblee-nationale.fr/dyn/deputes/PA${d.id}`,
         urlAN: null,
         twitter: null,
-        score: null, // No activity scoring for 17th legislature yet
+        score: d.score,
         activite: {
           presenceSemaines: null,
           interventionsHemicycle: null,
@@ -135,7 +113,7 @@ export async function GET(request: NextRequest) {
           amendementsProposes: null,
           amendementsAdoptes: null,
           questionsEcrites: null,
-          questionsOrales: null,
+          questionsOrales: d.questionsOrales,
           propositionsEcrites: null,
           rapports: null,
           nbMois: null,
