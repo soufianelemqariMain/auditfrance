@@ -3,9 +3,15 @@
 import { useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 
-export default function Map() {
+interface MapProps {
+  onDeptClick?: (code: string, nom: string) => void;
+}
+
+export default function Map({ onDeptClick }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
+  const onDeptClickRef = useRef(onDeptClick);
+  onDeptClickRef.current = onDeptClick;
   const { layers, mapState, setMapState, is3D } = useAppStore();
 
   useEffect(() => {
@@ -41,22 +47,13 @@ export default function Map() {
         map!.getCanvas().style.cursor = "";
       });
 
-      // Click on department → open data popup
+      // Click on department → open intelligence panel
       map!.on("click", "departments-fill", (e: { features?: Array<{properties: {code: string, nom: string}}>, lngLat: {lng: number, lat: number} }) => {
         if (!e.features?.length) return;
         const { code, nom } = e.features[0].properties;
-        new maplibregl.Popup({ closeButton: true, maxWidth: "220px" })
-          .setLngLat([e.lngLat.lng, e.lngLat.lat])
-          .setHTML(`
-            <div style="font-size:12px;line-height:1.8">
-              <strong style="font-size:13px">${nom}</strong>
-              <div style="color:#5e7d99;margin-bottom:6px">Département ${code}</div>
-              <a href="https://www.data.gouv.fr/fr/territories/department/${code}/" target="_blank" rel="noopener" style="color:#0055A4;display:block">→ data.gouv.fr</a>
-              <a href="https://www.insee.fr/fr/metadonnees/cog/departement/DEP${code}" target="_blank" rel="noopener" style="color:#0055A4;display:block">→ INSEE fiche</a>
-              <a href="https://www.prefectures-regions.gouv.fr" target="_blank" rel="noopener" style="color:#0055A4;display:block">→ Préfecture</a>
-            </div>
-          `)
-          .addTo(map!);
+        if (onDeptClickRef.current) {
+          onDeptClickRef.current(code, nom);
+        }
       });
 
       map!.on("moveend", () => {
@@ -146,7 +143,7 @@ export default function Map() {
         <div style={{ color: "var(--accent-red)" }}>● Ville principale</div>
         <div style={{ color: "#C9A227" }}>⬟ Data center</div>
         <div style={{ color: "#00aaff" }}>◉ Hub télécoms / IXP</div>
-        <div style={{ color: "rgba(0,85,164,0.6)" }}>▭ Dép. (clic → opendata)</div>
+        <div style={{ color: "rgba(0,85,164,0.8)" }}>▭ Dép. (clic → intelligence)</div>
       </div>
     </div>
   );
