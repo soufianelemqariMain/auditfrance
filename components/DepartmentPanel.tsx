@@ -147,7 +147,7 @@ function ApercuTab({ info, code }: { info: ReturnType<typeof getDeptInfo> & obje
         <ExtLink href={`https://www.insee.fr/fr/statistiques/1405599?geo=DEP-${code}`} label="INSEE — statistiques locales" />
         <ExtLink href={`https://fr.wikipedia.org/wiki/D%C3%A9partement_${info.nom.replace(/ /g, "_")}`} label="Wikipedia — fiche département" />
         <ExtLink href="https://www.ofgl.fr/les-chiffres-des-departements" label="OFGL — finances des départements" />
-        <ExtLink href={`https://data.economie.gouv.fr/explore/dataset/decp-v3-marches-valides/table/?refine.acheteur_id=${code}`} label="DECP — marchés publics locaux" />
+        <ExtLink href={`https://data.economie.gouv.fr/explore/dataset/decp-v3-marches-valides/table/?q=${code}`} label="DECP — marchés publics locaux" />
       </div>
     </div>
   );
@@ -364,12 +364,12 @@ function BudgetTab({ code, nom }: { code: string; nom: string }) {
 
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" }}>Sources officielles</div>
-        <ExtLink href={`https://www.ofgl.fr/les-chiffres-des-departements?filtre=DEP${code}`} label={`OFGL — budget du Conseil Dép. ${code}`} />
+        <ExtLink href="https://www.ofgl.fr/les-chiffres-des-departements" label={`OFGL — finances des départements`} />
         <div style={{ marginTop: 6 }}>
           <ExtLink href={`https://data.ofgl.fr/explore/dataset/ofgl-base-dep-consolidee/table/?refine.code_dep=${code}`} label="data.ofgl.fr — données consolidées" />
         </div>
         <div style={{ marginTop: 6 }}>
-          <ExtLink href={`https://www.collectivites-locales.gouv.fr/departement-${code}`} label="Collectivités locales — fiche" />
+          <ExtLink href={`https://www.collectivites-locales.gouv.fr/communes-et-finances`} label="Collectivités locales — données" />
         </div>
       </div>
     </div>
