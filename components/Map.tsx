@@ -36,6 +36,17 @@ export default function Map({ onDeptClick }: MapProps) {
       mapRef.current = map;
 
       map!.on("load", () => {
+        // Localize all basemap labels to French
+        // OpenMapTiles vector tiles carry name:fr alongside name
+        map!.getStyle().layers.forEach((layer: { id: string; type: string; layout?: Record<string, unknown> }) => {
+          if (layer.type === "symbol" && layer.layout?.["text-field"] !== undefined) {
+            map!.setLayoutProperty(layer.id, "text-field", [
+              "coalesce",
+              ["get", "name:fr"],
+              ["get", "name"],
+            ]);
+          }
+        });
         loadLayers(map!, maplibregl);
       });
 
