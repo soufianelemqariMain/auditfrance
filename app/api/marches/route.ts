@@ -4,6 +4,10 @@ import { DEPT_SEARCH_TERMS } from "@/lib/deptData";
 const DECP_API =
   "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp-v3-marches-valides/records";
 
+// Only fields confirmed present in DECP v3
+const FIELDS =
+  "titulaire_denominationsociale_1,titulaire_siret_1,montant,acheteur_nom,objet,datenotification,procedure";
+
 // Cache per dept: 15 min
 const cache = new Map<string, { data: object; ts: number }>();
 const CACHE_TTL = 15 * 60 * 1000;
@@ -12,63 +16,57 @@ export async function GET(request: NextRequest) {
   const dept = request.nextUrl.searchParams.get("dept");
   if (!dept) return NextResponse.json({ error: "dept param required" }, { status: 400 });
 
-  const key = dept.padStart(2, "0").toUpperCase();
+  const codePad = dept.padStart(2, "0");
+  const codeNum = codePad.replace(/^0/, ""); // "01" → "1"
 
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.ts < CACHE_TTL) {
-    return NextResponse.json(hit.data);
-  }
+  const hit = cache.get(codePad);
+  if (hit && Date.now() - hit.ts < CACHE_TTL) return NextResponse.json(hit.data);
 
-  try {
-    // Strategy 1: filter by lieu_execution_code_departement (most precise, dept code 2 chars)
-    // Strategy 2: filter by acheteur_nom LIKE "%term%" (name-based fallback)
-    // We try strategy 1 first, fall back if < 5 results
+  // Resolve search terms for this department
+  const terms = DEPT_SEARCH_TERMS[codeNum] ?? DEPT_SEARCH_TERMS[codePad] ?? [];
 
-    const fields =
-      "titulaire_denominationsociale_1,titulaire_siret_1,montant,acheteur_nom,objet,datenotification,procedure,lieu_execution_code_departement,cpv";
+  const results: MarcheOut[] = [];
+  const seen = new Set<string>();
 
-    // Strategy 1 — dept code filter
-    const url1 = `${DECP_API}?select=${fields}&where=lieu_execution_code_departement%3D%22${key}%22%20AND%20montant%3E25000&order_by=montant%20DESC&limit=50`;
-    let results = await fetchDecp(url1);
-
-    // Strategy 2 — name-based if dept-code filter is thin
-    if (results.length < 5) {
-      const terms = DEPT_SEARCH_TERMS[key.replace(/^0/, "")] ?? DEPT_SEARCH_TERMS[key] ?? [];
-      if (terms.length > 0) {
-        const whereTerms = terms
-          .slice(0, 3)
-          .map((t) => `acheteur_nom LIKE "%25${encodeURIComponent(t)}%25"`)
-          .join(" OR ");
-        const url2 = `${DECP_API}?select=${fields}&where=(${whereTerms})%20AND%20montant%3E25000&order_by=montant%20DESC&limit=50`;
-        const results2 = await fetchDecp(url2);
-        // Merge, deduplicate by objet+montant
-        const seen = new Set(results.map((r) => `${r.objet}|${r.montant}`));
-        for (const r of results2) {
-          const id = `${r.objet}|${r.montant}`;
-          if (!seen.has(id)) {
-            seen.add(id);
-            results.push(r);
-          }
+  // Query DECP for each term independently — skip terms that error
+  for (const term of terms.slice(0, 3)) {
+    try {
+      // URLSearchParams encodes % → %25, which ODS correctly decodes back to % for LIKE wildcards
+      const params = new URLSearchParams({
+        select: FIELDS,
+        where: `acheteur_nom LIKE "%${term}%" AND montant>25000`,
+        order_by: "montant DESC",
+        limit: "30",
+      });
+      const res = await fetch(`${DECP_API}?${params.toString()}`, {
+        headers: { "User-Agent": "AuditFrance/1.0" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!res.ok) continue; // DECP API error — skip this term
+      const json = await res.json();
+      for (const r of (json.results ?? []) as DecpRecord[]) {
+        const m = mapRecord(r);
+        const id = `${m.titulaire}|${m.montant}|${m.date.slice(0, 10)}`;
+        if (!seen.has(id)) {
+          seen.add(id);
+          results.push(m);
         }
-        // Re-sort merged
-        results.sort((a, b) => b.montant - a.montant);
       }
+    } catch {
+      // Network timeout or parse error — continue with remaining terms
     }
-
-    const data = {
-      dept: key,
-      count: results.length,
-      source: "DECP data.economie.gouv.fr",
-      marches: results.slice(0, 50),
-    };
-    cache.set(key, { data, ts: Date.now() });
-    return NextResponse.json(data);
-  } catch (err) {
-    return NextResponse.json(
-      { error: String(err instanceof Error ? err.message : err), marches: [] },
-      { status: 500 }
-    );
   }
+
+  results.sort((a, b) => b.montant - a.montant);
+
+  const data = {
+    dept: codePad,
+    count: results.length,
+    source: "DECP data.economie.gouv.fr",
+    marches: results.slice(0, 50),
+  };
+  cache.set(codePad, { data, ts: Date.now() });
+  return NextResponse.json(data);
 }
 
 interface DecpRecord {
@@ -79,8 +77,6 @@ interface DecpRecord {
   objet?: string;
   datenotification?: string;
   procedure?: string;
-  cpv?: string;
-  lieu_execution_code_departement?: string;
 }
 
 interface MarcheOut {
@@ -91,18 +87,10 @@ interface MarcheOut {
   objet: string;
   date: string;
   procedure: string;
-  cpv: string;
 }
 
-async function fetchDecp(url: string): Promise<MarcheOut[]> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": "AuditFrance/1.0" },
-    signal: AbortSignal.timeout(12000),
-  });
-  if (!res.ok) throw new Error(`DECP HTTP ${res.status}`);
-  const json = await res.json();
-  const records: DecpRecord[] = json.results ?? [];
-  return records.map((r) => ({
+function mapRecord(r: DecpRecord): MarcheOut {
+  return {
     titulaire: r.titulaire_denominationsociale_1 || "Titulaire non renseigné",
     siret: r.titulaire_siret_1 || "",
     montant: Number(r.montant) || 0,
@@ -110,6 +98,5 @@ async function fetchDecp(url: string): Promise<MarcheOut[]> {
     objet: r.objet || "",
     date: r.datenotification || "",
     procedure: r.procedure || "",
-    cpv: r.cpv || "",
-  }));
+  };
 }

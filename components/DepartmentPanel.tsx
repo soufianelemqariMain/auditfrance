@@ -13,7 +13,6 @@ interface DeptContract {
   objet: string;
   date: string;
   procedure: string;
-  cpv?: string;
 }
 
 interface Props {
@@ -60,7 +59,6 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
         objet: String(r.objet || ""),
         date: String(r.date || ""),
         procedure: String(r.procedure || ""),
-        cpv: String(r.cpv || ""),
       }));
       setContracts(results);
       setLoadStatus("done");
@@ -470,8 +468,7 @@ function MarchesTab({ contracts, loadStatus, loadMsg, isLive, onRefresh }: {
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
               {c.date && <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>{fmtDate(c.date)}</span>}
-              {c.acheteur && <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{c.acheteur.slice(0, 35)}</span>}
-              {c.cpv && <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>CPV {c.cpv.slice(0, 8)}</span>}
+              {c.acheteur && <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{c.acheteur.slice(0, 40)}</span>}
             </div>
           </div>
         ))}
