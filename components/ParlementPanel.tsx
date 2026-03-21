@@ -239,17 +239,17 @@ function fmtDate(iso: string): string {
   }
 }
 
-// Fallback links when RSS is unavailable
+// Fallback links when RSS is unavailable — top-level pages only (sub-pages vary by legislature)
 const fallbackAN: ParlItem[] = [
-  { id: "an1", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Agenda & séances plénières", url: "https://www.assemblee-nationale.fr/dyn/17/agenda" },
-  { id: "an2", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Textes en discussion", url: "https://www.assemblee-nationale.fr/dyn/17/textes" },
-  { id: "an3", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Questions au gouvernement", url: "https://www.assemblee-nationale.fr/dyn/17/questions" },
-  { id: "an4", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Comptes rendus des séances", url: "https://www.assemblee-nationale.fr/dyn/17/comptes-rendus" },
+  { id: "an1", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Actualités — Assemblée Nationale", url: "https://www.assemblee-nationale.fr/actualites/" },
+  { id: "an2", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Travaux législatifs en cours", url: "https://www.assemblee-nationale.fr/travaux-legislatifs/textes-en-discussion.asp" },
+  { id: "an3", chamber: "AN", source: "nosdeputes.fr", publishedAt: new Date().toISOString(), title: "Activité des député·e·s — nosdeputes.fr", url: "https://www.nosdeputes.fr" },
+  { id: "an4", chamber: "AN", source: "Assemblée Nationale", publishedAt: new Date().toISOString(), title: "Flux RSS indisponible — voir AN", url: "https://www.assemblee-nationale.fr" },
 ];
 
 const fallbackSenat: ParlItem[] = [
-  { id: "s1", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Ordre du jour du Sénat", url: "https://www.senat.fr/ordre-du-jour/index.html" },
-  { id: "s2", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Textes examinés en séance", url: "https://www.senat.fr/dossiers-legislatifs/index.html" },
-  { id: "s3", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Questions au gouvernement", url: "https://www.senat.fr/questions/index.html" },
-  { id: "s4", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Commissions — travaux en cours", url: "https://www.senat.fr/commission/index.html" },
+  { id: "s1", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Actualités du Sénat", url: "https://www.senat.fr/actualites-senatoriales/" },
+  { id: "s2", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Travaux parlementaires", url: "https://www.senat.fr/travaux-parlementaires/" },
+  { id: "s3", chamber: "Sénat", source: "nossenateurs.fr", publishedAt: new Date().toISOString(), title: "Activité des sénateurs — nossenateurs.fr", url: "https://www.nossenateurs.fr" },
+  { id: "s4", chamber: "Sénat", source: "Sénat", publishedAt: new Date().toISOString(), title: "Flux RSS indisponible — voir Sénat", url: "https://www.senat.fr" },
 ];

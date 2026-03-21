@@ -144,10 +144,10 @@ function ApercuTab({ info, code }: { info: ReturnType<typeof getDeptInfo> & obje
       {/* Links that actually work */}
       <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" }}>Sources officielles</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <ExtLink href={`https://www.insee.fr/fr/statistiques/1405599?geo=DEP-${code}`} label="INSEE — statistiques locales" />
+        <ExtLink href={`https://www.insee.fr/fr/statistiques/2011101?geo=DEP-${code}`} label="INSEE — population légale" />
         <ExtLink href={`https://fr.wikipedia.org/wiki/D%C3%A9partement_${info.nom.replace(/ /g, "_")}`} label="Wikipedia — fiche département" />
-        <ExtLink href="https://www.ofgl.fr/les-chiffres-des-departements" label="OFGL — finances des départements" />
-        <ExtLink href={`https://data.economie.gouv.fr/explore/dataset/decp-v3-marches-valides/table/?q=${code}`} label="DECP — marchés publics locaux" />
+        <ExtLink href={`https://data.ofgl.fr/explore/dataset/ofgl-base-dep-consolidee/table/?refine.code_dep=${code}`} label="OFGL — données budgétaires" />
+        <ExtLink href={`https://data.economie.gouv.fr/explore/dataset/decp-v3-marches-valides/`} label="DECP — marchés publics" />
       </div>
     </div>
   );
@@ -287,11 +287,11 @@ function ElusTab({ code, region }: { code: string; region: string }) {
                   <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Activité</a>
                   {d.urlAN && <a href={d.urlAN} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none" }}>→ AN</a>}
                   <a
-                    href={`https://www.data.gouv.fr/fr/datasets/professions-de-foi-des-candidats-aux-elections-legislatives-2022/#/resources`}
+                    href={`https://www.data.gouv.fr/fr/datasets/professions-de-foi-des-candidats-aux-elections-legislatives-2024/`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: 10, color: "#22c55e", textDecoration: "none" }}
-                    title="Profession de foi — élections législatives 2022 (16ème legislature)"
+                    title="Profession de foi — élections législatives 2024 (17ème legislature)"
                   >
                     → Profession de foi
                   </a>
@@ -364,12 +364,12 @@ function BudgetTab({ code, nom }: { code: string; nom: string }) {
 
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.07em" }}>Sources officielles</div>
-        <ExtLink href="https://www.ofgl.fr/les-chiffres-des-departements" label={`OFGL — finances des départements`} />
+        <ExtLink href={`https://data.ofgl.fr/explore/dataset/ofgl-base-dep-consolidee/table/?refine.code_dep=${code}`} label="OFGL — données consolidées dépt" />
         <div style={{ marginTop: 6 }}>
-          <ExtLink href={`https://data.ofgl.fr/explore/dataset/ofgl-base-dep-consolidee/table/?refine.code_dep=${code}`} label="data.ofgl.fr — données consolidées" />
+          <ExtLink href={`https://www.data.gouv.fr/fr/datasets/balances-comptables-des-departements/`} label="data.gouv.fr — balances comptables" />
         </div>
         <div style={{ marginTop: 6 }}>
-          <ExtLink href={`https://www.collectivites-locales.gouv.fr/communes-et-finances`} label="Collectivités locales — données" />
+          <ExtLink href={`https://www.collectivites-locales.gouv.fr/`} label="DGCL — collectivités locales" />
         </div>
       </div>
     </div>
