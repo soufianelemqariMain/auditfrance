@@ -79,8 +79,8 @@ export default function NewsTickerPanel() {
       setLoading(true);
       const res = await fetch("/api/news");
       if (res.ok) {
-        const data: NewsItem[] = await res.json();
-        setNewsItems(data);
+        const data = await res.json();
+        setNewsItems(data.items ?? []);
       }
     } catch {
       // silently ignore fetch errors — stale data remains visible

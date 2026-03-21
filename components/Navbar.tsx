@@ -15,10 +15,12 @@ function formatUTC(date: Date): string {
 }
 
 export default function Navbar() {
-  const [clock, setClock] = useState<string>(() => formatUTC(new Date()));
+  const [clock, setClock] = useState("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // Set immediately on mount to avoid server/client mismatch (hydration)
+    setClock(formatUTC(new Date()));
     const id = setInterval(() => {
       setClock(formatUTC(new Date()));
     }, 1000);

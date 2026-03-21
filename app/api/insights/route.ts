@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { parseRssFeed } from "@/lib/rss-parser";
 
 const QUICK_FEEDS: { url: string; name: string }[] = [
@@ -18,11 +17,11 @@ const QUICK_FEEDS: { url: string; name: string }[] = [
 
 const MOCK_INSIGHT = `Brief quotidien — France (données indisponibles)
 
-La clé ANTHROPIC_API_KEY n'est pas configurée sur ce serveur. Ce texte est un exemple de brief simulé.
+La clé MISTRAL_API_KEY n'est pas configurée sur ce serveur. Ce texte est un exemple de brief simulé.
 
-Situation générale : Aucune donnée temps réel disponible. Pour activer les briefs IA, veuillez définir la variable d'environnement ANTHROPIC_API_KEY dans votre fichier .env.local.
+Situation générale : Aucune donnée temps réel disponible. Pour activer les briefs IA, veuillez définir la variable d'environnement MISTRAL_API_KEY dans votre fichier .env.local.
 
-Recommandation : Contactez l'administrateur système pour configurer l'accès à l'API Anthropic.`;
+Recommandation : Contactez l'administrateur système pour configurer l'accès à l'API Mistral.`;
 
 export async function GET(_request: Request): Promise<Response> {
   // Fetch titles from 3 quick feeds in parallel
@@ -41,7 +40,7 @@ export async function GET(_request: Request): Promise<Response> {
 
   const top20 = titles.slice(0, 20);
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.MISTRAL_API_KEY;
 
   if (!apiKey) {
     return new Response(MOCK_INSIGHT, {
@@ -49,8 +48,6 @@ export async function GET(_request: Request): Promise<Response> {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
-
-  const anthropic = new Anthropic({ apiKey });
 
   const today = new Date().toLocaleDateString("fr-FR", {
     weekday: "long",
@@ -66,30 +63,73 @@ export async function GET(_request: Request): Promise<Response> {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const messageStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 300,
-          system:
-            "Tu es un analyste de renseignement français. Génère un brief quotidien concis (200 mots max) sur la situation en France basé sur les titres d'actualité fournis. Ton neutre, factuel, structuré. Commence par la date du jour.",
-          messages: [{ role: "user", content: userMessage }],
+        const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "mistral-small-latest",
+            max_tokens: 300,
+            stream: true,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Tu es un analyste de renseignement français. Génère un brief quotidien concis (200 mots max) sur la situation en France basé sur les titres d'actualité fournis. Ton neutre, factuel, structuré. Commence par la date du jour.",
+              },
+              { role: "user", content: userMessage },
+            ],
+          }),
         });
 
-        for await (const event of messageStream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
-            controller.enqueue(new TextEncoder().encode(event.delta.text));
+        if (!res.ok || !res.body) {
+          const errText = await res.text().catch(() => res.statusText);
+          console.error("[insights] Mistral API error:", res.status, errText);
+          controller.enqueue(
+            new TextEncoder().encode("\n\n[Erreur API Mistral : " + res.status + "]")
+          );
+          controller.close();
+          return;
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Process complete SSE lines
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed === "data: [DONE]") continue;
+            if (!trimmed.startsWith("data: ")) continue;
+
+            try {
+              const json = JSON.parse(trimmed.slice(6));
+              const content = json?.choices?.[0]?.delta?.content;
+              if (content) {
+                controller.enqueue(new TextEncoder().encode(content));
+              }
+            } catch {
+              // skip malformed SSE lines
+            }
           }
         }
 
         controller.close();
       } catch (err) {
-        console.error("[insights] Anthropic stream error:", err);
+        console.error("[insights] Mistral stream error:", err);
         controller.enqueue(
-          new TextEncoder().encode(
-            "\n\n[Erreur lors de la génération du brief IA]"
-          )
+          new TextEncoder().encode("\n\n[Erreur lors de la génération du brief IA]")
         );
         controller.close();
       }
