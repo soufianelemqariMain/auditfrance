@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useAppStore } from "../lib/store";
 
 interface LayerDef {
@@ -11,8 +10,9 @@ interface LayerDef {
 const LAYERS: LayerDef[] = [
   { key: "nuclear_plants", label: "☢ Centrales Nucl." },
   { key: "military_bases", label: "⬟ Bases Militaires" },
-  { key: "data_centers",   label: "⬟ Data Centers" },
+  { key: "data_centers",   label: "◈ Data Centers" },
   { key: "telco_hubs",     label: "◉ Hubs Télécoms" },
+  { key: "cities",         label: "● Villes principales" },
   { key: "departments",    label: "▭ Départements" },
   { key: "heatmap_elus",   label: "🗳 Activité Élus" },
 ];
@@ -20,11 +20,6 @@ const LAYERS: LayerDef[] = [
 export default function LayerPanel() {
   const layers = useAppStore((s) => s.layers);
   const toggleLayer = useAppStore((s) => s.toggleLayer);
-  const [search, setSearch] = useState("");
-
-  const filtered = LAYERS.filter((l) =>
-    l.label.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <aside
@@ -54,29 +49,9 @@ export default function LayerPanel() {
         COUCHES
       </div>
 
-      {/* Search */}
-      <div style={{ padding: "8px 12px" }}>
-        <input
-          type="text"
-          placeholder="Filtrer…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: "100%",
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--text-primary)",
-            fontSize: 11,
-            padding: "4px 8px",
-            outline: "none",
-            fontFamily: "inherit",
-          }}
-        />
-      </div>
-
       {/* Layer list */}
       <ul style={{ listStyle: "none", flex: 1 }}>
-        {filtered.map((layer) => {
+        {LAYERS.map((layer) => {
           const active = !!layers[layer.key];
           return (
             <li

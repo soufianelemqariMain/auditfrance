@@ -98,6 +98,7 @@ export default function Map({ onDeptClick }: MapProps) {
       data_centers:    ["data-centers-circle", "data-centers-label"],
       telco_hubs:      ["telco-hubs-circle", "telco-hubs-label"],
       departments:     ["departments-fill", "departments-line"],
+      cities:          ["cities-dot", "cities-label"],
     };
 
     Object.entries(LAYER_MAP).forEach(([key, ids]) => {
@@ -142,29 +143,6 @@ export default function Map({ onDeptClick }: MapProps) {
       >
         <MapButton onClick={() => { /* zoom handled by maplibre controls */ }}>+</MapButton>
         <MapButton onClick={() => { /* zoom handled by maplibre controls */ }}>−</MapButton>
-      </div>
-      {/* Legend */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 16,
-          left: 16,
-          background: "rgba(13,13,13,0.9)",
-          border: "1px solid var(--border)",
-          padding: "8px 12px",
-          fontSize: 11,
-          color: "var(--text-secondary)",
-          lineHeight: 1.8,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ color: "var(--accent-yellow)" }}>☢ Centrale nucléaire</div>
-        <div style={{ color: "var(--accent-blue)" }}>⬟ Base militaire</div>
-        <div style={{ color: "var(--accent-red)" }}>● Ville principale</div>
-        <div style={{ color: "#C9A227" }}>⬟ Data center</div>
-        <div style={{ color: "#00aaff" }}>◉ Hub télécoms / IXP</div>
-        <div style={{ color: "rgba(0,85,164,0.8)" }}>▭ Dép. (clic → intelligence)</div>
-        <div style={{ color: "#EF4135" }}>🗳 Heatmap activité élus</div>
       </div>
     </div>
   );
