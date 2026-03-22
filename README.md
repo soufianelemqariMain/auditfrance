@@ -103,6 +103,26 @@ Ouvrir [http://localhost:3000](http://localhost:3000). Aucune clé API requise p
 
 ---
 
+## Inspiré de worldmonitor.app — et ce qu'on fait différemment
+
+Ce projet s'inspire de [worldmonitor.app](https://worldmonitor.app), un tableau de bord de surveillance mondiale qui centralise données géopolitiques, économiques et médiatiques à l'échelle internationale.
+
+**Merci à eux.**
+
+Là où worldmonitor est global, Audit France est volontairement local et citoyen :
+
+| | worldmonitor.app | Audit France |
+|---|---|---|
+| **Périmètre** | Monde entier | France uniquement |
+| **Focus** | Géopolitique, macro-économie, actualités mondiales | Transparence publique française : marchés, élus, subventions, budgets |
+| **Sources** | Données internationales | APIs officielles de l'État français exclusivement |
+| **Granularité** | Pays | Département (101 territoires), commune |
+| **Usage** | Veille stratégique | Contrôle citoyen de l'action publique |
+
+Le pari ici : aller plus loin dans le détail institutionnel français — pas juste suivre les nouvelles, mais lire les contrats, suivre les députés vote par vote, voir où part l'argent public commune par commune.
+
+---
+
 ## Contribuer
 
 Les contributions sont bienvenues. L'architecture est volontairement modulaire — chaque panneau et chaque route API est isolé. Ajouter une nouvelle source de données, c'est généralement un seul fichier.
