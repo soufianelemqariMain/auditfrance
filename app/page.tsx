@@ -13,7 +13,6 @@ import AoOuvertsPanel from "@/components/AoOuvertsPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
-const DomTomInsets = dynamic(() => import("@/components/DomTomInsets"), { ssr: false });
 
 export default function Home() {
   const [selectedDept, setSelectedDept] = useState<{ code: string; nom: string } | null>(null);
@@ -39,9 +38,6 @@ export default function Home() {
         {/* Map — 50% of available height */}
         <div style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
           <Map onDeptClick={handleDeptClick} />
-
-          {/* DOM-TOM inset maps */}
-          <DomTomInsets />
 
           {/* Department intelligence panel — slides over the map */}
           {selectedDept && (
