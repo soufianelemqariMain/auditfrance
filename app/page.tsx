@@ -88,6 +88,35 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          height: 22,
+          background: "var(--bg-secondary)",
+          borderTop: "1px solid var(--border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          gap: 6,
+        }}
+      >
+        <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>
+          OPEN SOURCE
+        </span>
+        <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
+        <a
+          href="https://github.com/soufianelemqariMain/auditfrance"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em" }}
+        >
+          github.com/soufianelemqariMain/auditfrance
+        </a>
+        <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
+        <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>MIT</span>
+      </div>
     </div>
   );
 }
