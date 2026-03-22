@@ -72,7 +72,7 @@ export default function Navbar() {
             <span style={{ color: "var(--accent-red)" }}>France</span>
           </span>
           <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
-            LIBERTÉ · ÉGALITÉ · INFORMATION
+            LIBERTÉ · ÉGALITÉ · FRATERNITÉ
           </div>
         </div>
 
