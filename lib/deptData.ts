@@ -109,6 +109,11 @@ export const DEPT_SEARCH_TERMS: Record<string, string[]> = {
   "93": ["Seine-Saint-Denis", "Bobigny"],
   "94": ["Val-de-Marne", "Créteil"],
   "95": ["Val-d'Oise", "Cergy", "Pontoise"],
+  "971": ["Guadeloupe", "Basse-Terre", "Pointe-à-Pitre"],
+  "972": ["Martinique", "Fort-de-France"],
+  "973": ["Guyane", "Cayenne", "Guyane française"],
+  "974": ["La Réunion", "Saint-Denis", "Réunion"],
+  "976": ["Mayotte", "Mamoudzou", "Dzaoudzi"],
 };
 
 const DEPTS: DeptInfo[] = [
@@ -208,6 +213,11 @@ const DEPTS: DeptInfo[] = [
   { code: "93", nom: "Seine-Saint-Denis", region: "Île-de-France", prefecture: "Bobigny", population: 1647000, superficie: 236, densité: 6979 },
   { code: "94", nom: "Val-de-Marne", region: "Île-de-France", prefecture: "Créteil", population: 1366000, superficie: 245, densité: 5575 },
   { code: "95", nom: "Val-d'Oise", region: "Île-de-France", prefecture: "Cergy-Pontoise", population: 1215000, superficie: 1246, densité: 975 },
+  { code: "971", nom: "Guadeloupe", region: "Guadeloupe", prefecture: "Basse-Terre", population: 385000, superficie: 1628, densité: 237 },
+  { code: "972", nom: "Martinique", region: "Martinique", prefecture: "Fort-de-France", population: 350000, superficie: 1128, densité: 310 },
+  { code: "973", nom: "Guyane", region: "Guyane", prefecture: "Cayenne", population: 294000, superficie: 83534, densité: 4 },
+  { code: "974", nom: "La Réunion", region: "La Réunion", prefecture: "Saint-Denis", population: 885000, superficie: 2512, densité: 352 },
+  { code: "976", nom: "Mayotte", region: "Mayotte", prefecture: "Mamoudzou", population: 320000, superficie: 376, densité: 851 },
 ];
 
 const DEPT_MAP: Record<string, DeptInfo> = {};
