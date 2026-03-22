@@ -23,6 +23,7 @@ export default function Home() {
 
   return (
     <div
+      className="main-wrapper"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -34,9 +35,9 @@ export default function Home() {
       <Navbar />
       <FilterBar />
 
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+      <div className="main-content-area" style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         {/* Map — 50% of available height */}
-        <div style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
+        <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
           <Map onDeptClick={handleDeptClick} />
 
           {/* Department intelligence panel — slides over the map */}
@@ -51,6 +52,7 @@ export default function Home() {
 
         {/* Bottom panels — 50% of available height: News · TV Direct · Sous-actifs · AO Ouverts · CAC40 */}
         <div
+          className="bottom-panels"
           style={{
             flex: "0 0 50%",
             display: "flex",
@@ -59,27 +61,27 @@ export default function Home() {
           }}
         >
           {/* News — 22% */}
-          <div style={{ flex: "0 0 22%", overflow: "hidden" }}>
+          <div className="bp-news" style={{ flex: "0 0 22%", overflow: "hidden" }}>
             <NewsTickerPanel />
           </div>
 
           {/* TV Direct — 15% */}
-          <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
+          <div className="bp-tv" style={{ flex: "0 0 15%", overflow: "hidden" }}>
             <TVPanel />
           </div>
 
           {/* Sous-actifs — 18% */}
-          <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
+          <div className="bp-sousactifs" style={{ flex: "0 0 18%", overflow: "hidden" }}>
             <SousActifsPanel />
           </div>
 
           {/* AO Ouverts — 18% */}
-          <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
+          <div className="bp-ao" style={{ flex: "0 0 18%", overflow: "hidden" }}>
             <AoOuvertsPanel />
           </div>
 
           {/* CAC40 — fills remaining space */}
-          <div style={{ flex: 1, overflow: "hidden" }}>
+          <div className="bp-cac" style={{ flex: 1, overflow: "hidden" }}>
             <CAC40Panel />
           </div>
         </div>
@@ -87,6 +89,7 @@ export default function Home() {
 
       {/* Footer */}
       <div
+        className="footer-bar"
         style={{
           height: 22,
           background: "var(--bg-secondary)",

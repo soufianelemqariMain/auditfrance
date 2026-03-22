@@ -77,13 +77,14 @@ export default function Navbar() {
         </div>
 
         {/* Tagline */}
-        <div style={{ marginLeft: 12, fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
+        <div className="nav-tagline" style={{ marginLeft: 12, fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
           Intelligence · Économie · Territoire
         </div>
       </div>
 
       {/* Center: live UTC clock — suppressHydrationWarning prevents #418 mismatch */}
       <span
+        className="nav-clock"
         suppressHydrationWarning
         style={{
           fontSize: 12,
@@ -100,6 +101,7 @@ export default function Navbar() {
         <VigipirateBadge />
 
         <button
+          className="nav-share"
           onClick={handleShare}
           title="Copier le lien"
           style={{

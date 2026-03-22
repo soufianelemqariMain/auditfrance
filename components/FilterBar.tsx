@@ -18,6 +18,7 @@ export default function FilterBar() {
 
   return (
     <div
+      className="filterbar-container"
       style={{
         height: 36,
         background: "var(--bg-secondary)",

@@ -21,6 +21,7 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
 
   return (
     <div
+      className="dept-panel"
       style={{
         position: "absolute",
         top: 0,

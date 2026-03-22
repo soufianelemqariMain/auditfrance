@@ -82,6 +82,81 @@ html, body {
   animation-play-state: paused;
 }
 
+/* ——— Mobile responsive layout (< 768px) ——— */
+@media (max-width: 767px) {
+  /* Allow page scroll on mobile */
+  html, body {
+    overflow: auto !important;
+    height: auto !important;
+  }
+
+  /* Main wrapper: auto height, scrollable */
+  .main-wrapper {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+
+  /* Content area: column stack */
+  .main-content-area {
+    flex-direction: column !important;
+    overflow: visible !important;
+    height: auto !important;
+    flex: none !important;
+  }
+
+  /* Map: 60dvh, fixed */
+  .map-section {
+    flex: none !important;
+    height: 60dvh !important;
+    overflow: hidden !important;
+  }
+
+  /* Bottom panels: stacked vertically */
+  .bottom-panels {
+    flex: none !important;
+    height: auto !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+    border-top: none !important;
+  }
+
+  /* Each panel takes full width */
+  .bp-news        { flex: none !important; width: 100% !important; height: 260px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+  .bp-tv          { flex: none !important; width: 100% !important; height: 220px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+  .bp-sousactifs  { flex: none !important; width: 100% !important; height: 300px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+  .bp-ao          { flex: none !important; width: 100% !important; height: 300px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+  .bp-cac         { flex: none !important; width: 100% !important; height: 260px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
+
+  /* Department panel: full-width bottom sheet */
+  .dept-panel {
+    width: 100% !important;
+    height: 75dvh !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-left: none !important;
+    border-top: 2px solid var(--accent-blue) !important;
+  }
+
+  /* Navbar: hide secondary items */
+  .nav-tagline  { display: none !important; }
+  .nav-clock    { display: none !important; }
+  .nav-share    { display: none !important; }
+
+  /* FilterBar: taller touch targets */
+  .filterbar-container { height: 48px !important; }
+  .filterbar-container button {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+  }
+
+  /* Footer: hide on mobile */
+  .footer-bar { display: none !important; }
+}
+
 /* ——— Thin French tricolor top bar ——— */
 .tricolor-bar {
   height: 4px;
