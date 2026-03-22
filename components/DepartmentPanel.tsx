@@ -260,7 +260,6 @@ function ElusTab({ code, region }: { code: string; region: string }) {
                     <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{d.prenom} {d.nom}</div>
                     <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 1 }}>
                       Circ. {d.numCirco} · {d.circo}
-                      {d.profession && <span style={{ marginLeft: 6 }}>· {d.profession}</span>}
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
@@ -284,15 +283,6 @@ function ElusTab({ code, region }: { code: string; region: string }) {
                 {/* Links */}
                 <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
                   <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}>→ Profil AN</a>
-                  <a
-                    href={`https://www.data.gouv.fr/fr/datasets/professions-de-foi-des-candidats-aux-elections-legislatives-2024/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: 10, color: "#22c55e", textDecoration: "none" }}
-                    title="Profession de foi — législatives 2024"
-                  >
-                    → Profession de foi
-                  </a>
                 </div>
               </div>
             );
