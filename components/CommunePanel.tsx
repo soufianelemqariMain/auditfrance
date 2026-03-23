@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import OffresTab from "./OffresTab";
 
 interface MaireInfo {
   nom: string;
@@ -39,7 +40,7 @@ interface Props {
 }
 
 export default function CommunePanel({ code, nom, onClose }: Props) {
-  const [tab, setTab] = useState<"apercu" | "maire" | "budget" | "marches">("apercu");
+  const [tab, setTab] = useState<"apercu" | "maire" | "budget" | "marches" | "recrutement">("apercu");
   const [data, setData] = useState<CommuneData | null>(null);
   const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
 
@@ -114,8 +115,8 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 0, marginTop: 10 }}>
-          {(["apercu", "maire", "budget", "marches"] as const).map((t) => (
+        <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
+          {(["apercu", "maire", "budget", "marches", "recrutement"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -131,9 +132,10 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 transition: "all 0.15s",
+                flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "maire" ? "Maire" : t === "budget" ? "Budget" : "Marchés"}
+              {t === "apercu" ? "Aperçu" : t === "maire" ? "Maire" : t === "budget" ? "Budget" : t === "marches" ? "Marchés" : "Recrutement"}
             </button>
           ))}
         </div>
@@ -163,6 +165,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
             )}
             {tab === "budget" && <BudgetTab budget={data.budget} communeNom={data.commune.nom} code={code} />}
             {tab === "marches" && <MarchesTab commune={data.commune} />}
+            {tab === "recrutement" && <OffresTab commune={code} />}
           </>
         )}
       </div>

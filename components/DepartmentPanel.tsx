@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getDeptInfo, fmtPop } from "@/lib/deptData";
 import { getPresidentCR } from "@/lib/elusData";
+import OffresTab from "./OffresTab";
 
 interface Props {
   code: string;
@@ -18,7 +19,7 @@ function fmtDate(s: string): string {
 
 export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: Props) {
   const info = getDeptInfo(code);
-  const [tab, setTab] = useState<"apercu" | "consultations" | "budget" | "elus" | "communes">("apercu");
+  const [tab, setTab] = useState<"apercu" | "consultations" | "budget" | "elus" | "communes" | "recrutement">("apercu");
 
   return (
     <div
@@ -80,7 +81,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
-          {(["apercu", "elus", "consultations", "budget", "communes"] as const).map((t) => (
+          {(["apercu", "elus", "consultations", "budget", "communes", "recrutement"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t as typeof tab)}
@@ -99,7 +100,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
                 flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "consultations" ? "Appels d'offres" : t === "budget" ? "Budget" : "Communes"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "consultations" ? "Appels d'offres" : t === "budget" ? "Budget" : t === "communes" ? "Communes" : "Recrutement"}
             </button>
           ))}
         </div>
@@ -120,6 +121,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
         {tab === "communes" && (
           <CommunesTab code={code} onCommuneClick={onCommuneClick} />
         )}
+        {tab === "recrutement" && <OffresTab dept={code} />}
       </div>
     </div>
   );
