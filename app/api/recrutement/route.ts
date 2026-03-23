@@ -19,7 +19,7 @@ async function getToken(clientId: string, clientSecret: string): Promise<string>
     grant_type: "client_credentials",
     client_id: clientId,
     client_secret: clientSecret,
-    scope: "api_offresdemploiv2",
+    scope: "api_offresdemploiv2 o2dsoffre",
   });
 
   const res = await fetch(FT_TOKEN_URL, {
@@ -29,7 +29,10 @@ async function getToken(clientId: string, clientSecret: string): Promise<string>
     signal: AbortSignal.timeout(10000),
   });
 
-  if (!res.ok) throw new Error(`FT token HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`FT token HTTP ${res.status}: ${body}`);
+  }
   const json = await res.json();
   cachedToken = json.access_token;
   tokenExpiry = Date.now() + json.expires_in * 1000;
@@ -60,8 +63,8 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json(resultsCache.data);
   }
 
-  const clientId = process.env.FRANCE_TRAVAIL_CLIENT_ID;
-  const clientSecret = process.env.FRANCE_TRAVAIL_CLIENT_SECRET;
+  const clientId = process.env.FRANCE_TRAVAIL_CLIENT_ID?.trim();
+  const clientSecret = process.env.FRANCE_TRAVAIL_CLIENT_SECRET?.trim();
 
   if (!clientId || !clientSecret) {
     return NextResponse.json({
