@@ -5,13 +5,16 @@ import { useAppStore } from "@/lib/store";
 
 interface MapProps {
   onDeptClick?: (code: string, nom: string) => void;
+  onCommuneClick?: (code: string, nom: string) => void;
 }
 
-export default function Map({ onDeptClick }: MapProps) {
+export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const onDeptClickRef = useRef(onDeptClick);
   onDeptClickRef.current = onDeptClick;
+  const onCommuneClickRef = useRef(onCommuneClick);
+  onCommuneClickRef.current = onCommuneClick;
   const { layers, mapState, setMapState, is3D } = useAppStore();
 
   useEffect(() => {
@@ -58,9 +61,30 @@ export default function Map({ onDeptClick }: MapProps) {
         map!.getCanvas().style.cursor = "";
       });
 
-      // Click on department → open intelligence panel
-      map!.on("click", "departments-fill", (e: { features?: Array<{properties: {code: string, nom: string}}>, lngLat: {lng: number, lat: number} }) => {
+      // Cursor pointer on city hover
+      map!.on("mouseenter", "cities-dot", () => {
+        map!.getCanvas().style.cursor = "pointer";
+      });
+      map!.on("mouseleave", "cities-dot", () => {
+        map!.getCanvas().style.cursor = "";
+      });
+
+      // Click on city → open commune panel (fires before department handler due to z-order)
+      map!.on("click", "cities-dot", (e: { features?: Array<{properties: {code: string, name: string}}>, point: {x: number, y: number} }) => {
         if (!e.features?.length) return;
+        const { code, name } = e.features[0].properties;
+        if (onCommuneClickRef.current && code) {
+          onCommuneClickRef.current(code, name);
+        }
+      });
+
+      // Click on department → open intelligence panel
+      // Skip if a city dot was clicked at the same point (city handler takes priority)
+      map!.on("click", "departments-fill", (e: { features?: Array<{properties: {code: string, nom: string}}>, point: {x: number, y: number}, lngLat: {lng: number, lat: number} }) => {
+        if (!e.features?.length) return;
+        // If a city is at this point, the city handler already handled it
+        const cityFeatures = map!.queryRenderedFeatures(e.point, { layers: ["cities-dot"] });
+        if (cityFeatures.length > 0) return;
         const { code, nom } = e.features[0].properties;
         if (onDeptClickRef.current) {
           onDeptClickRef.current(code, nom);
@@ -315,33 +339,33 @@ function loadLayers(map: any, maplibregl: any) {
     })
     .catch(() => {});
 
-  // Major French cities
+  // Major French cities — code = INSEE commune code for CommunePanel routing
   const CITIES_GEOJSON = {
     type: "FeatureCollection" as const,
     features: [
-      { type: "Feature" as const, properties: { name: "Paris",          pop: 2161000 }, geometry: { type: "Point" as const, coordinates: [2.3522,   48.8566] } },
-      { type: "Feature" as const, properties: { name: "Marseille",      pop: 861635  }, geometry: { type: "Point" as const, coordinates: [5.3698,   43.2965] } },
-      { type: "Feature" as const, properties: { name: "Lyon",           pop: 522250  }, geometry: { type: "Point" as const, coordinates: [4.8357,   45.7640] } },
-      { type: "Feature" as const, properties: { name: "Toulouse",       pop: 479553  }, geometry: { type: "Point" as const, coordinates: [1.4442,   43.6047] } },
-      { type: "Feature" as const, properties: { name: "Nice",           pop: 342669  }, geometry: { type: "Point" as const, coordinates: [7.2620,   43.7102] } },
-      { type: "Feature" as const, properties: { name: "Nantes",         pop: 314138  }, geometry: { type: "Point" as const, coordinates: [-1.5534,  47.2184] } },
-      { type: "Feature" as const, properties: { name: "Montpellier",    pop: 295542  }, geometry: { type: "Point" as const, coordinates: [3.8767,   43.6108] } },
-      { type: "Feature" as const, properties: { name: "Strasbourg",     pop: 284677  }, geometry: { type: "Point" as const, coordinates: [7.7521,   48.5734] } },
-      { type: "Feature" as const, properties: { name: "Bordeaux",       pop: 257804  }, geometry: { type: "Point" as const, coordinates: [-0.5792,  44.8378] } },
-      { type: "Feature" as const, properties: { name: "Lille",          pop: 232741  }, geometry: { type: "Point" as const, coordinates: [3.0573,   50.6292] } },
-      { type: "Feature" as const, properties: { name: "Rennes",         pop: 216268  }, geometry: { type: "Point" as const, coordinates: [-1.6778,  48.1173] } },
-      { type: "Feature" as const, properties: { name: "Reims",          pop: 183522  }, geometry: { type: "Point" as const, coordinates: [4.0317,   49.2583] } },
-      { type: "Feature" as const, properties: { name: "Le Havre",       pop: 172074  }, geometry: { type: "Point" as const, coordinates: [0.1079,   49.4944] } },
-      { type: "Feature" as const, properties: { name: "Toulon",         pop: 176198  }, geometry: { type: "Point" as const, coordinates: [5.9281,   43.1258] } },
-      { type: "Feature" as const, properties: { name: "Saint-Étienne",  pop: 171961  }, geometry: { type: "Point" as const, coordinates: [4.3872,   45.4397] } },
-      { type: "Feature" as const, properties: { name: "Grenoble",       pop: 158198  }, geometry: { type: "Point" as const, coordinates: [5.7245,   45.1885] } },
-      { type: "Feature" as const, properties: { name: "Dijon",          pop: 157431  }, geometry: { type: "Point" as const, coordinates: [5.0415,   47.3220] } },
-      { type: "Feature" as const, properties: { name: "Angers",         pop: 155840  }, geometry: { type: "Point" as const, coordinates: [-0.5518,  47.4784] } },
-      { type: "Feature" as const, properties: { name: "Nîmes",          pop: 148889  }, geometry: { type: "Point" as const, coordinates: [4.3601,   43.8367] } },
-      { type: "Feature" as const, properties: { name: "Aix-en-Provence",pop: 143097  }, geometry: { type: "Point" as const, coordinates: [5.4474,   43.5297] } },
-      { type: "Feature" as const, properties: { name: "Le Mans",        pop: 143599  }, geometry: { type: "Point" as const, coordinates: [0.1966,   48.0061] } },
-      { type: "Feature" as const, properties: { name: "Clermont-Fd",    pop: 143886  }, geometry: { type: "Point" as const, coordinates: [3.0863,   45.7772] } },
-      { type: "Feature" as const, properties: { name: "Brest",          pop: 140064  }, geometry: { type: "Point" as const, coordinates: [-4.4860,  48.3904] } },
+      { type: "Feature" as const, properties: { name: "Paris",          code: "75056", pop: 2161000 }, geometry: { type: "Point" as const, coordinates: [2.3522,   48.8566] } },
+      { type: "Feature" as const, properties: { name: "Marseille",      code: "13055", pop: 861635  }, geometry: { type: "Point" as const, coordinates: [5.3698,   43.2965] } },
+      { type: "Feature" as const, properties: { name: "Lyon",           code: "69123", pop: 522250  }, geometry: { type: "Point" as const, coordinates: [4.8357,   45.7640] } },
+      { type: "Feature" as const, properties: { name: "Toulouse",       code: "31555", pop: 479553  }, geometry: { type: "Point" as const, coordinates: [1.4442,   43.6047] } },
+      { type: "Feature" as const, properties: { name: "Nice",           code: "06088", pop: 342669  }, geometry: { type: "Point" as const, coordinates: [7.2620,   43.7102] } },
+      { type: "Feature" as const, properties: { name: "Nantes",         code: "44109", pop: 314138  }, geometry: { type: "Point" as const, coordinates: [-1.5534,  47.2184] } },
+      { type: "Feature" as const, properties: { name: "Montpellier",    code: "34172", pop: 295542  }, geometry: { type: "Point" as const, coordinates: [3.8767,   43.6108] } },
+      { type: "Feature" as const, properties: { name: "Strasbourg",     code: "67482", pop: 284677  }, geometry: { type: "Point" as const, coordinates: [7.7521,   48.5734] } },
+      { type: "Feature" as const, properties: { name: "Bordeaux",       code: "33063", pop: 257804  }, geometry: { type: "Point" as const, coordinates: [-0.5792,  44.8378] } },
+      { type: "Feature" as const, properties: { name: "Lille",          code: "59350", pop: 232741  }, geometry: { type: "Point" as const, coordinates: [3.0573,   50.6292] } },
+      { type: "Feature" as const, properties: { name: "Rennes",         code: "35238", pop: 216268  }, geometry: { type: "Point" as const, coordinates: [-1.6778,  48.1173] } },
+      { type: "Feature" as const, properties: { name: "Reims",          code: "51454", pop: 183522  }, geometry: { type: "Point" as const, coordinates: [4.0317,   49.2583] } },
+      { type: "Feature" as const, properties: { name: "Le Havre",       code: "76351", pop: 172074  }, geometry: { type: "Point" as const, coordinates: [0.1079,   49.4944] } },
+      { type: "Feature" as const, properties: { name: "Toulon",         code: "83137", pop: 176198  }, geometry: { type: "Point" as const, coordinates: [5.9281,   43.1258] } },
+      { type: "Feature" as const, properties: { name: "Saint-Étienne",  code: "42218", pop: 171961  }, geometry: { type: "Point" as const, coordinates: [4.3872,   45.4397] } },
+      { type: "Feature" as const, properties: { name: "Grenoble",       code: "38185", pop: 158198  }, geometry: { type: "Point" as const, coordinates: [5.7245,   45.1885] } },
+      { type: "Feature" as const, properties: { name: "Dijon",          code: "21231", pop: 157431  }, geometry: { type: "Point" as const, coordinates: [5.0415,   47.3220] } },
+      { type: "Feature" as const, properties: { name: "Angers",         code: "49007", pop: 155840  }, geometry: { type: "Point" as const, coordinates: [-0.5518,  47.4784] } },
+      { type: "Feature" as const, properties: { name: "Nîmes",          code: "30189", pop: 148889  }, geometry: { type: "Point" as const, coordinates: [4.3601,   43.8367] } },
+      { type: "Feature" as const, properties: { name: "Aix-en-Provence",code: "13001", pop: 143097  }, geometry: { type: "Point" as const, coordinates: [5.4474,   43.5297] } },
+      { type: "Feature" as const, properties: { name: "Le Mans",        code: "72181", pop: 143599  }, geometry: { type: "Point" as const, coordinates: [0.1966,   48.0061] } },
+      { type: "Feature" as const, properties: { name: "Clermont-Fd",    code: "63113", pop: 143886  }, geometry: { type: "Point" as const, coordinates: [3.0863,   45.7772] } },
+      { type: "Feature" as const, properties: { name: "Brest",          code: "29019", pop: 140064  }, geometry: { type: "Point" as const, coordinates: [-4.4860,  48.3904] } },
     ],
   };
 

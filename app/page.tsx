@@ -46,7 +46,7 @@ export default function Home() {
       <div className="main-content-area" style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         {/* Map — 50% of available height */}
         <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
-          <Map onDeptClick={handleDeptClick} />
+          <Map onDeptClick={handleDeptClick} onCommuneClick={handleCommuneSelect} />
 
           {/* Commune search — floating top-left over map */}
           <div
