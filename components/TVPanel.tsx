@@ -20,13 +20,6 @@ const CHANNELS: TVChannel[] = [
     color: "#0066cc",
   },
   {
-    name: "BFM TV",
-    short: "BFM",
-    hlsUrl:
-      "https://live-bfmtv.akamaized.net/hls/live/2004124/bfmtv_fr/master.m3u8",
-    color: "#e60000",
-  },
-  {
     name: "Arte",
     short: "ART",
     hlsUrl:
