@@ -61,7 +61,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
         position: "absolute",
         top: 0,
         right: 0,
-        width: 420,
+        width: 600,
         height: "100%",
         background: "var(--bg-panel)",
         borderLeft: "1px solid var(--border)",

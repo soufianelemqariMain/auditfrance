@@ -110,7 +110,7 @@ export default function RecrutementPanel() {
           }}
         >
           <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.08em" }}>
-            OFFRES CDI EN COURS
+            TOP RECRUTEUR
           </span>
           <span style={{ fontSize: 13, fontWeight: 700, color: "#22c55e", letterSpacing: "0.06em" }}>
             {data.totalOffres > 0

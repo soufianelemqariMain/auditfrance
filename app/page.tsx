@@ -13,6 +13,7 @@ import CommuneSearchBar from "@/components/CommuneSearchBar";
 import SousActifsPanel from "@/components/SousActifsPanel";
 import AoOuvertsPanel from "@/components/AoOuvertsPanel";
 import RecrutementPanel from "@/components/RecrutementPanel";
+import SondagesPanel from "@/components/SondagesPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -92,34 +93,39 @@ export default function Home() {
             overflow: "hidden",
           }}
         >
-          {/* News — 22% */}
-          <div className="bp-news" style={{ flex: "0 0 22%", overflow: "hidden" }}>
+          {/* News — 18% */}
+          <div className="bp-news" style={{ flex: "0 0 18%", overflow: "hidden" }}>
             <NewsTickerPanel />
           </div>
 
-          {/* TV Direct — 15% */}
-          <div className="bp-tv" style={{ flex: "0 0 15%", overflow: "hidden" }}>
+          {/* TV Direct — 12% */}
+          <div className="bp-tv" style={{ flex: "0 0 12%", overflow: "hidden" }}>
             <TVPanel />
           </div>
 
-          {/* Sous-actifs — 18% */}
-          <div className="bp-sousactifs" style={{ flex: "0 0 18%", overflow: "hidden" }}>
+          {/* Sous-actifs — 14% */}
+          <div className="bp-sousactifs" style={{ flex: "0 0 14%", overflow: "hidden" }}>
             <SousActifsPanel />
           </div>
 
-          {/* AO Ouverts — 18% */}
-          <div className="bp-ao" style={{ flex: "0 0 18%", overflow: "hidden" }}>
+          {/* AO Ouverts — 14% */}
+          <div className="bp-ao" style={{ flex: "0 0 14%", overflow: "hidden" }}>
             <AoOuvertsPanel />
           </div>
 
-          {/* CAC40 — fixed width */}
-          <div className="bp-cac" style={{ flex: "0 0 14%", overflow: "hidden" }}>
+          {/* CAC40 — 11% */}
+          <div className="bp-cac" style={{ flex: "0 0 11%", overflow: "hidden" }}>
             <CAC40Panel />
           </div>
 
           {/* Recrutement — fills remaining space */}
           <div className="bp-recrutement" style={{ flex: 1, overflow: "hidden" }}>
             <RecrutementPanel />
+          </div>
+
+          {/* Sondages Présidentielles 2027 */}
+          <div className="bp-sondages" style={{ flex: 1, overflow: "hidden" }}>
+            <SondagesPanel />
           </div>
         </div>
       </div>
