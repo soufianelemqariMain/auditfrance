@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    { "type": "Feature", "properties": { "name": "Le Havre",         "type": "port",    "rang": 1 }, "geometry": { "type": "Point", "coordinates": [0.1219, 49.4904] } },
+    { "type": "Feature", "properties": { "name": "Marseille-Fos",    "type": "port",    "rang": 1 }, "geometry": { "type": "Point", "coordinates": [4.9095, 43.4415] } },
+    { "type": "Feature", "properties": { "name": "Dunkerque",        "type": "port",    "rang": 1 }, "geometry": { "type": "Point", "coordinates": [2.3680, 51.0364] } },
+    { "type": "Feature", "properties": { "name": "Calais",           "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [1.8500, 50.9581] } },
+    { "type": "Feature", "properties": { "name": "Rouen",            "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [1.0993, 49.4432] } },
+    { "type": "Feature", "properties": { "name": "Nantes-St-Nazaire","type": "port",    "rang": 1 }, "geometry": { "type": "Point", "coordinates": [-2.2040, 47.2741] } },
+    { "type": "Feature", "properties": { "name": "Bordeaux",         "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [-0.5540, 45.1326] } },
+    { "type": "Feature", "properties": { "name": "La Rochelle",      "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [-1.1510, 46.1591] } },
+    { "type": "Feature", "properties": { "name": "Brest",            "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [-4.4860, 48.3904] } },
+    { "type": "Feature", "properties": { "name": "Sète",             "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [3.6970, 43.4030] } },
+    { "type": "Feature", "properties": { "name": "Cherbourg",        "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [-1.6350, 49.6330] } },
+    { "type": "Feature", "properties": { "name": "Bayonne",          "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [-1.4730, 43.4940] } },
+    { "type": "Feature", "properties": { "name": "Toulon",           "type": "port",    "rang": 2 }, "geometry": { "type": "Point", "coordinates": [5.9280, 43.1240] } },
+    { "type": "Feature", "properties": { "name": "Roissy CDG",       "type": "airport", "rang": 1 }, "geometry": { "type": "Point", "coordinates": [2.5479, 49.0097] } },
+    { "type": "Feature", "properties": { "name": "Paris Orly",       "type": "airport", "rang": 1 }, "geometry": { "type": "Point", "coordinates": [2.3591, 48.7262] } },
+    { "type": "Feature", "properties": { "name": "Lyon St-Exupéry",  "type": "airport", "rang": 2 }, "geometry": { "type": "Point", "coordinates": [5.0812, 45.7256] } },
+    { "type": "Feature", "properties": { "name": "Nice Côte d'Azur", "type": "airport", "rang": 2 }, "geometry": { "type": "Point", "coordinates": [7.2159, 43.6584] } },
+    { "type": "Feature", "properties": { "name": "Marseille Provence","type": "airport", "rang": 2 }, "geometry": { "type": "Point", "coordinates": [5.2214, 43.4393] } },
+    { "type": "Feature", "properties": { "name": "Toulouse Blagnac", "type": "airport", "rang": 2 }, "geometry": { "type": "Point", "coordinates": [1.3638, 43.6293] } },
+    { "type": "Feature", "properties": { "name": "Bordeaux Mérignac","type": "airport", "rang": 2 }, "geometry": { "type": "Point", "coordinates": [-0.7156, 44.8283] } }
+  ]
+}

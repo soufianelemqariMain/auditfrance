@@ -54,6 +54,7 @@ export const useAppStore = create<AppState>((set) => ({
     military_bases: true,
     data_centers:   true,
     telco_hubs:     true,
+    ports:          true,
     departments:    true,
     heatmap_elus:   false,
   },

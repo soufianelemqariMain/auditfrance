@@ -7,6 +7,7 @@ const FILTERS = [
   { key: "military_bases", label: "⬟ Militaire",      color: "#00ff41" },
   { key: "data_centers",   label: "◈ Data Centers",   color: "#C9A227" },
   { key: "telco_hubs",     label: "◉ Télécoms",       color: "#00aaff" },
+  { key: "ports",          label: "⚓ Ports & Hubs",  color: "#38bdf8" },
   { key: "cities",         label: "● Villes",         color: "#EF4135" },
   { key: "departments",    label: "▭ Départements",   color: "#0055A4" },
   { key: "heatmap_elus",   label: "🗳 Activité Élus", color: "#c084fc" },

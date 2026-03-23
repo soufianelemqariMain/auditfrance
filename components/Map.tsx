@@ -145,6 +145,7 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
       military_bases:  ["military-bases-circle", "military-bases-label"],
       data_centers:    ["data-centers-circle", "data-centers-label"],
       telco_hubs:      ["telco-hubs-circle", "telco-hubs-label"],
+      ports:           ["ports-circle", "ports-label"],
       departments:     ["departments-fill", "departments-line"],
       cities:          ["cities-dot", "cities-label"],
     };
@@ -357,6 +358,59 @@ function loadLayers(map: any, maplibregl: any) {
             "line-color": "#0055A4",
             "line-width": 0.8,
             "line-opacity": 0.5,
+          },
+        });
+      }
+    })
+    .catch(() => {});
+
+  // Major French ports & airports
+  fetch("/data/ports.geojson")
+    .then((r) => r.json())
+    .then((data) => {
+      if (!map.getSource("ports")) {
+        map.addSource("ports", { type: "geojson", data });
+        map.addLayer({
+          id: "ports-circle",
+          type: "circle",
+          source: "ports",
+          paint: {
+            "circle-radius": [
+              "match", ["get", "rang"],
+              1, 8,
+              2, 6,
+              5,
+            ],
+            "circle-color": [
+              "match", ["get", "type"],
+              "port",    "#38bdf8",
+              "airport", "#818cf8",
+              "#38bdf8",
+            ],
+            "circle-stroke-color": "#F5F5F5",
+            "circle-stroke-width": 1,
+            "circle-opacity": 0.9,
+          },
+        });
+        map.addLayer({
+          id: "ports-label",
+          type: "symbol",
+          source: "ports",
+          layout: {
+            "text-field": [
+              "concat",
+              ["match", ["get", "type"], "port", "⚓ ", "✈ "],
+              ["get", "name"],
+            ],
+            "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+            "text-size": 9,
+            "text-offset": [0, 1.4],
+            "text-anchor": "top",
+          },
+          paint: {
+            "text-color": "#38bdf8",
+            "text-halo-color": "#0c1c2e",
+            "text-halo-width": 1,
           },
         });
       }

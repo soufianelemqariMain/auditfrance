@@ -12,6 +12,7 @@ import CommunePanel from "@/components/CommunePanel";
 import CommuneSearchBar from "@/components/CommuneSearchBar";
 import SousActifsPanel from "@/components/SousActifsPanel";
 import AoOuvertsPanel from "@/components/AoOuvertsPanel";
+import RecrutementPanel from "@/components/RecrutementPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -111,9 +112,14 @@ export default function Home() {
             <AoOuvertsPanel />
           </div>
 
-          {/* CAC40 — fills remaining space */}
-          <div className="bp-cac" style={{ flex: 1, overflow: "hidden" }}>
+          {/* CAC40 — fixed width */}
+          <div className="bp-cac" style={{ flex: "0 0 14%", overflow: "hidden" }}>
             <CAC40Panel />
+          </div>
+
+          {/* Recrutement — fills remaining space */}
+          <div className="bp-recrutement" style={{ flex: 1, overflow: "hidden" }}>
+            <RecrutementPanel />
           </div>
         </div>
       </div>
