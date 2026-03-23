@@ -1,58 +1,69 @@
 <div align="center">
 
-# Audit France
+# 🇫🇷 Audit France
 
-**Le tableau de bord de transparence publique française — en temps réel**
+### Le tableau de bord de la République — en temps réel
 
-[![Licence MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
+*Marchés publics. Élus. Budgets. Appels d'offres. Sondages. Tout ce que l'État publie, rendu lisible.*
+
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-22c55e.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![Deploy with Vercel](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
+[![GitHub Sponsors](https://img.shields.io/badge/Soutenir%20le%20projet-%E2%9D%A4-ff69b4?logo=github-sponsors)](https://github.com/sponsors/soufianelemqariMain)
 [![PRs bienvenues](https://img.shields.io/badge/PRs-bienvenues-brightgreen.svg)](https://github.com/soufianelemqariMain/auditfrance/issues)
 
-[Démo live](https://auditfrance.vercel.app) · [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) · [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues)
+[**→ Démo live**](https://auditfrance.vercel.app) &nbsp;·&nbsp; [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Soutenir le projet ❤️](https://github.com/sponsors/soufianelemqariMain)
 
 </div>
 
 ---
 
-## C'est quoi
+## Pourquoi ce projet existe
 
-Un outil citoyen. Une seule interface. Tout ce qui compte sur l'efficacité de l'État français — les marchés publics, les budgets, les élus, les appels d'offres, les subventions — agrégé en temps réel depuis les données officielles.
+La transparence de l'État, c'est pas un concept. C'est des APIs. Des fichiers JSON. Des millions de lignes publiées chaque jour sur data.gouv.fr, BOAMP, DECP, nosdeputes.fr — et que personne ne lit parce qu'elles sont inaccessibles.
 
-L'idée de départ : si l'État publie ses propres données, pourquoi ne pas les rendre lisibles pour tout le monde ? C'est ça la transparence. Pas un discours. Pas un rapport. Une interface.
+**Audit France, c'est la traduction de ces données brutes en quelque chose d'humain.**
 
-Merci à l'écosystème open data français — data.gouv.fr, BOAMP, nosdeputes.fr, DECP, OFGL — qui rend ce genre d'outil possible sans une seule base de données privée ni un seul accord commercial.
+Pas de compte à créer. Pas d'abonnement. Pas d'algorithme qui filtre ce que tu vois. Juste les données officielles de la République, présentées clairement, pour n'importe quel citoyen qui veut comprendre comment fonctionne l'État qui le gouverne.
+
+L'argent public appartient au public. Les décisions publiques méritent d'être publiques. C'est tout.
 
 ---
 
-## Ce que ça fait
+## Ce que tu vois en ouvrant l'application
 
-### Carte nationale interactive
+### 🗺️ Carte nationale — 101 départements, 35 000 communes
 
-Cliquez sur l'un des 101 départements français. Le tableau de bord s'affiche instantanément :
+Clique sur n'importe quel département. En une seconde, tu accèdes à :
 
-| Onglet | Contenu |
+| Onglet | Ce que ça montre |
 |---|---|
 | **Aperçu** | Population, superficie, densité, préfecture |
-| **Élus** | Président du conseil régional + tous les députés avec leur score d'activité en direct |
-| **Appels d'offres** | Marchés publics actifs — flux live depuis BOAMP |
-| **Budget** | Ventilation des dépenses départementales (ratios OFGL) |
+| **Élus** | Président du conseil + tous les députés avec leur score d'activité parlementaire en direct |
+| **Appels d'offres** | Marchés publics actifs du département — flux live BOAMP |
+| **Budget** | Ventilation des dépenses départementales — ratios OFGL par habitant |
+| **Communes** | Zoom sur n'importe quelle commune : maire, budget, marchés locaux |
+| **Recrutement** | Offres CDI ouvertes dans le département — top recruteurs en temps réel |
 
-### Barre de veille en bas d'écran
+### 📊 Barre de veille en temps réel
 
-| Panneau | Source | Rafraîchissement |
+Six panneaux permanents en bas d'écran :
+
+| Panneau | Ce que ça montre | Mise à jour |
 |---|---|---|
-| Fil d'actu | BFM, France Info, Le Monde, Le Figaro, RFI, France 24 | 5 min |
-| TV en direct | France 24, BFM TV, CNews, LCP | Stream |
-| Sous-actifs | nosdeputes.fr synthèse | 1 heure |
-| AO ouverts | BOAMP OpenDataSoft | 15 min |
-| CAC 40 | Yahoo Finance (~40 sociétés) | 60 sec |
+| **Fil d'actu** | France Info, Le Monde, Le Figaro, RFI, France 24 | 5 min |
+| **TV en direct** | France 24 · Arte · Euronews FR — stream HLS natif | Continu |
+| **Sous-actifs** | Députés avec faible activité parlementaire | 1 heure |
+| **AO ouverts** | Appels d'offres actifs (BOAMP) | 15 min |
+| **CAC 40** | ~40 valeurs — cours en quasi-temps réel | 60 sec |
+| **Recrutement** | Top recruteurs CDI nationaux — France Travail | 30 min |
+| **Sondages 2027** | Intentions de vote présidentielle 2027 par candidat | Mensuel |
 
-### Page audit national (`/audit`)
+### 📋 Page Audit national (`/audit`)
 
 | Onglet | Source | Contenu |
 |---|---|---|
-| **Budget PLF** | budget.gouv.fr | PLF 2025 par ministère |
+| **Budget PLF** | budget.gouv.fr | PLF par ministère |
 | **Marchés attribués** | DECP | Top prestataires par volume de commande publique |
 | **Marchés ouverts** | BOAMP | Tous les appels d'offres actifs, filtrables par département |
 | **Subventions** | data-subventions.beta.gouv.fr | Subventions attribuées + programmes de financement ouverts |
@@ -61,28 +72,34 @@ Cliquez sur l'un des 101 départements français. Le tableau de bord s'affiche i
 
 ## Sources de données
 
-Tout est tiré en direct depuis les APIs officielles de l'État français. Pas de base privée. Pas de scraping. Pas de triche.
+Tout vient des APIs officielles de l'État français. Aucune base privée. Aucun partenariat commercial. Aucun intermédiaire.
 
-| Données | API | Cache |
+| Données | Source officielle | Cache |
 |---|---|---|
-| Marchés attribués | [DECP v3 — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min |
-| Appels d'offres ouverts | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min |
-| Subventions de l'État | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min |
-| Programmes de financement | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min |
+| Marchés attribués | [DECP — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min |
+| Appels d'offres | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min |
+| Subventions | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min |
+| Aides territoires | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min |
 | Activité des députés | [nosdeputes.fr](https://www.nosdeputes.fr) | 1 heure |
-| Actualités | RSS (BFM, Le Monde, France Info, Le Figaro, RFI, France 24) | 5 min |
+| Offres d'emploi CDI | [France Travail API](https://francetravail.io) | 30 min |
+| Actualités | RSS (France Info, Le Monde, Le Figaro, RFI, France 24) | 5 min |
 | Bourse | Yahoo Finance | 60 sec |
+| Données électorales | data.gouv.fr | Statique |
+| Budgets locaux | OFGL | Statique |
 
 ---
 
 ## Stack technique
 
-- **[Next.js 16](https://nextjs.org)** — App Router, routes API serveur
-- **[React 19](https://react.dev)** — Interface
-- **[TypeScript](https://www.typescriptlang.org)** — Types de bout en bout
-- **[MapLibre GL](https://maplibre.org)** — Carte interactive
-- **[Zustand](https://zustand-demo.pmnd.rs)** — État client
+- **[Next.js 16](https://nextjs.org)** — App Router, routes API serveur, rendu hybride
+- **[React 19](https://react.dev)** — Interface réactive
+- **[TypeScript](https://www.typescriptlang.org)** — Typage bout en bout
+- **[MapLibre GL](https://maplibre.org)** — Carte vectorielle interactive
 - **[Tailwind CSS](https://tailwindcss.com)** — Styles utilitaires
+- **[hls.js](https://github.com/video-dev/hls.js)** — Lecture des streams TV
+- **[Vercel](https://vercel.com)** — Déploiement et edge functions
+
+Aucune base de données. Aucune infrastructure propre. Tout passe par les APIs publiques.
 
 ---
 
@@ -95,67 +112,83 @@ npm install
 npm run dev
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000). Aucune clé API requise pour démarrer.
+Ouvrir [http://localhost:3000](http://localhost:3000). **Aucune clé API requise pour démarrer** — la majorité des fonctionnalités marchent sans configuration.
 
-### Déployer sur Vercel
+### Variables d'environnement optionnelles
+
+Crée un fichier `.env.local` pour activer les données enrichies :
+
+```env
+# Offres d'emploi CDI en temps réel (inscription gratuite sur francetravail.io)
+FRANCE_TRAVAIL_CLIENT_ID=...
+FRANCE_TRAVAIL_CLIENT_SECRET=...
+```
+
+### Déployer sur Vercel en un clic
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
 
 ---
 
-## Inspiré de worldmonitor.app — et ce qu'on fait différemment
-
-Ce projet s'inspire de [worldmonitor.app](https://worldmonitor.app), un tableau de bord de surveillance mondiale qui centralise données géopolitiques, économiques et médiatiques à l'échelle internationale.
-
-**Merci à eux.**
-
-Là où worldmonitor est global, Audit France est volontairement local et citoyen :
-
-| | worldmonitor.app | Audit France |
-|---|---|---|
-| **Périmètre** | Monde entier | France uniquement |
-| **Focus** | Géopolitique, macro-économie, actualités mondiales | Transparence publique française : marchés, élus, subventions, budgets |
-| **Sources** | Données internationales | APIs officielles de l'État français exclusivement |
-| **Granularité** | Pays | Département (101 territoires), commune |
-| **Usage** | Veille stratégique | Contrôle citoyen de l'action publique |
-
-Le pari ici : aller plus loin dans le détail institutionnel français — pas juste suivre les nouvelles, mais lire les contrats, suivre les députés vote par vote, voir où part l'argent public commune par commune.
-
----
-
 ## Contribuer
 
-Les contributions sont bienvenues. L'architecture est volontairement modulaire — chaque panneau et chaque route API est isolé. Ajouter une nouvelle source de données, c'est généralement un seul fichier.
+L'architecture est volontairement modulaire. Chaque panneau est un composant isolé. Chaque source de données est une route API indépendante. Ajouter une nouvelle fonctionnalité, c'est généralement un seul fichier.
 
-**Bonnes premières issues :**
+**Bonnes premières contributions :**
 - Ajouter une nouvelle source de données au panneau département
-- Améliorer l'algorithme de scoring d'activité des élus
-- Ajouter un fil d'actu régional filtré par département
+- Améliorer le scoring d'activité des élus (votes, questions, rapports)
+- Fil d'actu filtré par département
 - Responsive mobile
 - Nouvelles sources de marchés publics (au-delà de BOAMP)
-- Mode sombre / clair
+- Historique et graphiques temporels
 
 **Pour contribuer :**
 
 1. Forker le repo
 2. Créer une branche : `git checkout -b feature/ma-contribution`
-3. Faire les modifications
+3. Coder
 4. Pousser : `git push origin feature/ma-contribution`
 5. Ouvrir une PR
 
-Une fonctionnalité par PR. TypeScript obligatoire. Variables CSS pour les styles. Si vous touchez à une source de données, documentez ce que vous récupérez et pourquoi.
+Une fonctionnalité par PR. TypeScript obligatoire. Variables CSS pour les styles. Si tu touches à une source de données, documente ce que tu récupères et pourquoi.
+
+---
+
+## Soutenir le projet ❤️
+
+Audit France est gratuit, open source, sans publicité et sans collecte de données. Si l'outil t'est utile et que tu veux soutenir son développement :
+
+**[→ Faire un don via GitHub Sponsors](https://github.com/sponsors/soufianelemqariMain)**
+
+Chaque contribution aide à maintenir les intégrations API, améliorer la couverture des données et garder le projet vivant.
+
+---
+
+## Inspiré par worldmonitor.app
+
+Ce projet s'inspire de [worldmonitor.app](https://worldmonitor.app), tableau de bord de surveillance mondiale qui centralise données géopolitiques, économiques et médiatiques à l'échelle internationale. Merci à eux pour l'inspiration.
+
+Là où worldmonitor est global, Audit France est délibérément local et institutionnel :
+
+| | worldmonitor.app | Audit France |
+|---|---|---|
+| **Périmètre** | Monde entier | France uniquement |
+| **Focus** | Géopolitique, macro | Transparence publique : marchés, élus, subventions, budgets |
+| **Sources** | Données internationales | APIs officielles françaises exclusivement |
+| **Granularité** | Pays | Département, commune |
 
 ---
 
 ## Licence
 
-MIT — voir [LICENSE](LICENSE).
+MIT — voir [LICENSE](LICENSE). Fais-en ce que tu veux. Cite la source, c'est tout.
 
 ---
 
 <div align="center">
 
-Construit sur des données publiques, pour l'intérêt général.<br>
-Parce que l'efficacité de l'État, ça se mesure. Et ça se publie.
+*L'efficacité de l'État, ça se mesure. Et ça se publie.*
+
+**[Démo live](https://auditfrance.vercel.app) · [GitHub Sponsors ❤️](https://github.com/sponsors/soufianelemqariMain)**
 
 </div>
