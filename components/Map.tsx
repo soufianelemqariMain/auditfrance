@@ -79,16 +79,40 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
       });
 
       // Click on department → open intelligence panel
-      // Skip if a city dot was clicked at the same point (city handler takes priority)
+      // At zoom >= 10, the general reverse-geocode handler takes over for commune-level navigation
       map!.on("click", "departments-fill", (e: { features?: Array<{properties: {code: string, nom: string}}>, point: {x: number, y: number}, lngLat: {lng: number, lat: number} }) => {
         if (!e.features?.length) return;
-        // If a city is at this point, the city handler already handled it
+        // At high zoom, let the general click handler open the commune instead
+        if (map!.getZoom() >= 10) return;
+        // If a city dot is here, city handler takes priority
         const cityFeatures = map!.queryRenderedFeatures(e.point, { layers: ["cities-dot"] });
         if (cityFeatures.length > 0) return;
         const { code, nom } = e.features[0].properties;
         if (onDeptClickRef.current) {
           onDeptClickRef.current(code, nom);
         }
+      });
+
+      // General reverse-geocode handler — fires at zoom >= 10 for any map click
+      // This gives access to ALL communes by resolving the lat/lon to a commune code
+      map!.on("click", (e: { lngLat: { lat: number; lng: number }; point: { x: number; y: number } }) => {
+        if (map!.getZoom() < 10) return;
+        // Skip if a city dot (already handled by its own click handler)
+        const cityFeatures = map!.queryRenderedFeatures(e.point, { layers: ["cities-dot"] });
+        if (cityFeatures.length > 0) return;
+        // Resolve which commune is at this lat/lon
+        const { lat, lng } = e.lngLat;
+        fetch(
+          `https://geo.api.gouv.fr/communes?lat=${lat}&lon=${lng}&fields=code,nom&limit=1`,
+          { signal: AbortSignal.timeout(5000) }
+        )
+          .then((r) => r.json())
+          .then((results: Array<{ code: string; nom: string }>) => {
+            if (results.length > 0 && onCommuneClickRef.current) {
+              onCommuneClickRef.current(results[0].code, results[0].nom);
+            }
+          })
+          .catch(() => {});
       });
 
       map!.on("moveend", () => {

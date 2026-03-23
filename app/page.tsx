@@ -67,6 +67,7 @@ export default function Home() {
               code={selectedDept.code}
               nom={selectedDept.nom}
               onClose={() => setSelectedDept(null)}
+              onCommuneClick={handleCommuneSelect}
             />
           )}
 

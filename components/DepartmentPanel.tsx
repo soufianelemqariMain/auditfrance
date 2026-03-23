@@ -8,6 +8,7 @@ interface Props {
   code: string;
   nom: string;
   onClose: () => void;
+  onCommuneClick?: (code: string, nom: string) => void;
 }
 
 function fmtDate(s: string): string {
@@ -15,9 +16,9 @@ function fmtDate(s: string): string {
   return s.slice(0, 10);
 }
 
-export default function DepartmentPanel({ code, nom, onClose }: Props) {
+export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: Props) {
   const info = getDeptInfo(code);
-  const [tab, setTab] = useState<"apercu" | "consultations" | "budget" | "elus">("apercu");
+  const [tab, setTab] = useState<"apercu" | "consultations" | "budget" | "elus" | "communes">("apercu");
 
   return (
     <div
@@ -78,13 +79,13 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 0, marginTop: 10 }}>
-          {(["apercu", "elus", "consultations", "budget"] as const).map((t) => (
+        <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
+          {(["apercu", "elus", "consultations", "budget", "communes"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t as typeof tab)}
               style={{
-                padding: "5px 14px",
+                padding: "5px 12px",
                 fontSize: 10,
                 fontWeight: 600,
                 cursor: "pointer",
@@ -95,9 +96,10 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 transition: "all 0.15s",
+                flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "consultations" ? "Appels d'offres" : "Budget"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "consultations" ? "Appels d'offres" : t === "budget" ? "Budget" : "Communes"}
             </button>
           ))}
         </div>
@@ -114,6 +116,9 @@ export default function DepartmentPanel({ code, nom, onClose }: Props) {
         {tab === "consultations" && <ConsultationsTab code={code} />}
         {tab === "budget" && (
           <BudgetTab code={code} nom={nom} />
+        )}
+        {tab === "communes" && (
+          <CommunesTab code={code} onCommuneClick={onCommuneClick} />
         )}
       </div>
     </div>
@@ -428,6 +433,115 @@ function MiniStat({ label, value, unit, color }: { label: string; value: number;
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{label}</span>
       <span style={{ fontSize: 10, fontWeight: 700, color, fontFamily: "var(--font-mono)" }}>{value}{unit ? " " + unit : ""}</span>
+    </div>
+  );
+}
+
+// --- Communes tab ---
+interface CommuneItem {
+  code: string;
+  nom: string;
+  population: number;
+}
+
+function CommunesTab({
+  code,
+  onCommuneClick,
+}: {
+  code: string;
+  onCommuneClick?: (code: string, nom: string) => void;
+}) {
+  const [communes, setCommunes] = useState<CommuneItem[]>([]);
+  const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    setStatus("loading");
+    fetch(
+      `https://geo.api.gouv.fr/departements/${code}/communes?fields=code,nom,population&limit=500`
+    )
+      .then((r) => r.json())
+      .then((data: CommuneItem[]) => {
+        setCommunes(data.sort((a, b) => (b.population ?? 0) - (a.population ?? 0)));
+        setStatus("done");
+      })
+      .catch(() => setStatus("error"));
+  }, [code]);
+
+  const filtered = query.length >= 1
+    ? communes.filter((c) => c.nom.toLowerCase().includes(query.toLowerCase()))
+    : communes;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Search */}
+      <div style={{ marginBottom: 8, flexShrink: 0 }}>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Filtrer…"
+          style={{
+            width: "100%",
+            background: "var(--bg-secondary)",
+            border: "1px solid var(--border)",
+            borderRadius: 4,
+            padding: "5px 8px",
+            fontSize: 11,
+            color: "var(--text-primary)",
+            outline: "none",
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
+
+      {/* Status */}
+      {status === "loading" && (
+        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Chargement…</div>
+      )}
+      {status === "error" && (
+        <div style={{ fontSize: 11, color: "#ef4444" }}>Erreur lors du chargement des communes.</div>
+      )}
+
+      {/* List */}
+      {status === "done" && (
+        <>
+          <div style={{ fontSize: 10, color: "var(--text-secondary)", marginBottom: 6, flexShrink: 0 }}>
+            {filtered.length} commune{filtered.length !== 1 ? "s" : ""}
+            {query && ` pour « ${query} »`}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 3 }}>
+            {filtered.map((c) => (
+              <button
+                key={c.code}
+                onClick={() => onCommuneClick?.(c.code, c.nom)}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 8px",
+                  background: "rgba(255,255,255,0.02)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                  cursor: onCommuneClick ? "pointer" : "default",
+                  textAlign: "left",
+                  gap: 8,
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
+              >
+                <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-primary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {c.nom}
+                </span>
+                <span style={{ fontSize: 10, color: "var(--text-secondary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                  {c.population > 0 ? fmtPop(c.population) : c.code}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
