@@ -8,6 +8,8 @@ import NewsTickerPanel from "@/components/NewsTickerPanel";
 import TVPanel from "@/components/TVPanel";
 import CAC40Panel from "@/components/CAC40Panel";
 import DepartmentPanel from "@/components/DepartmentPanel";
+import CommunePanel from "@/components/CommunePanel";
+import CommuneSearchBar from "@/components/CommuneSearchBar";
 import SousActifsPanel from "@/components/SousActifsPanel";
 import AoOuvertsPanel from "@/components/AoOuvertsPanel";
 
@@ -16,9 +18,15 @@ const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 export default function Home() {
   const [selectedDept, setSelectedDept] = useState<{ code: string; nom: string } | null>(null);
+  const [selectedCommune, setSelectedCommune] = useState<{ code: string; nom: string } | null>(null);
 
   const handleDeptClick = useCallback((code: string, nom: string) => {
     setSelectedDept({ code, nom });
+    setSelectedCommune(null);
+  }, []);
+
+  const handleCommuneSelect = useCallback((code: string, nom: string) => {
+    setSelectedCommune({ code, nom });
   }, []);
 
   return (
@@ -40,12 +48,34 @@ export default function Home() {
         <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
           <Map onDeptClick={handleDeptClick} />
 
+          {/* Commune search — floating top-left over map */}
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              width: 200,
+              zIndex: 30,
+            }}
+          >
+            <CommuneSearchBar onSelect={handleCommuneSelect} />
+          </div>
+
           {/* Department intelligence panel — slides over the map */}
-          {selectedDept && (
+          {selectedDept && !selectedCommune && (
             <DepartmentPanel
               code={selectedDept.code}
               nom={selectedDept.nom}
               onClose={() => setSelectedDept(null)}
+            />
+          )}
+
+          {/* Commune panel — slides over the map, higher z-index than dept panel */}
+          {selectedCommune && (
+            <CommunePanel
+              code={selectedCommune.code}
+              nom={selectedCommune.nom}
+              onClose={() => setSelectedCommune(null)}
             />
           )}
         </div>
