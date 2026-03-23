@@ -96,30 +96,6 @@ export default function RecrutementPanel() {
         </div>
       </div>
 
-      {/* Total */}
-      {data?.source === "france_travail" && (
-        <div
-          style={{
-            padding: "5px 10px",
-            borderBottom: "1px solid var(--border)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0,
-            background: "rgba(34,197,94,0.05)",
-          }}
-        >
-          <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.08em" }}>
-            TOP RECRUTEUR
-          </span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#22c55e", letterSpacing: "0.06em" }}>
-            {data.totalOffres > 0
-              ? data.totalOffres.toLocaleString("fr-FR")
-              : `${data.topEmployeurs.length * 3}+`}
-          </span>
-        </div>
-      )}
-
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {loading && !data && (
