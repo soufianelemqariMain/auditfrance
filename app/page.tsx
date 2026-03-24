@@ -130,7 +130,7 @@ export default function Home() {
           </div>
 
           {/* Vérifier — Infoverif analysis panel */}
-          <div className="bp-verif" style={{ flex: "0 0 80px", overflow: "hidden" }}>
+          <div className="bp-verif" style={{ flex: "0 0 260px", overflow: "hidden" }}>
             <VerifPanel />
           </div>
         </div>
