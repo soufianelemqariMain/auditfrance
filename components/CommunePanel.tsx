@@ -158,8 +158,8 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
             {tab === "apercu" && <ApercuTab commune={data.commune} />}
             {tab === "maire" && (
               <MaireTab
+                code={code}
                 maire={data.maire}
-                elections2026Pending={data.elections2026Pending}
                 communeNom={data.commune.nom}
               />
             )}
@@ -208,64 +208,62 @@ function ApercuTab({ commune }: { commune: CommuneData["commune"] }) {
 
 // ─── Maire tab ────────────────────────────────────────────────────────────────
 function MaireTab({
+  code,
   maire,
-  elections2026Pending,
   communeNom,
 }: {
+  code: string;
   maire: MaireInfo | null;
-  elections2026Pending: boolean;
   communeNom: string;
 }) {
+  const [newMayor, setNewMayor] = useState<{ prenom: string; nom: string; liste: string; nuance: string } | null>(null);
+  const [mayorStatus, setMayorStatus] = useState<"loading" | "done" | "none">("loading");
+
+  useEffect(() => {
+    fetch(`/api/elections/municipales2026?commune=${code}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) { setMayorStatus("none"); return; }
+        const elected = (d.listes as ListeResult[]).find((l) => l.elu);
+        if (elected) {
+          setNewMayor({ prenom: elected.prenomTete, nom: elected.nomTete, liste: elected.libelleAbr || elected.libelle, nuance: elected.nuance });
+          setMayorStatus("done");
+        } else {
+          setMayorStatus("none");
+        }
+      })
+      .catch(() => setMayorStatus("none"));
+  }, [code]);
+
   return (
     <div>
-      {/* 2026 election results available banner */}
-      {elections2026Pending && (
-        <div
-          style={{
-            background: "rgba(34,197,94,0.07)",
-            border: "1px solid rgba(34,197,94,0.3)",
-            borderRadius: 5,
-            padding: "8px 10px",
-            marginBottom: 14,
-            display: "flex",
-            gap: 8,
-            alignItems: "flex-start",
-          }}
-        >
-          <span style={{ fontSize: 13 }}>🗳</span>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>
-              Municipales 2026 — résultats disponibles
-            </div>
-            <div style={{ fontSize: 10, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              Les résultats officiels du 2e tour (23 mars 2026) sont en ligne. Consultez l'onglet <strong style={{ color: "var(--text-primary)" }}>Élections 26</strong> pour les détails.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Current maire from RNE */}
+      {/* New mayor from 2026 elections */}
       <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
-        Maire en exercice · Répertoire National des Élus (RNE)
+        Maire élu·e · Municipales 2026 — 2e tour
       </div>
 
-      {maire ? (
+      {mayorStatus === "loading" && (
+        <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "8px 0" }}>Chargement…</div>
+      )}
+
+      {mayorStatus === "done" && newMayor && (
         <div
           style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid var(--border)",
+            background: "rgba(34,197,94,0.06)",
+            border: "1px solid rgba(34,197,94,0.35)",
             borderRadius: 5,
             padding: "10px 12px",
+            marginBottom: 16,
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-                {maire.prenom} {maire.nom}
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>
+                {newMayor.prenom} {newMayor.nom}
               </div>
-              {maire.csp && (
+              {newMayor.liste && (
                 <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>
-                  {maire.csp}
+                  {newMayor.liste}
                 </div>
               )}
             </div>
@@ -281,44 +279,52 @@ function MaireTab({
                 flexShrink: 0,
               }}
             >
-              MAIRE
+              ÉLU·E 2026
             </span>
           </div>
-          {maire.mandatDebut && (
-            <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 6 }}>
-              Mandat depuis le {fmtDate(maire.mandatDebut)}
-            </div>
-          )}
-          <div style={{ marginTop: 8 }}>
-            <a
-              href={`https://www.resultats-elections.interieur.gouv.fr/municipales2026/index.html`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none" }}
-            >
-              → Vérifier les résultats 2026
-            </a>
-          </div>
-        </div>
-      ) : (
-        <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "12px 0" }}>
-          Aucun·e maire trouvé·e dans le RNE pour {communeNom} (code {" "}
-          <span style={{ fontFamily: "var(--font-mono)" }}>—</span>).
-          <div style={{ marginTop: 8 }}>
-            <a
-              href="https://www.data.gouv.fr/fr/datasets/repertoire-national-des-elus-1/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "var(--accent-blue)", fontSize: 10 }}
-            >
-              → Consulter le RNE sur data.gouv.fr
-            </a>
+          <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 5 }}>
+            Élu·e le 23 mars 2026
           </div>
         </div>
       )}
 
+      {mayorStatus === "none" && (
+        <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "8px 0 14px" }}>
+          Pas de résultats du 2e tour disponibles pour cette commune.
+        </div>
+      )}
+
+      {/* Previous maire from RNE */}
+      {maire && (
+        <>
+          <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+            Maire précédent·e · RNE
+          </div>
+          <div
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid var(--border)",
+              borderRadius: 5,
+              padding: "10px 12px",
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
+              {maire.prenom} {maire.nom}
+            </div>
+            {maire.csp && (
+              <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>{maire.csp}</div>
+            )}
+            {maire.mandatDebut && (
+              <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 4 }}>
+                Mandat depuis le {fmtDate(maire.mandatDebut)}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 14, letterSpacing: "0.05em" }}>
-        Sources : RNE — Ministère de l'Intérieur · data.gouv.fr
+        Sources : data.gouv.fr — Municipales 2026 T2 · RNE Ministère de l'Intérieur
       </div>
     </div>
   );
