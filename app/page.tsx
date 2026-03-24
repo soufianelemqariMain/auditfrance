@@ -9,7 +9,6 @@ import TVPanel from "@/components/TVPanel";
 import CAC40Panel from "@/components/CAC40Panel";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import CommunePanel from "@/components/CommunePanel";
-import CommuneSearchBar from "@/components/CommuneSearchBar";
 import SousActifsPanel from "@/components/SousActifsPanel";
 import AoOuvertsPanel from "@/components/AoOuvertsPanel";
 import RecrutementPanel from "@/components/RecrutementPanel";
@@ -44,25 +43,12 @@ export default function Home() {
       }}
     >
       <Navbar />
-      <FilterBar />
+      <FilterBar onCommuneSelect={handleCommuneSelect} />
 
       <div className="main-content-area" style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         {/* Map — 50% of available height */}
         <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
           <Map onDeptClick={handleDeptClick} onCommuneClick={handleCommuneSelect} />
-
-          {/* Commune search — floating top-left over map */}
-          <div
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 10,
-              width: 200,
-              zIndex: 30,
-            }}
-          >
-            <CommuneSearchBar onSelect={handleCommuneSelect} />
-          </div>
 
           {/* Department intelligence panel — slides over the map */}
           {selectedDept && !selectedCommune && (

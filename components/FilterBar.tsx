@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "../lib/store";
+import CommuneSearchBar from "./CommuneSearchBar";
 
 const FILTERS = [
   { key: "nuclear_plants", label: "☢ Nucléaire",      color: "#ffcc00" },
@@ -13,7 +14,11 @@ const FILTERS = [
   { key: "heatmap_elus",   label: "🗳 Activité Élus", color: "#c084fc" },
 ];
 
-export default function FilterBar() {
+interface Props {
+  onCommuneSelect?: (code: string, nom: string) => void;
+}
+
+export default function FilterBar({ onCommuneSelect }: Props) {
   const layers = useAppStore((s) => s.layers);
   const toggleLayer = useAppStore((s) => s.toggleLayer);
 
@@ -74,6 +79,16 @@ export default function FilterBar() {
           </button>
         );
       })}
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Commune search — right side of filter bar */}
+      {onCommuneSelect && (
+        <div style={{ flexShrink: 0, width: 180 }}>
+          <CommuneSearchBar onSelect={onCommuneSelect} />
+        </div>
+      )}
     </div>
   );
 }

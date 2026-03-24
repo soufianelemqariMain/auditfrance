@@ -58,6 +58,18 @@ Six panneaux permanents en bas d'écran :
 | **CAC 40** | ~40 valeurs — cours en quasi-temps réel | 60 sec |
 | **Recrutement** | Top recruteurs CDI nationaux — France Travail | 30 min |
 | **Sondages 2027** | Intentions de vote présidentielle 2027 par candidat | Mensuel |
+| **🔍 Vérifier une info** | Analyse Infoverif — propagande, désinformation, complot | Temps réel |
+
+### 🔍 Vérifier une info — Infoverif
+
+Panneau intégré directement dans le tableau de bord. Colle un texte, un article, un discours ou une URL — le moteur [Infoverif](https://infoverif.org) analyse le contenu en temps réel via le framework [DISARM](https://www.disarm.foundation/) (391 techniques référencées) et retourne :
+
+- **Score de risque global** (0-100) avec niveau : Faible / Modéré / Élevé / Critique
+- **Scores détaillés** : Propagande · Désinformation · Complot
+- **Techniques détectées** avec identifiant DISARM, niveau de confiance et extrait
+- **Résumé** de l'analyse
+
+Supporte le texte libre, les URLs, et l'import de fichiers texte. Propulsé par [Infoverif.org](https://infoverif.org).
 
 ### 📋 Page Audit national (`/audit`)
 

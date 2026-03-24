@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface Technique {
   id?: string;
@@ -40,19 +40,27 @@ const VERDICT_ICON: Record<string, string> = {
   low: "✅", medium: "⚠️", high: "🚨", critical: "❌",
 };
 
-function pct(v?: number) {
-  return v != null ? `${Math.round(v * 100)}%` : "—";
+// API returns 0-100 scale scores (not 0-1)
+function scoreLabel(v?: number) {
+  return v != null ? `${Math.round(v)}/100` : "—";
+}
+
+// confidence may be 0-1 or 0-100; normalize to display as %
+function confLabel(v: number) {
+  const pct = v > 1 ? Math.round(v) : Math.round(v * 100);
+  return `${pct}%`;
 }
 
 function ScoreRow({ label, value, color }: { label: string; value?: number; color: string }) {
+  const barWidth = Math.min(value ?? 0, 100);
   return (
     <div style={{ marginBottom: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "var(--text-secondary)", marginBottom: 2 }}>
         <span>{label}</span>
-        <span style={{ fontFamily: "var(--font-mono)", color }}>{pct(value)}</span>
+        <span style={{ fontFamily: "var(--font-mono)", color }}>{scoreLabel(value)}</span>
       </div>
       <div style={{ height: 4, background: "rgba(255,255,255,0.07)", borderRadius: 2, overflow: "hidden" }}>
-        <div style={{ width: `${(value ?? 0) * 100}%`, height: "100%", background: color, borderRadius: 2, transition: "width 0.5s" }} />
+        <div style={{ width: `${barWidth}%`, height: "100%", background: color, borderRadius: 2, transition: "width 0.5s" }} />
       </div>
     </div>
   );
@@ -62,6 +70,7 @@ export default function VerifPanel() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [result, setResult] = useState<VerifResult | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const isUrl = /^https?:\/\//i.test(input.trim());
   const verdictColor = result?.verdict_level ? (VERDICT_COLOR[result.verdict_level] ?? "#6b7280") : "#6b7280";
@@ -88,6 +97,20 @@ export default function VerifPanel() {
       setResult({ error: err instanceof Error ? err.message : "Erreur réseau" });
       setStatus("error");
     }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Read text content from file and populate textarea
+    const text = await file.text().catch(() => "");
+    if (text.trim()) {
+      setInput(text.trim().slice(0, 4000));
+      setStatus("idle");
+      setResult(null);
+    }
+    // Reset file input so the same file can be re-selected
+    e.target.value = "";
   }
 
   function reset() {
@@ -117,7 +140,7 @@ export default function VerifPanel() {
           <textarea
             value={input}
             onChange={(e) => { setInput(e.target.value); if (status !== "idle") reset(); }}
-            placeholder="Collez un texte ou une URL…"
+            placeholder="Texte, URL, article, discours…"
             rows={3}
             style={{
               width: "100%",
@@ -145,28 +168,61 @@ export default function VerifPanel() {
             </span>
           )}
         </div>
-        <button
-          onClick={analyse}
-          disabled={!input.trim() || status === "loading"}
-          style={{
-            width: "100%",
-            background: "var(--accent-blue)", color: "#fff", border: "none",
-            padding: "5px 0", borderRadius: 3, fontSize: 11, fontWeight: 700,
-            cursor: (!input.trim() || status === "loading") ? "default" : "pointer",
-            fontFamily: "inherit",
-            opacity: (!input.trim() || status === "loading") ? 0.5 : 1,
-          }}
-        >
-          {status === "loading" ? "Analyse…" : "Analyser"}
-        </button>
+
+        {/* Actions row */}
+        <div style={{ display: "flex", gap: 5 }}>
+          <button
+            onClick={analyse}
+            disabled={!input.trim() || status === "loading"}
+            style={{
+              flex: 1,
+              background: "var(--accent-blue)", color: "#fff", border: "none",
+              padding: "5px 0", borderRadius: 3, fontSize: 11, fontWeight: 700,
+              cursor: (!input.trim() || status === "loading") ? "default" : "pointer",
+              fontFamily: "inherit",
+              opacity: (!input.trim() || status === "loading") ? 0.5 : 1,
+            }}
+          >
+            {status === "loading" ? "Analyse…" : "Analyser"}
+          </button>
+
+          {/* File upload button */}
+          <button
+            onClick={() => fileRef.current?.click()}
+            title="Importer un fichier texte"
+            style={{
+              background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
+              color: "var(--text-secondary)", padding: "5px 8px", borderRadius: 3,
+              fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}
+          >
+            📎
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".txt,.md,.csv,.json,.html,.xml,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={handleFile}
+            style={{ display: "none" }}
+          />
+        </div>
       </div>
 
       {/* Results area */}
       <div style={{ flex: 1, overflow: "auto", padding: "8px 10px" }}>
 
         {status === "idle" && (
-          <div style={{ fontSize: 9, color: "var(--border)", textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>
-            Texte, URL ou lien d'article<br />Propulsé par Infoverif · DISARM
+          <div style={{ fontSize: 9, color: "var(--border)", textAlign: "center", marginTop: 10, lineHeight: 1.8 }}>
+            Texte · URL · Article · Discours<br />
+            Document · Image · Vidéo · Audio<br />
+            <a
+              href="https://infoverif.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--accent-blue)", textDecoration: "none", opacity: 0.6 }}
+            >
+              Propulsé par Infoverif · DISARM
+            </a>
           </div>
         )}
 
@@ -193,7 +249,7 @@ export default function VerifPanel() {
                   {VERDICT_FR[result.verdict_level ?? ""] ?? result.verdict_level}
                 </div>
                 <div style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
-                  Influence {pct(result.overall_influence)}
+                  Influence {scoreLabel(result.overall_influence)}
                 </div>
               </div>
             </div>
@@ -226,18 +282,30 @@ export default function VerifPanel() {
                         <span style={{ fontSize: 10, color: "var(--text-primary)", fontWeight: 500 }}>{t.name}</span>
                       </div>
                       {t.confidence != null && (
-                        <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "#6366f1", flexShrink: 0, marginLeft: 4 }}>{Math.round(t.confidence * 100)}%</span>
+                        <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "#6366f1", flexShrink: 0, marginLeft: 4 }}>{confLabel(t.confidence)}</span>
                       )}
                     </div>
                     {t.excerpt && (
                       <div style={{ fontSize: 9, color: "var(--text-secondary)", fontStyle: "italic", marginTop: 3, lineHeight: 1.4 }}>
-                        "{t.excerpt}"
+                        &ldquo;{t.excerpt}&rdquo;
                       </div>
                     )}
                   </div>
                 ))}
               </div>
             )}
+
+            {/* Attribution */}
+            <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--border)", textAlign: "center" }}>
+              <a
+                href="https://infoverif.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.05em" }}
+              >
+                Analyse par infoverif.org · DISARM
+              </a>
+            </div>
           </>
         )}
       </div>
