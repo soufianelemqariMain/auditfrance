@@ -6,15 +6,17 @@ import BudgetPanel from "@/components/audit/BudgetPanel";
 import MarchesPanel from "@/components/audit/MarchesPanel";
 import ConsultationsPanel from "@/components/audit/ConsultationsPanel";
 import SubventionsPanel from "@/components/audit/SubventionsPanel";
+import MediaAuditPanel from "@/components/audit/MediaAuditPanel";
 import { BUDGET } from "@/lib/auditData";
 
-type AuditTab = "budget" | "marches-attribues" | "marches-ouverts" | "subventions";
+type AuditTab = "budget" | "marches-attribues" | "marches-ouverts" | "subventions" | "medias";
 
 const TABS: { key: AuditTab; label: string }[] = [
   { key: "budget", label: `Budget PLF ${BUDGET.year}` },
   { key: "marches-attribues", label: "Marchés attribués" },
   { key: "marches-ouverts", label: "Marchés ouverts" },
   { key: "subventions", label: "Subventions" },
+  { key: "medias", label: "Audit Médias" },
 ];
 
 export default function AuditPage() {
@@ -82,6 +84,7 @@ export default function AuditPage() {
         {tab === "marches-attribues" && <MarchesPanel />}
         {tab === "marches-ouverts" && <ConsultationsPanel />}
         {tab === "subventions" && <SubventionsPanel />}
+        {tab === "medias" && <MediaAuditPanel />}
       </div>
     </div>
   );
