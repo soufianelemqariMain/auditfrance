@@ -102,7 +102,7 @@ export default function VerifPanel() {
       {/* Header */}
       <div style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          🔍 Vérifier
+          🔍 Vérifier une info
         </span>
         {(status === "done" || status === "error") && (
           <button onClick={reset} style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: 9, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>

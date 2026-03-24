@@ -1,15 +1,15 @@
 "use client";
 
 // Sondages présidentiels 2027 — 1er tour
-// Source: IFOP/Fiducial, février 2026
+// Source: IFOP/Fiducial, mars 2026
 // trend: "up" | "down" | "flat"
 const CANDIDATES = [
-  { name: "M. Le Pen",    party: "RN",         score: 34, trend: "up"   },
-  { name: "É. Philippe",  party: "Horizons",   score: 22, trend: "down" },
-  { name: "G. Attal",     party: "Renaiss.",   score: 11, trend: "flat" },
+  { name: "J. Bardella",  party: "RN",         score: 33, trend: "up"   },
+  { name: "É. Philippe",  party: "Horizons",   score: 21, trend: "down" },
+  { name: "G. Attal",     party: "Renaiss.",   score: 12, trend: "flat" },
   { name: "J.-L. Mélen.", party: "LFI",        score: 10, trend: "down" },
-  { name: "F. Hollande",  party: "PS",         score:  8, trend: "up"   },
-  { name: "É. Ciotti",    party: "LR",         score:  6, trend: "flat" },
+  { name: "F. Ruffin",    party: "Gauche",     score:  8, trend: "up"   },
+  { name: "É. Ciotti",    party: "LR",         score:  5, trend: "down" },
 ];
 
 const PARTY_COLOR: Record<string, string> = {
@@ -19,6 +19,7 @@ const PARTY_COLOR: Record<string, string> = {
   LFI: "#c92a2a",
   PS: "#e64980",
   LR: "#1864ab",
+  Gauche: "#c92a2a",
 };
 
 const TREND_ICON: Record<string, string> = {
@@ -40,7 +41,7 @@ export default function SondagesPanel() {
         <span style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
           Sondages 2027
         </span>
-        <span style={{ fontSize: 8, color: "var(--border)", fontFamily: "var(--font-mono)" }}>IFOP fév. 26</span>
+        <span style={{ fontSize: 8, color: "var(--border)", fontFamily: "var(--font-mono)" }}>IFOP mars 26</span>
       </div>
 
       {/* Candidate list */}
