@@ -40,7 +40,7 @@ interface Props {
 }
 
 export default function CommunePanel({ code, nom, onClose }: Props) {
-  const [tab, setTab] = useState<"apercu" | "maire" | "budget" | "marches" | "recrutement">("apercu");
+  const [tab, setTab] = useState<"apercu" | "maire" | "budget" | "marches" | "recrutement" | "elections">("apercu");
   const [data, setData] = useState<CommuneData | null>(null);
   const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
 
@@ -116,7 +116,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
-          {(["apercu", "maire", "budget", "marches", "recrutement"] as const).map((t) => (
+          {(["apercu", "maire", "budget", "marches", "recrutement", "elections"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -135,7 +135,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
                 flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "maire" ? "Maire" : t === "budget" ? "Budget" : t === "marches" ? "Marchés" : "Recrutement"}
+              {t === "apercu" ? "Aperçu" : t === "maire" ? "Maire" : t === "budget" ? "Budget" : t === "marches" ? "Marchés" : t === "recrutement" ? "Recrutement" : "Élections 26"}
             </button>
           ))}
         </div>
@@ -166,6 +166,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
             {tab === "budget" && <BudgetTab budget={data.budget} communeNom={data.commune.nom} code={code} />}
             {tab === "marches" && <MarchesTab commune={data.commune} />}
             {tab === "recrutement" && <OffresTab commune={code} />}
+            {tab === "elections" && <ElectionsTab code={code} communeNom={data.commune.nom} />}
           </>
         )}
       </div>
@@ -217,12 +218,12 @@ function MaireTab({
 }) {
   return (
     <div>
-      {/* 2026 election results pending banner */}
+      {/* 2026 election results available banner */}
       {elections2026Pending && (
         <div
           style={{
-            background: "rgba(234,179,8,0.1)",
-            border: "1px solid rgba(234,179,8,0.35)",
+            background: "rgba(34,197,94,0.07)",
+            border: "1px solid rgba(34,197,94,0.3)",
             borderRadius: 5,
             padding: "8px 10px",
             marginBottom: 14,
@@ -231,21 +232,13 @@ function MaireTab({
             alignItems: "flex-start",
           }}
         >
-          <span style={{ fontSize: 13 }}>⏳</span>
+          <span style={{ fontSize: 13 }}>🗳</span>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#eab308", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>
-              Municipales 2026 — résultats en attente
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#22c55e", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>
+              Municipales 2026 — résultats disponibles
             </div>
             <div style={{ fontSize: 10, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              Les résultats officiels du 2e tour (22 mars 2026) seront publiés dès mise en ligne par le Ministère de l'Intérieur.{" "}
-              <a
-                href="https://www.resultats-elections.interieur.gouv.fr/municipales2026/index.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "var(--accent-blue)" }}
-              >
-                → resultats-elections.interieur.gouv.fr
-              </a>
+              Les résultats officiels du 2e tour (23 mars 2026) sont en ligne. Consultez l'onglet <strong style={{ color: "var(--text-primary)" }}>Élections 26</strong> pour les détails.
             </div>
           </div>
         </div>
@@ -427,6 +420,177 @@ function MarchesTab({ commune }: { commune: CommuneData["commune"] }) {
 
       <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 14, letterSpacing: "0.05em" }}>
         Sources : BOAMP · DECP · data.gouv.fr
+      </div>
+    </div>
+  );
+}
+
+// ─── Élections tab ────────────────────────────────────────────────────────────
+interface ListeResult {
+  numPanneau: string;
+  nomTete: string;
+  prenomTete: string;
+  nuance: string;
+  libelleAbr: string;
+  libelle: string;
+  voix: number;
+  pctVoixExprim: number;
+  elu: boolean;
+  siegesCM: number;
+  siegesCC: number;
+}
+
+interface ElectionsData {
+  codeCommune: string;
+  libCommune: string;
+  inscrits: number;
+  votants: number;
+  pctVotants: number;
+  abstentions: number;
+  pctAbstentions: number;
+  exprimes: number;
+  blancs: number;
+  nuls: number;
+  listes: ListeResult[];
+  source: string;
+}
+
+// Colour by political nuance code
+const NUANCE_COLOR: Record<string, string> = {
+  LDVD: "#1d4ed8", LDVG: "#dc2626", LDIVERS: "#6b7280", LDVC: "#6b7280",
+  LRN: "#1d4ed8",  LFI: "#dc2626",  LPS: "#f97316",    LUG: "#dc2626",
+  LUD: "#1d4ed8",  LMAJM: "#f59e0b", LMAJD: "#3b82f6", LAVENIR: "#0ea5e9",
+};
+function nuanceColor(nuance: string): string {
+  return NUANCE_COLOR[nuance] ?? "#6b7280";
+}
+
+function ElectionsTab({ code, communeNom }: { code: string; communeNom: string }) {
+  const [data, setData] = useState<ElectionsData | null>(null);
+  const [status, setStatus] = useState<"loading" | "done" | "notfound" | "error">("loading");
+
+  useEffect(() => {
+    setStatus("loading");
+    setData(null);
+    fetch(`/api/elections/municipales2026?commune=${code}`)
+      .then((r) => {
+        if (r.status === 404) { setStatus("notfound"); return null; }
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((d) => { if (d) { setData(d); setStatus("done"); } })
+      .catch(() => setStatus("error"));
+  }, [code]);
+
+  if (status === "loading") {
+    return <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "20px 0" }}>Chargement des résultats…</div>;
+  }
+  if (status === "notfound") {
+    return (
+      <div style={{ fontSize: 11, color: "var(--text-secondary)", padding: "12px 0" }}>
+        Pas de résultats du 2e tour pour {communeNom} — cette commune a peut-être été réglée au 1er tour ou n'a pas eu de scrutin.
+        <div style={{ marginTop: 10 }}>
+          <ExtLink href="https://www.resultats-elections.interieur.gouv.fr/municipales2026/index.html" label="→ Résultats officiels Intérieur" />
+        </div>
+      </div>
+    );
+  }
+  if (status === "error" || !data) {
+    return <div style={{ fontSize: 11, color: "#ef4444", padding: "12px 0" }}>Erreur lors du chargement des résultats.</div>;
+  }
+
+  const maxVoix = Math.max(...data.listes.map((l) => l.voix), 1);
+  const participation = data.inscrits > 0 ? (data.votants / data.inscrits) * 100 : 0;
+
+  return (
+    <div>
+      {/* Title */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 }}>
+          Municipales 2026 — 2e tour
+        </div>
+        <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>23 mars 2026 · {communeNom}</div>
+      </div>
+
+      {/* Turnout stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 14 }}>
+        <StatCard label="Inscrits" value={data.inscrits.toLocaleString("fr-FR")} accent="var(--accent-blue)" />
+        <StatCard label="Votants" value={`${participation.toFixed(1)} %`} accent="#22c55e" />
+        <StatCard label="Abstentions" value={`${data.pctAbstentions.toFixed(1)} %`} accent="var(--accent-yellow)" />
+      </div>
+
+      {/* Participation bar */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+          <span style={{ fontSize: 9, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Participation</span>
+          <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--text-primary)" }}>
+            {data.votants.toLocaleString("fr-FR")} / {data.inscrits.toLocaleString("fr-FR")}
+          </span>
+        </div>
+        <div style={{ height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${participation}%`, background: "#22c55e", borderRadius: 3 }} />
+        </div>
+      </div>
+
+      {/* Lists results */}
+      <div style={{ fontSize: 10, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+        Résultats par liste
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {data.listes.map((liste) => {
+          const color = nuanceColor(liste.nuance);
+          return (
+            <div key={liste.numPanneau} style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${liste.elu ? color : "var(--border)"}`, borderRadius: 5, padding: "8px 10px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 5 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-primary)" }}>
+                      {liste.prenomTete} {liste.nomTete}
+                    </span>
+                    {liste.libelleAbr && (
+                      <span style={{ fontSize: 9, background: `${color}22`, color, border: `1px solid ${color}44`, borderRadius: 3, padding: "1px 5px", fontWeight: 600 }}>
+                        {liste.libelleAbr}
+                      </span>
+                    )}
+                    {liste.elu && (
+                      <span style={{ fontSize: 9, background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 3, padding: "1px 5px", fontWeight: 700 }}>
+                        ÉLU·E
+                      </span>
+                    )}
+                  </div>
+                  {liste.libelle && liste.libelle !== liste.libelleAbr && (
+                    <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {liste.libelle}
+                    </div>
+                  )}
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color, fontFamily: "var(--font-mono)" }}>
+                    {liste.pctVoixExprim.toFixed(1)}%
+                  </div>
+                  <div style={{ fontSize: 9, color: "var(--text-secondary)" }}>
+                    {liste.voix.toLocaleString("fr-FR")} voix
+                  </div>
+                </div>
+              </div>
+              {/* Bar */}
+              <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${(liste.voix / maxVoix) * 100}%`, background: color, borderRadius: 2 }} />
+              </div>
+              {(liste.siegesCM > 0 || liste.siegesCC > 0) && (
+                <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 5 }}>
+                  {liste.siegesCM > 0 && `${liste.siegesCM} siège${liste.siegesCM > 1 ? "s" : ""} au CM`}
+                  {liste.siegesCM > 0 && liste.siegesCC > 0 && " · "}
+                  {liste.siegesCC > 0 && `${liste.siegesCC} siège${liste.siegesCC > 1 ? "s" : ""} au CC`}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ fontSize: 9, color: "var(--text-secondary)", marginTop: 12, letterSpacing: "0.05em" }}>
+        Source : {data.source}
       </div>
     </div>
   );
