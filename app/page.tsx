@@ -14,6 +14,7 @@ import SousActifsPanel from "@/components/SousActifsPanel";
 import AoOuvertsPanel from "@/components/AoOuvertsPanel";
 import RecrutementPanel from "@/components/RecrutementPanel";
 import SondagesPanel from "@/components/SondagesPanel";
+import VerifPanel from "@/components/VerifPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -126,6 +127,11 @@ export default function Home() {
           {/* Sondages Présidentielles 2027 */}
           <div className="bp-sondages" style={{ flex: 1, overflow: "hidden" }}>
             <SondagesPanel />
+          </div>
+
+          {/* Vérifier — Infoverif analysis panel */}
+          <div className="bp-verif" style={{ flex: "0 0 80px", overflow: "hidden" }}>
+            <VerifPanel />
           </div>
         </div>
       </div>
