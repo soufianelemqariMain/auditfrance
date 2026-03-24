@@ -1,154 +1,187 @@
 "use client";
 
-interface Candidat {
-  nom: string;
-  parti: string;
-  couleur: string;
-  score: number; // % 1er tour
-  evolution: number; // points vs sondage précédent
+import { useState, useEffect } from "react";
+import type { SondagesData, Poll } from "@/app/api/sondages/route";
+
+const PARTY_COLORS: Record<string, string> = {
+  RN: "#002395",
+  Horizons: "#0080FF",
+  Renaissance: "#FFBE00",
+  LFI: "#CC2443",
+  PS: "#E75480",
+  LR: "#0047AB",
+  "Gauche": "#CC2443",
+  "LFI/Gauche": "#CC2443",
+};
+
+function partyColor(party: string) {
+  return PARTY_COLORS[party] ?? "#6b7280";
 }
 
-const CANDIDATS: Candidat[] = [
-  { nom: "E. Philippe",    parti: "Horizons",   couleur: "#3b82f6", score: 27, evolution: +1 },
-  { nom: "J. Bardella",    parti: "RN",         couleur: "#1d4ed8", score: 22, evolution: -1 },
-  { nom: "J.-L. Mélenchon",parti: "LFI",        couleur: "#dc2626", score: 14, evolution: 0  },
-  { nom: "G. Attal",       parti: "Renaissance",couleur: "#f59e0b", score: 11, evolution: +2 },
-  { nom: "R. Glucksmann",  parti: "PS/Place P.", couleur: "#f97316", score: 9,  evolution: +1 },
-  { nom: "A. Hidalgo",     parti: "PS",         couleur: "#ec4899", score: 5,  evolution: -1 },
-  { nom: "F. Roussel",     parti: "PCF",        couleur: "#b91c1c", score: 4,  evolution: 0  },
-  { nom: "Autres",         parti: "",           couleur: "#6b7280", score: 8,  evolution: 0  },
-];
+function ScoreBar({ score, max, color }: { score: number; max: number; color: string }) {
+  return (
+    <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ width: `${(score / max) * 100}%`, height: "100%", background: color, borderRadius: 3, transition: "width 0.4s" }} />
+    </div>
+  );
+}
 
-const SOURCE = "IFOP / Fiducial — Fév. 2026";
-
-export default function SondagesPanel() {
-  const max = Math.max(...CANDIDATS.map((c) => c.score));
+function ApprovalChart({ data }: { data: SondagesData["approvalMacron"] }) {
+  const last12 = data.slice(-12);
+  const maxVal = 100;
 
   return (
-    <div
-      style={{
-        background: "var(--bg-panel)",
-        borderTop: "1px solid var(--border)",
-        borderLeft: "1px solid var(--border)",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        fontFamily: "var(--font-mono)",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "6px 10px",
-          borderBottom: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", color: "#f59e0b" }}>
-          SONDAGES PRÉSIDENTIELLES 2027
-        </span>
-        <span style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>
-          1ER TOUR
-        </span>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "10px 16px 6px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em" }}>
+          Popularité Macron — 12 derniers mois
+        </div>
+      </div>
+      <div style={{ flex: 1, padding: "12px 16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        {last12.map((pt) => {
+          const [year, month] = pt.date.split("-");
+          const label = new Date(Number(year), Number(month) - 1).toLocaleString("fr-FR", { month: "short", year: "2-digit" });
+          return (
+            <div key={pt.date} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 46, fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>{label}</span>
+              <div style={{ flex: 1, position: "relative", height: 14, display: "flex", alignItems: "center" }}>
+                {/* disapproval bar (red, full width bg) */}
+                <div style={{ position: "absolute", inset: 0, background: "rgba(239,68,68,0.12)", borderRadius: 2 }} />
+                {/* approval bar (blue, partial) */}
+                <div style={{
+                  position: "absolute", left: 0, top: 0, bottom: 0,
+                  width: `${(pt.approval / maxVal) * 100}%`,
+                  background: "rgba(99,102,241,0.5)", borderRadius: 2,
+                  transition: "width 0.3s"
+                }} />
+                <span style={{ position: "absolute", left: 4, fontSize: 9, color: "#a5b4fc", fontFamily: "var(--font-mono)", fontWeight: 600 }}>
+                  {pt.approval}%
+                </span>
+                <span style={{ position: "absolute", right: 4, fontSize: 9, color: "#fca5a5", fontFamily: "var(--font-mono)" }}>
+                  {pt.disapproval}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 9, color: "var(--text-secondary)" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 8, height: 8, background: "rgba(99,102,241,0.5)", borderRadius: 1, display: "inline-block" }} />
+            Approbation
+          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span style={{ width: 8, height: 8, background: "rgba(239,68,68,0.3)", borderRadius: 1, display: "inline-block" }} />
+            Désapprobation
+          </span>
+          <span style={{ marginLeft: "auto" }}>Source : IFOP</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PollCard({ poll }: { poll: Poll }) {
+  const maxScore = Math.max(...poll.candidates.map((c) => c.score));
+  return (
+    <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+        <div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-primary)" }}>
+            Tour {poll.round}
+          </span>
+          <span style={{ fontSize: 10, color: "var(--text-secondary)", marginLeft: 8 }}>
+            {poll.pollster} / {poll.sponsor}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {poll.sampleSize && (
+            <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+              n={poll.sampleSize.toLocaleString("fr-FR")}
+            </span>
+          )}
+          <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+            {new Date(poll.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "2-digit" })}
+          </span>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+        {poll.candidates.map((c) => {
+          const color = partyColor(c.party);
+          return (
+            <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                fontSize: 9, fontWeight: 600, padding: "1px 5px", borderRadius: 3,
+                background: color + "22", color, border: `1px solid ${color}44`,
+                flexShrink: 0, width: 64, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>{c.party}</span>
+              <span style={{ fontSize: 11, color: "var(--text-primary)", width: 140, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {c.name}
+              </span>
+              <ScoreBar score={c.score} max={maxScore} color={color} />
+              <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: "var(--font-mono)", width: 36, textAlign: "right", flexShrink: 0 }}>
+                {c.score}%
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function SondagesPanel() {
+  const [data, setData] = useState<SondagesData | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/sondages")
+      .then((r) => r.json())
+      .then(setData)
+      .catch((e) => setError(String(e)));
+  }, []);
+
+  if (error) {
+    return <div style={{ padding: 16, fontSize: 11, color: "var(--text-secondary)" }}>Erreur: {error}</div>;
+  }
+
+  if (!data) {
+    return <div style={{ padding: 16, fontSize: 11, color: "var(--text-secondary)" }}>Chargement…</div>;
+  }
+
+  const round1Polls = data.polls2027.filter((p) => p.round === 1);
+  const round2Polls = data.polls2027.filter((p) => p.round === 2);
+
+  return (
+    <div style={{ height: "100%", display: "flex", overflow: "hidden" }}>
+      {/* Approval chart */}
+      <div style={{ width: 280, flexShrink: 0, borderRight: "1px solid var(--border)", overflow: "hidden" }}>
+        <ApprovalChart data={data.approvalMacron} />
       </div>
 
-      {/* Candidates */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
-        {CANDIDATS.map((c) => (
-          <div
-            key={c.nom}
-            style={{
-              padding: "3px 10px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: c.couleur,
-                    flexShrink: 0,
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
-                    letterSpacing: "0.04em",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {c.nom}
-                </span>
-                {c.parti && (
-                  <span style={{ fontSize: 8, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                    {c.parti}
-                  </span>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                {c.evolution !== 0 && (
-                  <span
-                    style={{
-                      fontSize: 8,
-                      color: c.evolution > 0 ? "#22c55e" : "#ef4444",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {c.evolution > 0 ? `▲${c.evolution}` : `▼${Math.abs(c.evolution)}`}
-                  </span>
-                )}
-                <span style={{ fontSize: 11, fontWeight: 700, color: c.couleur, letterSpacing: "0.06em" }}>
-                  {c.score}%
-                </span>
-              </div>
+      {/* Polls */}
+      <div style={{ flex: 1, overflow: "auto" }}>
+        <div style={{ padding: "8px 16px 4px", borderBottom: "1px solid var(--border)", fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>Sondages présidentiels 2027</span>
+          <span style={{ fontWeight: 400, fontSize: 9 }}>Dernière mise à jour : {data.lastUpdated}</span>
+        </div>
+
+        <div style={{ display: "flex", height: "calc(100% - 33px)", overflow: "hidden" }}>
+          {/* 1st round */}
+          <div style={{ flex: 1, overflow: "auto", borderRight: "1px solid var(--border)" }}>
+            <div style={{ padding: "6px 16px", fontSize: 10, fontWeight: 600, color: "var(--accent-blue)", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              1er Tour
             </div>
-            {/* Bar */}
-            <div
-              style={{
-                height: 3,
-                background: "var(--border)",
-                borderRadius: 2,
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${(c.score / max) * 100}%`,
-                  background: c.couleur,
-                  borderRadius: 2,
-                  transition: "width 0.4s ease",
-                }}
-              />
-            </div>
+            {round1Polls.map((p, i) => <PollCard key={i} poll={p} />)}
           </div>
-        ))}
-      </div>
 
-      {/* Source */}
-      <div
-        style={{
-          padding: "4px 10px",
-          borderTop: "1px solid var(--border)",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.06em" }}>
-          {SOURCE}
-        </span>
+          {/* 2nd round */}
+          <div style={{ flex: 1, overflow: "auto" }}>
+            <div style={{ padding: "6px 16px", fontSize: 10, fontWeight: 600, color: "var(--accent-yellow)", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              2ème Tour
+            </div>
+            {round2Polls.map((p, i) => <PollCard key={i} poll={p} />)}
+          </div>
+        </div>
       </div>
     </div>
   );
