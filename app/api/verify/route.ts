@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 const INFOVERIF_URL = "https://infoveriforg-production.up.railway.app";
 
 export async function POST(request: Request): Promise<NextResponse> {
