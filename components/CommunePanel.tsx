@@ -40,7 +40,7 @@ interface Props {
 }
 
 export default function CommunePanel({ code, nom, onClose }: Props) {
-  const [tab, setTab] = useState<"apercu" | "budget" | "marches" | "recrutement" | "elections">("apercu");
+  const [tab, setTab] = useState<"apercu" | "recrutement">("apercu");
   const [data, setData] = useState<CommuneData | null>(null);
   const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
 
@@ -116,7 +116,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
-          {(["apercu", "budget", "marches", "recrutement", "elections"] as const).map((t) => (
+          {(["apercu", "recrutement"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -135,7 +135,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
                 flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "budget" ? "Budget" : t === "marches" ? "Marchés" : t === "recrutement" ? "Recrutement" : "Élus"}
+              {t === "apercu" ? "Aperçu" : "Offres d'emploi"}
             </button>
           ))}
         </div>
@@ -156,10 +156,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
         {status === "done" && data && (
           <>
             {tab === "apercu" && <ApercuTab commune={data.commune} />}
-            {tab === "budget" && <BudgetTab budget={data.budget} communeNom={data.commune.nom} code={code} />}
-            {tab === "marches" && <MarchesTab commune={data.commune} />}
             {tab === "recrutement" && <OffresTab commune={code} />}
-            {tab === "elections" && <ElectionsTab code={code} communeNom={data.commune.nom} />}
           </>
         )}
       </div>
