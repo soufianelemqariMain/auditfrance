@@ -3,8 +3,8 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Audit France — Transparence démocratique & finances publiques",
-  description: "Tableau de bord open-source de veille civique : élus, marchés publics, appels d'offres et budget par département. Données officielles en temps réel.",
+  title: "InfoVerif — Transparence civique & détection de désinformation",
+  description: "Plateforme open-source de veille civique et d'analyse média : élus, marchés publics, finances publiques, et détection de manipulation par IA. Données officielles en temps réel.",
 };
 
 export default function RootLayout({

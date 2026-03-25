@@ -146,7 +146,7 @@ export default function Home() {
           rel="noopener noreferrer"
           style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em" }}
         >
-          github.com/soufianelemqariMain/auditfrance
+          infoverif.org
         </a>
         <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
         <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>MIT</span>

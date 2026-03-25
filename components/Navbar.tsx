@@ -57,7 +57,7 @@ export default function Navbar() {
     >
       {/* Left: brand + rooster + nav tabs */}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <span style={{ fontSize: 18, lineHeight: 1 }}>🐓</span>
+        <span style={{ fontSize: 18, lineHeight: 1 }}>🔍</span>
         <div>
           <span
             style={{
@@ -68,17 +68,24 @@ export default function Navbar() {
               textTransform: "uppercase",
             }}
           >
-            Audit{" "}
-            <span style={{ color: "var(--accent-red)" }}>France</span>
+            Info<span style={{ color: "var(--accent-blue)" }}>Verif</span>
           </span>
           <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
-            LIBERTÉ · ÉGALITÉ · FRATERNITÉ
+            TRANSPARENCE · VÉRITÉ · DÉMOCRATIE
           </div>
         </div>
 
-        {/* Tagline */}
-        <div className="nav-tagline" style={{ marginLeft: 12, fontSize: 10, color: "var(--text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-          Intelligence · Économie · Territoire
+        {/* Nav links */}
+        <div className="nav-tagline" style={{ marginLeft: 12, display: "flex", gap: 16, alignItems: "center" }}>
+          <a href="/" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Tableau de bord
+          </a>
+          <a href="/analyse" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>
+            Analyser
+          </a>
+          <a href="/entreprise" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            Entreprise
+          </a>
         </div>
       </div>
 
