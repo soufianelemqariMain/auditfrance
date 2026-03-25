@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
-const INFOVERIF_URL = "https://infoveriforg-production.up.railway.app";
+const INFOVERIF_URL =
+  process.env.INFOVERIF_BACKEND_URL ?? "https://infoveriforg-production.up.railway.app";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const apiKey = process.env.INFOVERIF_API_KEY;
@@ -35,7 +36,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           "X-Api-Key": apiKey,
         },
         body: JSON.stringify({ url: input, platform: "web" }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(55000),
       });
     } else {
       const form = new FormData();
@@ -46,7 +47,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         method: "POST",
         headers: { "X-Api-Key": apiKey },
         body: form,
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(55000),
       });
     }
 
