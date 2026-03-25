@@ -75,18 +75,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Nav links */}
-        <div className="nav-tagline" style={{ marginLeft: 12, display: "flex", gap: 16, alignItems: "center" }}>
-          <a href="/" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            Tableau de bord
-          </a>
-          <a href="/analyse" style={{ fontSize: 10, color: "var(--accent-blue)", textDecoration: "none", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>
-            Analyser
-          </a>
-          <a href="/entreprise" style={{ fontSize: 10, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-            Entreprise
-          </a>
-        </div>
       </div>
 
       {/* Center: live UTC clock — suppressHydrationWarning prevents #418 mismatch */}
