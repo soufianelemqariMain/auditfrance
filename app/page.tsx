@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
 import TVPanel from "@/components/TVPanel";
+import DepartmentPanel from "@/components/DepartmentPanel";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -284,6 +285,12 @@ function AnalyserPanel() {
 
 /* ── Main page ──────────────────────────────────────────────── */
 export default function Home() {
+  const [selectedDept, setSelectedDept] = useState<{ code: string; nom: string } | null>(null);
+
+  const handleDeptClick = useCallback((code: string, nom: string) => {
+    setSelectedDept({ code, nom });
+  }, []);
+
   return (
     <div
       className="main-wrapper"
@@ -294,7 +301,15 @@ export default function Home() {
       <div className="main-content-area" style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         {/* Map — 50% of available height */}
         <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
-          <Map />
+          <Map onDeptClick={handleDeptClick} />
+
+          {selectedDept && (
+            <DepartmentPanel
+              code={selectedDept.code}
+              nom={selectedDept.nom}
+              onClose={() => setSelectedDept(null)}
+            />
+          )}
         </div>
 
         {/* Bottom panels — 50%: News · TV Direct · Analyser */}

@@ -19,7 +19,7 @@ function fmtDate(s: string): string {
 
 export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: Props) {
   const info = getDeptInfo(code);
-  const [tab, setTab] = useState<"apercu" | "consultations" | "budget" | "elus" | "communes" | "recrutement">("apercu");
+  const [tab, setTab] = useState<"apercu" | "budget" | "elus" | "recrutement">("apercu");
 
   return (
     <div
@@ -81,10 +81,10 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
-          {(["apercu", "elus", "consultations", "budget", "communes", "recrutement"] as const).map((t) => (
+          {(["apercu", "elus", "budget", "recrutement"] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t as typeof tab)}
+              onClick={() => setTab(t)}
               style={{
                 padding: "5px 12px",
                 fontSize: 10,
@@ -100,7 +100,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
                 flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "consultations" ? "Appels d'offres" : t === "budget" ? "Budget" : t === "communes" ? "Communes" : "Recrutement"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "budget" ? "Budget" : "Offres d'emploi"}
             </button>
           ))}
         </div>
@@ -114,12 +114,8 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
         {tab === "elus" && (
           <ElusTab code={code} region={info?.region ?? ""} />
         )}
-        {tab === "consultations" && <ConsultationsTab code={code} />}
         {tab === "budget" && (
           <BudgetTab code={code} nom={nom} />
-        )}
-        {tab === "communes" && (
-          <CommunesTab code={code} onCommuneClick={onCommuneClick} />
         )}
         {tab === "recrutement" && <OffresTab dept={code} />}
       </div>
