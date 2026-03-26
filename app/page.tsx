@@ -127,34 +127,34 @@ function AnalyserPanel() {
         )}
       </div>
 
-      <div style={{ flex: 1, overflow: "auto", display: "flex", gap: 0 }}>
-        {/* Left: input */}
-        <div style={{ flex: "0 0 380px", padding: "12px 14px", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ position: "relative" }}>
+      <div style={{ flex: 1, overflow: "auto", padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Input row */}
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flexShrink: 0 }}>
+          <div style={{ flex: 1, position: "relative" }}>
             <textarea
               value={input}
               onChange={(e) => { setInput(e.target.value); if (status !== "idle") reset(); }}
               placeholder="Collez ici une URL, un article, un discours, un tweet, ou tout texte à vérifier…"
               style={{
                 width: "100%",
-                height: 120,
+                height: 70,
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid var(--border)",
                 borderRadius: 4,
                 color: "var(--text-primary)",
                 fontSize: 12,
                 fontFamily: "inherit",
-                padding: "10px 12px",
+                padding: "8px 38px 8px 10px",
                 resize: "none",
                 outline: "none",
                 boxSizing: "border-box",
-                lineHeight: 1.6,
+                lineHeight: 1.5,
               }}
             />
             {input.trim() && (
               <span style={{
-                position: "absolute", top: 7, right: 8,
-                fontSize: 8, fontWeight: 800, padding: "1px 5px", borderRadius: 2,
+                position: "absolute", top: 6, right: 6,
+                fontSize: 7, fontWeight: 800, padding: "1px 4px", borderRadius: 2,
                 background: isUrl ? "rgba(99,102,241,0.15)" : "rgba(34,197,94,0.12)",
                 color: isUrl ? "#a5b4fc" : "#86efac",
                 pointerEvents: "none",
@@ -163,18 +163,16 @@ function AnalyserPanel() {
               </span>
             )}
           </div>
-
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
             <button
               onClick={analyse}
               disabled={!input.trim() || status === "loading"}
               style={{
-                flex: 1,
                 background: "var(--accent-blue)", color: "#fff", border: "none",
-                padding: "9px 0", borderRadius: 4, fontSize: 12, fontWeight: 700,
+                padding: "8px 14px", borderRadius: 4, fontSize: 11, fontWeight: 700,
                 cursor: (!input.trim() || status === "loading") ? "default" : "pointer",
                 fontFamily: "inherit", opacity: (!input.trim() || status === "loading") ? 0.5 : 1,
-                letterSpacing: "0.06em", textTransform: "uppercase",
+                letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
               }}
             >
               {status === "loading" ? "Analyse…" : "Analyser"}
@@ -184,55 +182,55 @@ function AnalyserPanel() {
               title="Importer un fichier"
               style={{
                 background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)",
-                color: "var(--text-secondary)", padding: "9px 12px", borderRadius: 4,
-                fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+                color: "var(--text-secondary)", padding: "6px 0", borderRadius: 4,
+                fontSize: 13, cursor: "pointer", fontFamily: "inherit", textAlign: "center",
               }}
             >📎</button>
-            <input ref={fileRef} type="file" accept=".txt,.md,.html,text/*" onChange={handleFile} style={{ display: "none" }} />
           </div>
+          <input ref={fileRef} type="file" accept=".txt,.md,.html,text/*" onChange={handleFile} style={{ display: "none" }} />
+        </div>
 
-          {status === "idle" && (
-            <div style={{ fontSize: 9, color: "var(--border)", lineHeight: 1.8, textAlign: "center", marginTop: 4 }}>
-              Article · URL · Discours · Post réseaux · Document<br />
-              <span style={{ color: "var(--text-secondary)", opacity: 0.5 }}>Taxonomie DISARM Framework</span>
+        {/* Status / results — fills remaining space */}
+        <div style={{ flex: 1, overflow: "auto" }}>
+          {status === "idle" && !input && (
+            <div style={{ fontSize: 9, color: "var(--border)", lineHeight: 2, textAlign: "center", paddingTop: 4 }}>
+              Article · URL · Discours · Post réseaux · Document
+              <br /><span style={{ color: "var(--text-secondary)", opacity: 0.5 }}>Taxonomie DISARM Framework</span>
             </div>
           )}
 
           {status === "loading" && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--text-secondary)", fontSize: 11 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--text-secondary)", fontSize: 11, paddingTop: 8 }}>
               <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid var(--border)", borderTopColor: "var(--accent-blue)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
               Analyse DISARM en cours…
             </div>
           )}
 
           {status === "error" && result?.error && (
-            <div style={{ fontSize: 11, color: "#ef4444", lineHeight: 1.5 }}>Erreur : {result.error}</div>
+            <div style={{ fontSize: 11, color: "#ef4444", lineHeight: 1.5, padding: "4px 0" }}>Erreur : {result.error}</div>
           )}
-        </div>
 
-        {/* Right: results */}
-        <div style={{ flex: 1, overflow: "auto", padding: "12px 16px" }}>
           {status === "done" && result && !result.error && (
             <>
               {/* Verdict */}
               <div style={{
-                display: "flex", alignItems: "center", gap: 14, marginBottom: 14, padding: "10px 14px",
+                display: "flex", alignItems: "center", gap: 10, marginBottom: 10, padding: "8px 12px",
                 background: verdictColor + "14", border: `1px solid ${verdictColor}40`, borderRadius: 5,
               }}>
-                <span style={{ fontSize: 28, flexShrink: 0 }}>{VERDICT_ICON[result.verdict_level ?? ""] ?? "🔎"}</span>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: verdictColor }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>{VERDICT_ICON[result.verdict_level ?? ""] ?? "🔎"}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: verdictColor }}>
                     {VERDICT_FR[result.verdict_level ?? ""] ?? result.verdict_level}
                   </div>
-                  <div style={{ fontSize: 10, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                  <div style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
                     Influence globale : {scoreLabel(result.overall_influence)}
                   </div>
                 </div>
+                <button onClick={reset} style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: 10, cursor: "pointer", padding: 0, fontFamily: "inherit", flexShrink: 0 }}>✕</button>
               </div>
 
               {/* Scores */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Scores de risque</div>
+              <div style={{ marginBottom: 10 }}>
                 <ScoreBar label="Propagande" value={result.propaganda_score} color="#ef4444" />
                 <ScoreBar label="Désinformation" value={result.misinfo_score} color="#f97316" />
                 <ScoreBar label="Complotisme" value={result.conspiracy_score} color="#a78bfa" />
@@ -240,7 +238,7 @@ function AnalyserPanel() {
 
               {/* Summary */}
               {result.summary && (
-                <div style={{ marginBottom: 14, fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6, borderLeft: "2px solid var(--border)", paddingLeft: 10 }}>
+                <div style={{ marginBottom: 10, fontSize: 10, color: "var(--text-secondary)", lineHeight: 1.5, borderLeft: "2px solid var(--border)", paddingLeft: 8 }}>
                   {result.summary}
                 </div>
               )}
@@ -248,23 +246,22 @@ function AnalyserPanel() {
               {/* Techniques */}
               {result.techniques && result.techniques.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
                     Techniques DISARM ({result.techniques.length})
                   </div>
                   {result.techniques.map((t, i) => (
-                    <div key={i} style={{ marginBottom: 6, padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: 3, border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                          {t.id && <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--text-secondary)", background: "rgba(255,255,255,0.06)", padding: "0 4px", borderRadius: 2 }}>{t.id}</span>}
-                          <span style={{ fontSize: 11, color: "var(--text-primary)", fontWeight: 600 }}>{t.name}</span>
-                          {t.tactic && <span style={{ fontSize: 9, color: "var(--text-secondary)", fontStyle: "italic" }}>{t.tactic}</span>}
+                    <div key={i} style={{ marginBottom: 5, padding: "6px 8px", background: "rgba(255,255,255,0.03)", borderRadius: 3, border: "1px solid rgba(255,255,255,0.05)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                        <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", minWidth: 0 }}>
+                          {t.id && <span style={{ fontSize: 8, fontFamily: "var(--font-mono)", color: "var(--text-secondary)", background: "rgba(255,255,255,0.06)", padding: "0 3px", borderRadius: 2, flexShrink: 0 }}>{t.id}</span>}
+                          <span style={{ fontSize: 10, color: "var(--text-primary)", fontWeight: 600 }}>{t.name}</span>
                         </div>
                         {t.confidence != null && (
-                          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "#6366f1", flexShrink: 0, marginLeft: 6 }}>{confLabel(t.confidence)}</span>
+                          <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "#6366f1", flexShrink: 0 }}>{confLabel(t.confidence)}</span>
                         )}
                       </div>
                       {t.excerpt && (
-                        <div style={{ fontSize: 9, color: "var(--text-secondary)", fontStyle: "italic", marginTop: 4, lineHeight: 1.4, borderLeft: "2px solid rgba(255,255,255,0.1)", paddingLeft: 8 }}>
+                        <div style={{ fontSize: 8, color: "var(--text-secondary)", fontStyle: "italic", marginTop: 3, lineHeight: 1.4, borderLeft: "2px solid rgba(255,255,255,0.1)", paddingLeft: 6 }}>
                           &ldquo;{t.excerpt}&rdquo;
                         </div>
                       )}
@@ -273,23 +270,6 @@ function AnalyserPanel() {
                 </div>
               )}
             </>
-          )}
-
-          {status === "idle" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, paddingTop: 4 }}>
-              {[
-                { icon: "📰", label: "Article", desc: "URL ou texte complet d'un article de presse" },
-                { icon: "🎙️", label: "Discours", desc: "Transcription d'un discours politique" },
-                { icon: "📱", label: "Post réseaux", desc: "Tweet, publication Facebook, contenu viral" },
-                { icon: "📄", label: "Document", desc: "PDF, rapport, note officielle" },
-              ].map(({ icon, label, desc }) => (
-                <div key={label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: 4, padding: 10, textAlign: "center" }}>
-                  <div style={{ fontSize: 18, marginBottom: 5 }}>{icon}</div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{label}</div>
-                  <div style={{ fontSize: 9, color: "var(--text-secondary)", lineHeight: 1.4 }}>{desc}</div>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       </div>
