@@ -6,7 +6,7 @@ const INFOVERIF_URL =
   process.env.INFOVERIF_BACKEND_URL ?? "https://infoveriforg-production.up.railway.app";
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const apiKey = process.env.INFOVERIF_API_KEY;
+  const apiKey = process.env.INFOVERIF_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json({ error: "INFOVERIF_API_KEY not configured" }, { status: 503 });
   }
@@ -53,10 +53,22 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      return NextResponse.json(
-        { error: `Infoverif error ${res.status}`, detail: errText },
-        { status: res.status }
-      );
+      // Try to extract a human-readable detail from FastAPI error body
+      let detail = errText;
+      try {
+        const parsed = JSON.parse(errText);
+        detail = parsed.detail ?? errText;
+      } catch { /* raw text */ }
+      // Surface user-friendly messages for common errors
+      let userError = "Analyse impossible pour ce contenu.";
+      if (res.status === 401 || res.status === 403) {
+        userError = "Erreur d'authentification avec le serveur d'analyse.";
+      } else if (res.status === 400) {
+        userError = `Contenu non analysable : ${typeof detail === "string" ? detail.replace(/^analyze-url failed:\s*/i, "").slice(0, 120) : "format non supporté."}`;
+      } else if (res.status >= 500) {
+        userError = "Le serveur d'analyse est temporairement indisponible.";
+      }
+      return NextResponse.json({ error: userError }, { status: 200 }); // return 200 so UI renders error nicely
     }
 
     const data = await res.json();
