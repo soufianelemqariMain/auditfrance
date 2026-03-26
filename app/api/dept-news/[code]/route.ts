@@ -40,11 +40,15 @@ function parseRSS(xml: string, sourceName: string): Article[] {
     const item = xml.slice(start + itemOpen.length, end);
     searchFrom = end + itemClose.length;
 
-    const title = extractTag(item, "title");
+    const rawTitle = extractTag(item, "title");
     const link = extractTag(item, "link") || extractTag(item, "guid");
     const pubDate = extractTag(item, "pubDate");
+    // <source> tag inside item holds the actual outlet (Google News, etc.)
+    const itemSource = extractTag(item, "source") || sourceName;
+    // Strip " - Outlet Name" suffix that Google News appends to titles
+    const title = rawTitle.replace(/ - [^-]{2,40}$/, "").trim();
     if (title && link) {
-      items.push({ title, url: link, source: sourceName, publishedAt: pubDate });
+      items.push({ title, url: link, source: itemSource, publishedAt: pubDate });
     }
   }
   return items;

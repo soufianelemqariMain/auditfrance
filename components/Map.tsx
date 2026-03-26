@@ -78,60 +78,44 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
       mapRef.current = map;
 
       map!.on("load", () => {
-        // Localize all basemap labels to French
         map!.getStyle().layers.forEach((layer: { id: string; type: string; layout?: Record<string, unknown> }) => {
           if (layer.type === "symbol" && layer.layout?.["text-field"] !== undefined) {
             map!.setLayoutProperty(layer.id, "text-field", [
-              "coalesce",
-              ["get", "name:fr"],
-              ["get", "name"],
+              "coalesce", ["get", "name:fr"], ["get", "name"],
             ]);
           }
         });
 
-        // Inject pulse keyframe CSS once
-        injectPulseCSS();
+        injectOverlayCSS();
+
+        // Add SVG shooting-star overlay + toast container
+        const wrapper = mapContainer.current!.parentElement!;
+        addOverlays(wrapper);
 
         loadLayers(map!, maplibregl);
 
-        // Start news radar after a short delay (let map settle)
         setTimeout(() => {
-          radarInterval = startNewsRadar(map!, maplibregl, (code, nom) => {
+          radarInterval = startNewsRadar(map!, maplibregl, wrapper, (code, nom) => {
             if (onDeptClickRef.current) onDeptClickRef.current(code, nom);
           });
         }, 3000);
       });
 
-      // Cursor on department hover
-      map!.on("mouseenter", "departments-fill", () => {
-        map!.getCanvas().style.cursor = "pointer";
-      });
-      map!.on("mouseleave", "departments-fill", () => {
-        map!.getCanvas().style.cursor = "";
-      });
+      map!.on("mouseenter", "departments-fill", () => { map!.getCanvas().style.cursor = "pointer"; });
+      map!.on("mouseleave", "departments-fill", () => { map!.getCanvas().style.cursor = ""; });
+      map!.on("mouseenter", "cities-dot", () => { map!.getCanvas().style.cursor = "pointer"; });
+      map!.on("mouseleave", "cities-dot", () => { map!.getCanvas().style.cursor = ""; });
 
-      // Cursor on city hover
-      map!.on("mouseenter", "cities-dot", () => {
-        map!.getCanvas().style.cursor = "pointer";
-      });
-      map!.on("mouseleave", "cities-dot", () => {
-        map!.getCanvas().style.cursor = "";
-      });
-
-      // City click → commune panel
       map!.on("click", "cities-dot", (e: { features?: Array<{properties: {code: string, name: string}}>, point: {x: number, y: number} }) => {
         if (!e.features?.length) return;
         const { code, name } = e.features[0].properties;
-        if (onCommuneClickRef.current && code) {
-          onCommuneClickRef.current(code, name);
-        }
+        if (onCommuneClickRef.current && code) onCommuneClickRef.current(code, name);
       });
 
-      // Department click (fires after city handler)
       map!.on("click", (e: { point: {x: number, y: number} }) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cityFeatures = map!.queryRenderedFeatures(e.point, { layers: ["cities-dot"] });
-        if (cityFeatures?.length) return; // handled by city click
+        if (cityFeatures?.length) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const deptFeatures = map!.queryRenderedFeatures(e.point, { layers: ["departments-fill"] });
         if (deptFeatures?.length) {
@@ -155,7 +139,6 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update 3D pitch
   useEffect(() => {
     if (!mapRef.current) return;
     (mapRef.current as { setPitch: (v: number) => void }).setPitch(is3D ? 45 : 0);
@@ -168,56 +151,178 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
   );
 }
 
-/** Inject pulse keyframe CSS once into document head */
-function injectPulseCSS() {
-  if (document.getElementById("news-pulse-style")) return;
+function addOverlays(wrapper: HTMLElement) {
+  if (wrapper.querySelector(".star-svg")) return;
+
+  // SVG overlay for shooting stars (pointer-events: none so map stays clickable)
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "star-svg");
+  svg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;";
+  wrapper.appendChild(svg);
+
+  // Toast container — bottom left
+  const toastWrap = document.createElement("div");
+  toastWrap.className = "news-toast-wrap";
+  toastWrap.style.cssText =
+    "position:absolute;bottom:20px;left:14px;display:flex;flex-direction:column;gap:5px;z-index:20;pointer-events:none;max-width:260px;";
+  wrapper.appendChild(toastWrap);
+}
+
+function injectOverlayCSS() {
+  if (document.getElementById("map-overlay-style")) return;
   const style = document.createElement("style");
-  style.id = "news-pulse-style";
+  style.id = "map-overlay-style";
   style.textContent = `
-    @keyframes news-pulse-ring {
+    @keyframes pulse-ring {
       0%   { transform: scale(1);   opacity: 0.9; }
       70%  { transform: scale(3.5); opacity: 0.3; }
       100% { transform: scale(5);   opacity: 0;   }
     }
-    @keyframes news-pulse-dot {
+    @keyframes pulse-dot-fade {
       0%   { opacity: 1; }
       80%  { opacity: 1; }
       100% { opacity: 0; }
     }
-    .news-pulse-container {
-      position: relative;
-      width: 12px;
-      height: 12px;
-      cursor: pointer;
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0);   }
+    }
+    @keyframes toast-out {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+    .news-pulse-wrap {
+      position: relative; width: 12px; height: 12px; cursor: pointer;
     }
     .news-pulse-dot {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background: #ef4444;
-      animation: news-pulse-dot 4s ease-out forwards;
-      box-shadow: 0 0 6px #ef4444;
+      position: absolute; inset: 0; border-radius: 50%;
+      background: #00d4ff;
+      box-shadow: 0 0 8px #00d4ff88;
+      animation: pulse-dot-fade 5s ease-out forwards;
     }
     .news-pulse-ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 2px solid #ef4444;
-      animation: news-pulse-ring 1.8s ease-out infinite;
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 1.5px solid #00d4ff;
+      animation: pulse-ring 1.8s ease-out infinite;
     }
-    .news-pulse-ring.delay {
+    .news-pulse-ring.d {
       animation-delay: 0.9s;
+    }
+    .news-toast {
+      background: rgba(8,12,24,0.88);
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 3px;
+      padding: 5px 8px;
+      animation: toast-in 0.2s ease-out forwards;
+      backdrop-filter: blur(4px);
+    }
+    .news-toast.out {
+      animation: toast-out 0.3s ease-in forwards;
+    }
+    .toast-src {
+      font-size: 8px;
+      color: #00d4ff;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 2px;
+      font-family: var(--font-mono, monospace);
+    }
+    .toast-title {
+      font-size: 9.5px;
+      color: #e5e7eb;
+      line-height: 1.4;
+      display: block;
+      font-family: inherit;
     }
   `;
   document.head.appendChild(style);
 }
 
-/** Poll news for random departments every 60s, show pulse markers for fresh articles */
+function showToast(wrapper: HTMLElement, source: string, title: string) {
+  const toastWrap = wrapper.querySelector(".news-toast-wrap");
+  if (!toastWrap) return;
+
+  // Limit to 3 visible toasts — remove oldest
+  const existing = toastWrap.querySelectorAll(".news-toast");
+  if (existing.length >= 3) existing[0].remove();
+
+  const toast = document.createElement("div");
+  toast.className = "news-toast";
+  toast.innerHTML = `<span class="toast-src">${source}</span><span class="toast-title">${title.slice(0, 90)}${title.length > 90 ? "…" : ""}</span>`;
+  toastWrap.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("out");
+    setTimeout(() => toast.remove(), 350);
+  }, 6000);
+}
+
+function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number }) {
+  const svg = wrapper.querySelector(".star-svg") as SVGSVGElement | null;
+  if (!svg) return;
+
+  const w = wrapper.clientWidth;
+  const h = wrapper.clientHeight;
+
+  // Random start point on a map edge
+  const side = Math.floor(Math.random() * 4);
+  let x0: number, y0: number;
+  if (side === 0) { x0 = Math.random() * w; y0 = -10; }
+  else if (side === 1) { x0 = w + 10; y0 = Math.random() * h; }
+  else if (side === 2) { x0 = Math.random() * w; y0 = h + 10; }
+  else { x0 = -10; y0 = Math.random() * h; }
+
+  const dx = targetPx.x - x0;
+  const dy = targetPx.y - y0;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", String(x0));
+  line.setAttribute("y1", String(y0));
+  line.setAttribute("x2", String(targetPx.x));
+  line.setAttribute("y2", String(targetPx.y));
+  line.setAttribute("stroke", "#00d4ff");
+  line.setAttribute("stroke-width", "1.2");
+  line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("stroke-dasharray", String(length));
+  line.setAttribute("stroke-dashoffset", String(length));
+  line.style.opacity = "0.85";
+  svg.appendChild(line);
+
+  const DRAW = 500;   // ms to draw the line
+  const HOLD = 150;   // ms to hold
+  const FADE = 350;   // ms to fade out
+
+  let t0: number | null = null;
+  function tick(ts: number) {
+    if (!t0) t0 = ts;
+    const el = ts - t0;
+    if (el < DRAW) {
+      const p = 1 - Math.pow(1 - el / DRAW, 3);
+      line.setAttribute("stroke-dashoffset", String(length * (1 - p)));
+      requestAnimationFrame(tick);
+    } else if (el < DRAW + HOLD) {
+      line.setAttribute("stroke-dashoffset", "0");
+      requestAnimationFrame(tick);
+    } else if (el < DRAW + HOLD + FADE) {
+      const fp = (el - DRAW - HOLD) / FADE;
+      line.style.opacity = String(0.85 * (1 - fp));
+      requestAnimationFrame(tick);
+    } else {
+      svg.removeChild(line);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
 function startNewsRadar(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   map: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   maplibregl: any,
+  wrapper: HTMLElement,
   onDeptClick: (code: string, nom: string) => void,
 ): ReturnType<typeof setInterval> {
   const seenTitles = new Set<string>();
@@ -225,39 +330,42 @@ function startNewsRadar(
   const activeMarkers: any[] = [];
 
   async function poll() {
-    // Pick 8 random departments each cycle
     const shuffled = [...ALL_DEPT_CODES].sort(() => Math.random() - 0.5).slice(0, 8);
-
     for (const code of shuffled) {
       const centroid = DEPT_CENTROIDS[code];
       if (!centroid) continue;
-
       try {
-        const res = await fetch(`/api/dept-news/${code}?bust=${Date.now()}`, {
-          cache: "no-store",
-        });
+        const res = await fetch(`/api/dept-news/${code}?bust=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) continue;
         const data = await res.json();
-        const articles: Array<{ title: string; url: string; source: string }> = data.articles ?? [];
+        const articles: Array<{ title: string; source: string }> = data.articles ?? [];
+        const fresh = articles.filter((a) => a.title && !seenTitles.has(a.title));
+        if (!fresh.length) continue;
+        fresh.forEach((a) => seenTitles.add(a.title));
 
-        const newArticles = articles.filter((a) => a.title && !seenTitles.has(a.title));
-        if (newArticles.length === 0) continue;
+        const first = fresh[0];
+        const source = first.source && first.source !== "Google Actualités" ? first.source : (data.source ?? "Presse locale");
 
-        // Mark as seen
-        newArticles.forEach((a) => seenTitles.add(a.title));
+        // Pixel position of centroid (for SVG overlay)
+        const px: { x: number; y: number } = map.project(centroid);
 
-        // Fire a pulse marker at centroid
-        firePulse(map, maplibregl, centroid, code, data.source ?? "Presse locale", onDeptClick, activeMarkers);
+        // 1) Shooting star
+        fireShootingStar(wrapper, px);
+
+        // 2) Pulse marker (fires after star arrives)
+        setTimeout(() => {
+          firePulse(map, maplibregl, centroid, code, onDeptClick, activeMarkers);
+          // 3) Toast
+          showToast(wrapper, source, first.title);
+        }, 550);
+
       } catch {
-        // silent — radar continues
+        // silent
       }
     }
   }
 
-  // First poll after 5s
-  setTimeout(poll, 5000);
-
-  // Then every 90s
+  setTimeout(poll, 4000);
   const interval = setInterval(poll, 90_000);
   return interval;
 }
@@ -269,175 +377,102 @@ function firePulse(
   maplibregl: any,
   lnglat: [number, number],
   deptCode: string,
-  sourceName: string,
   onDeptClick: (code: string, nom: string) => void,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   activeMarkers: any[],
 ) {
   const el = document.createElement("div");
-  el.className = "news-pulse-container";
-  el.title = `${sourceName} · ${deptCode}`;
+  el.className = "news-pulse-wrap";
 
   const dot = document.createElement("div");
   dot.className = "news-pulse-dot";
   el.appendChild(dot);
 
-  const ring1 = document.createElement("div");
-  ring1.className = "news-pulse-ring";
-  el.appendChild(ring1);
+  const r1 = document.createElement("div");
+  r1.className = "news-pulse-ring";
+  el.appendChild(r1);
 
-  const ring2 = document.createElement("div");
-  ring2.className = "news-pulse-ring delay";
-  el.appendChild(ring2);
+  const r2 = document.createElement("div");
+  r2.className = "news-pulse-ring d";
+  el.appendChild(r2);
 
-  el.addEventListener("click", () => {
-    onDeptClick(deptCode, deptCode);
-  });
+  el.addEventListener("click", () => onDeptClick(deptCode, deptCode));
 
   const marker = new maplibregl.Marker({ element: el, anchor: "center" })
     .setLngLat(lnglat)
     .addTo(map);
 
   activeMarkers.push(marker);
-
-  // Auto-remove after animation completes (8s)
   setTimeout(() => {
     marker.remove();
-    const idx = activeMarkers.indexOf(marker);
-    if (idx !== -1) activeMarkers.splice(idx, 1);
+    const i = activeMarkers.indexOf(marker);
+    if (i !== -1) activeMarkers.splice(i, 1);
   }, 8000);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function loadLayers(map: any, _maplibregl: any) {
-  // French departments — clickable fill + border
   fetch("/data/departments.geojson")
     .then((r) => r.json())
     .then((data) => {
       if (!map.getSource("departments")) {
         map.addSource("departments", { type: "geojson", data });
-
-        map.addLayer({
-          id: "departments-fill",
-          type: "fill",
-          source: "departments",
-          paint: {
-            "fill-color": "#0055A4",
-            "fill-opacity": 0.06,
-          },
-        });
-
-        map.addLayer({
-          id: "departments-line",
-          type: "line",
-          source: "departments",
-          paint: {
-            "line-color": "#0055A4",
-            "line-width": 0.8,
-            "line-opacity": 0.5,
-          },
-        });
+        map.addLayer({ id: "departments-fill", type: "fill", source: "departments", paint: { "fill-color": "#0055A4", "fill-opacity": 0.06 } });
+        map.addLayer({ id: "departments-line", type: "line", source: "departments", paint: { "line-color": "#0055A4", "line-width": 0.8, "line-opacity": 0.5 } });
       }
-    })
-    .catch(() => {});
+    }).catch(() => {});
 
-  // Major French cities
-  const CITIES_GEOJSON = {
+  const CITIES: { name: string; code: string; pop: number; lon: number; lat: number }[] = [
+    { name: "Paris",          code: "75056", pop: 2161000, lon: 2.3522,  lat: 48.8566 },
+    { name: "Marseille",      code: "13055", pop: 861635,  lon: 5.3698,  lat: 43.2965 },
+    { name: "Lyon",           code: "69123", pop: 522250,  lon: 4.8357,  lat: 45.7640 },
+    { name: "Toulouse",       code: "31555", pop: 479553,  lon: 1.4442,  lat: 43.6047 },
+    { name: "Nice",           code: "06088", pop: 342669,  lon: 7.2620,  lat: 43.7102 },
+    { name: "Nantes",         code: "44109", pop: 314138,  lon: -1.5534, lat: 47.2184 },
+    { name: "Montpellier",    code: "34172", pop: 295542,  lon: 3.8767,  lat: 43.6108 },
+    { name: "Strasbourg",     code: "67482", pop: 284677,  lon: 7.7521,  lat: 48.5734 },
+    { name: "Bordeaux",       code: "33063", pop: 257804,  lon: -0.5792, lat: 44.8378 },
+    { name: "Lille",          code: "59350", pop: 232741,  lon: 3.0573,  lat: 50.6292 },
+    { name: "Rennes",         code: "35238", pop: 216268,  lon: -1.6778, lat: 48.1173 },
+    { name: "Reims",          code: "51454", pop: 183522,  lon: 4.0317,  lat: 49.2583 },
+    { name: "Le Havre",       code: "76351", pop: 172074,  lon: 0.1079,  lat: 49.4944 },
+    { name: "Toulon",         code: "83137", pop: 176198,  lon: 5.9281,  lat: 43.1258 },
+    { name: "Saint-Étienne",  code: "42218", pop: 171961,  lon: 4.3872,  lat: 45.4397 },
+    { name: "Grenoble",       code: "38185", pop: 158198,  lon: 5.7245,  lat: 45.1885 },
+    { name: "Dijon",          code: "21231", pop: 157431,  lon: 5.0415,  lat: 47.3220 },
+    { name: "Angers",         code: "49007", pop: 155840,  lon: -0.5518, lat: 47.4784 },
+    { name: "Nîmes",          code: "30189", pop: 148889,  lon: 4.3601,  lat: 43.8367 },
+    { name: "Clermont-Fd",    code: "63113", pop: 143886,  lon: 3.0863,  lat: 45.7772 },
+    { name: "Brest",          code: "29019", pop: 140064,  lon: -4.4860, lat: 48.3904 },
+  ];
+
+  const geojson = {
     type: "FeatureCollection" as const,
-    features: [
-      { type: "Feature" as const, properties: { name: "Paris",          code: "75056", pop: 2161000 }, geometry: { type: "Point" as const, coordinates: [2.3522,   48.8566] } },
-      { type: "Feature" as const, properties: { name: "Marseille",      code: "13055", pop: 861635  }, geometry: { type: "Point" as const, coordinates: [5.3698,   43.2965] } },
-      { type: "Feature" as const, properties: { name: "Lyon",           code: "69123", pop: 522250  }, geometry: { type: "Point" as const, coordinates: [4.8357,   45.7640] } },
-      { type: "Feature" as const, properties: { name: "Toulouse",       code: "31555", pop: 479553  }, geometry: { type: "Point" as const, coordinates: [1.4442,   43.6047] } },
-      { type: "Feature" as const, properties: { name: "Nice",           code: "06088", pop: 342669  }, geometry: { type: "Point" as const, coordinates: [7.2620,   43.7102] } },
-      { type: "Feature" as const, properties: { name: "Nantes",         code: "44109", pop: 314138  }, geometry: { type: "Point" as const, coordinates: [-1.5534,  47.2184] } },
-      { type: "Feature" as const, properties: { name: "Montpellier",    code: "34172", pop: 295542  }, geometry: { type: "Point" as const, coordinates: [3.8767,   43.6108] } },
-      { type: "Feature" as const, properties: { name: "Strasbourg",     code: "67482", pop: 284677  }, geometry: { type: "Point" as const, coordinates: [7.7521,   48.5734] } },
-      { type: "Feature" as const, properties: { name: "Bordeaux",       code: "33063", pop: 257804  }, geometry: { type: "Point" as const, coordinates: [-0.5792,  44.8378] } },
-      { type: "Feature" as const, properties: { name: "Lille",          code: "59350", pop: 232741  }, geometry: { type: "Point" as const, coordinates: [3.0573,   50.6292] } },
-      { type: "Feature" as const, properties: { name: "Rennes",         code: "35238", pop: 216268  }, geometry: { type: "Point" as const, coordinates: [-1.6778,  48.1173] } },
-      { type: "Feature" as const, properties: { name: "Reims",          code: "51454", pop: 183522  }, geometry: { type: "Point" as const, coordinates: [4.0317,   49.2583] } },
-      { type: "Feature" as const, properties: { name: "Le Havre",       code: "76351", pop: 172074  }, geometry: { type: "Point" as const, coordinates: [0.1079,   49.4944] } },
-      { type: "Feature" as const, properties: { name: "Toulon",         code: "83137", pop: 176198  }, geometry: { type: "Point" as const, coordinates: [5.9281,   43.1258] } },
-      { type: "Feature" as const, properties: { name: "Saint-Étienne",  code: "42218", pop: 171961  }, geometry: { type: "Point" as const, coordinates: [4.3872,   45.4397] } },
-      { type: "Feature" as const, properties: { name: "Grenoble",       code: "38185", pop: 158198  }, geometry: { type: "Point" as const, coordinates: [5.7245,   45.1885] } },
-      { type: "Feature" as const, properties: { name: "Dijon",          code: "21231", pop: 157431  }, geometry: { type: "Point" as const, coordinates: [5.0415,   47.3220] } },
-      { type: "Feature" as const, properties: { name: "Angers",         code: "49007", pop: 155840  }, geometry: { type: "Point" as const, coordinates: [-0.5518,  47.4784] } },
-      { type: "Feature" as const, properties: { name: "Nîmes",          code: "30189", pop: 148889  }, geometry: { type: "Point" as const, coordinates: [4.3601,   43.8367] } },
-      { type: "Feature" as const, properties: { name: "Aix-en-Provence",code: "13001", pop: 143097  }, geometry: { type: "Point" as const, coordinates: [5.4474,   43.5297] } },
-      { type: "Feature" as const, properties: { name: "Le Mans",        code: "72181", pop: 143599  }, geometry: { type: "Point" as const, coordinates: [0.1966,   48.0061] } },
-      { type: "Feature" as const, properties: { name: "Clermont-Fd",    code: "63113", pop: 143886  }, geometry: { type: "Point" as const, coordinates: [3.0863,   45.7772] } },
-      { type: "Feature" as const, properties: { name: "Brest",          code: "29019", pop: 140064  }, geometry: { type: "Point" as const, coordinates: [-4.4860,  48.3904] } },
-    ],
+    features: CITIES.map((c) => ({
+      type: "Feature" as const,
+      properties: { name: c.name, code: c.code, pop: c.pop },
+      geometry: { type: "Point" as const, coordinates: [c.lon, c.lat] },
+    })),
   };
 
   if (!map.getSource("cities")) {
-    map.addSource("cities", { type: "geojson", data: CITIES_GEOJSON });
-
+    map.addSource("cities", { type: "geojson", data: geojson });
     map.addLayer({
-      id: "cities-dot",
-      type: "circle",
-      source: "cities",
+      id: "cities-dot", type: "circle", source: "cities",
       paint: {
-        "circle-radius": [
-          "interpolate", ["linear"], ["get", "pop"],
-          100000, 3,
-          500000, 5,
-          2000000, 8,
-        ],
-        "circle-color": "#EF4135",
-        "circle-opacity": 0.85,
-        "circle-stroke-color": "#F5F5F5",
-        "circle-stroke-width": 1,
+        "circle-radius": ["interpolate", ["linear"], ["get", "pop"], 100000, 3, 500000, 5, 2000000, 8],
+        "circle-color": "#EF4135", "circle-opacity": 0.85,
+        "circle-stroke-color": "#F5F5F5", "circle-stroke-width": 1,
       },
     });
-
     map.addLayer({
-      id: "cities-label",
-      type: "symbol",
-      source: "cities",
+      id: "cities-label", type: "symbol", source: "cities",
       layout: {
         "text-field": ["get", "name"],
         "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
+        "text-size": 10, "text-offset": [0, 1.2], "text-anchor": "top",
       },
-      paint: {
-        "text-color": "#F5F5F5",
-        "text-halo-color": "#0c1c2e",
-        "text-halo-width": 1,
-      },
+      paint: { "text-color": "#F5F5F5", "text-halo-color": "#0c1c2e", "text-halo-width": 1 },
     });
   }
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function applyHeatmap(map: any) {
-  try {
-    const res = await fetch("/api/dept-stats");
-    if (!res.ok) return;
-    const json = await res.json();
-    const depts: Array<{ code: string; norm: number }> = json.depts ?? [];
-    if (!depts.length || !map.getLayer("departments-fill")) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const matchExpr: any[] = ["match", ["get", "code"]];
-    for (const dept of depts) {
-      const t = dept.norm;
-      const r = Math.round(12 + t * (239 - 12));
-      const g = Math.round(28 + t * (65 - 28));
-      const b = Math.round(46 + t * (53 - 46));
-      matchExpr.push(dept.code, `rgb(${r},${g},${b})`);
-    }
-    matchExpr.push("#0c1c2e");
-
-    map.setPaintProperty("departments-fill", "fill-color", matchExpr);
-    map.setPaintProperty("departments-fill", "fill-opacity", 0.65);
-  } catch {
-    // silently ignore
-  }
-}
-
-// Export for potential future use from Navbar
-export { applyHeatmap };
