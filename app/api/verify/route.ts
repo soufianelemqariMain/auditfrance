@@ -60,11 +60,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         detail = parsed.detail ?? errText;
       } catch { /* raw text */ }
       // Surface user-friendly messages for common errors
+      const detailStr = typeof detail === "string" ? detail : "";
       let userError = "Analyse impossible pour ce contenu.";
       if (res.status === 401 || res.status === 403) {
         userError = "Erreur d'authentification avec le serveur d'analyse.";
+      } else if (res.status === 400 && /yt-dlp|audio|video download/i.test(detailStr)) {
+        userError = "Vidéo non téléchargeable. Collez directement la transcription ou le texte du discours dans l'Analyser.";
       } else if (res.status === 400) {
-        userError = `Contenu non analysable : ${typeof detail === "string" ? detail.replace(/^analyze-url failed:\s*/i, "").slice(0, 120) : "format non supporté."}`;
+        userError = `Contenu non analysable : ${detailStr.replace(/^analyze-url failed:\s*/i, "").slice(0, 120) || "format non supporté."}`;
       } else if (res.status >= 500) {
         userError = "Le serveur d'analyse est temporairement indisponible.";
       }
