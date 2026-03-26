@@ -60,6 +60,56 @@ function ScoreBar({ label, value, color }: { label: string; value?: number; colo
   );
 }
 
+interface RecentAnalysis {
+  verdict_level?: string;
+  overall_influence?: number;
+  propaganda_score?: number;
+  source_type?: string;
+  created_at?: string;
+  technique_count?: number;
+}
+
+function RecentFeed() {
+  const [items, setItems] = useState<RecentAnalysis[]>([]);
+  useEffect(() => {
+    fetch("/api/recent-analyses?limit=5")
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d.analyses)) setItems(d.analyses); })
+      .catch(() => {});
+  }, []);
+  if (!items.length) return null;
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 8, color: "var(--border)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Dernières analyses</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {items.map((a, i) => {
+          const color = VERDICT_COLOR[a.verdict_level ?? ""] ?? "#6b7280";
+          const label = VERDICT_FR[a.verdict_level ?? ""] ?? (a.verdict_level ?? "?");
+          const icon = VERDICT_ICON[a.verdict_level ?? ""] ?? "🔎";
+          const ago = a.created_at
+            ? (() => {
+                const diff = Date.now() - new Date(a.created_at).getTime();
+                const m = Math.floor(diff / 60000);
+                return m < 60 ? `il y a ${m}m` : `il y a ${Math.floor(m / 60)}h`;
+              })()
+            : "";
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 6px", background: "rgba(255,255,255,0.03)", borderRadius: 3, border: `1px solid ${color}30` }}>
+              <span style={{ fontSize: 11 }}>{icon}</span>
+              <span style={{ flex: 1, fontSize: 9, color, fontWeight: 700 }}>{label}</span>
+              <span style={{ fontSize: 8, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                {a.propaganda_score != null ? `P:${Math.round(a.propaganda_score)}` : ""}
+                {a.technique_count ? ` · ${a.technique_count} tech.` : ""}
+              </span>
+              <span style={{ fontSize: 8, color: "var(--border)" }}>{ago}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function AnalyserPanel() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -196,9 +246,12 @@ function AnalyserPanel() {
         {/* Status / results — fills remaining space */}
         <div style={{ flex: 1, overflow: "auto" }}>
           {status === "idle" && !input && (
-            <div style={{ fontSize: 9, color: "var(--border)", lineHeight: 2, textAlign: "center", paddingTop: 4 }}>
-              Article · URL · Discours · Post réseaux · Document
-              <br /><span style={{ color: "var(--text-secondary)", opacity: 0.5 }}>Taxonomie DISARM Framework</span>
+            <div style={{ paddingTop: 4 }}>
+              <div style={{ fontSize: 9, color: "var(--border)", lineHeight: 2, textAlign: "center" }}>
+                Article · URL · Discours · Post réseaux · Document
+                <br /><span style={{ color: "var(--text-secondary)", opacity: 0.5 }}>Taxonomie DISARM Framework</span>
+              </div>
+              <RecentFeed />
             </div>
           )}
 
