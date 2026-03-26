@@ -29,8 +29,26 @@ function decodeGoogleNewsUrl(googleUrl: string): string {
 export const runtime = "nodejs";
 
 /**
+ * Follow the Google News redirect using an RSS-reader User-Agent.
+ * Google serves a 302 → real article URL for RSS reader clients.
+ * Returns the resolved URL, or the original if resolution fails.
+ */
+async function resolveGoogleNewsRedirect(url: string): Promise<string> {
+  if (!url.includes("news.google.com")) return url;
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; RSS reader/1.0)" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.url && !res.url.includes("news.google.com")) return res.url;
+  } catch { /* ignore */ }
+  return url;
+}
+
+/**
  * Publisher domain → RSS feed URL for major French outlets.
- * Used to reverse-lookup article URLs from Google News items via title matching.
+ * Fallback: reverse-lookup article URLs from Google News items via title matching.
  */
 const PUBLISHER_RSS: Record<string, string> = {
   "lemonde.fr":        "https://www.lemonde.fr/rss/une.xml",
@@ -174,12 +192,21 @@ export async function GET(
       const rawArticles = parseRSS(xml, outlet.name);
       if (rawArticles.length === 0) continue;
 
-      // Step 1: proto-decode (works for old-format Google News URLs)
+      // Step 1: proto-decode (instant, no network — works for old-format URLs)
       const decoded = rawArticles.map((a) => ({ ...a, url: decodeGoogleNewsUrl(a.url) }));
 
-      // Step 2: for articles still on news.google.com, try publisher RSS lookup
-      const resolved = await Promise.all(
+      // Step 2: RSS-reader redirect follow — Google returns 302 → real URL for this UA
+      const redirectResolved = await Promise.all(
         decoded.map(async (a) => {
+          if (!a.url.includes("news.google.com")) return a;
+          const realUrl = await resolveGoogleNewsRedirect(a.url);
+          return { ...a, url: realUrl };
+        })
+      );
+
+      // Step 3: for any still on news.google.com, fall back to publisher RSS lookup
+      const resolved = await Promise.all(
+        redirectResolved.map(async (a) => {
           if (!a.url.includes("news.google.com") || !a._publisherUrl) return a;
           const realUrl = await resolveViaPublisherRss(a._publisherUrl, a.title);
           return realUrl ? { ...a, url: realUrl } : a;
