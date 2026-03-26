@@ -11,6 +11,7 @@ import CommunePanel from "@/components/CommunePanel";
 import SondagesPanel from "@/components/SondagesPanel";
 import TransparencePanel from "@/components/TransparencePanel";
 import DiscoursPanel from "@/components/DiscoursPanel";
+import NewsTickerPanel from "@/components/NewsTickerPanel";
 import { useAppStore } from "@/lib/store";
 
 // MapLibre requires browser APIs — load client-side only
@@ -24,6 +25,19 @@ interface Technique {
   confidence?: number;
   excerpt?: string;
 }
+interface NarrativeSchema {
+  hero?: string;
+  villain?: string;
+  victim?: string;
+  quest?: string;
+  summary?: string;
+}
+interface RhetoricAnalysis {
+  ethos?: string;
+  logos?: string;
+  pathos?: string;
+  dominant_device?: string;
+}
 interface VerifResult {
   propaganda_score?: number;
   conspiracy_score?: number;
@@ -33,6 +47,12 @@ interface VerifResult {
   techniques?: Technique[];
   summary?: string;
   error?: string;
+  // Enriched narrative/rhetoric analysis
+  narrative_schema?: NarrativeSchema;
+  rhetoric_analysis?: RhetoricAnalysis;
+  communication_intent?: string;
+  audience_vectors?: string[];
+  framing_analysis?: string;
 }
 const VERDICT_COLOR: Record<string, string> = {
   low: "#22c55e", medium: "#eab308", high: "#f97316", critical: "#ef4444",
@@ -251,7 +271,7 @@ function AnalyserPanel() {
 
               {/* Techniques */}
               {result.techniques && result.techniques.length > 0 && (
-                <div>
+                <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
                     Techniques DISARM ({result.techniques.length})
                   </div>
@@ -273,6 +293,101 @@ function AnalyserPanel() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Narrative Schema */}
+              {result.narrative_schema && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                    Schéma Narratif
+                  </div>
+                  <div style={{ padding: "8px 10px", background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.15)", borderRadius: 3 }}>
+                    {result.narrative_schema.summary && (
+                      <div style={{ fontSize: 10, color: "var(--text-primary)", lineHeight: 1.5, marginBottom: 8 }}>
+                        {result.narrative_schema.summary}
+                      </div>
+                    )}
+                    {[
+                      { key: "hero", label: "Héros", color: "#22c55e" },
+                      { key: "villain", label: "Antagoniste", color: "#ef4444" },
+                      { key: "victim", label: "Victime", color: "#f97316" },
+                      { key: "quest", label: "Enjeu", color: "#a78bfa" },
+                    ].map(({ key, label, color }) => {
+                      const val = result.narrative_schema?.[key as keyof NarrativeSchema];
+                      if (!val || key === "summary") return null;
+                      return (
+                        <div key={key} style={{ display: "flex", gap: 6, marginBottom: 4, fontSize: 9, lineHeight: 1.4 }}>
+                          <span style={{ color, fontWeight: 700, flexShrink: 0, minWidth: 62 }}>{label}</span>
+                          <span style={{ color: "var(--text-secondary)" }}>{val}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Rhetoric Analysis */}
+              {result.rhetoric_analysis && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                    Analyse Rhétorique
+                  </div>
+                  <div style={{ padding: "8px 10px", background: "rgba(56,189,248,0.05)", border: "1px solid rgba(56,189,248,0.15)", borderRadius: 3 }}>
+                    {result.rhetoric_analysis.dominant_device && (
+                      <div style={{ fontSize: 10, color: "#38bdf8", fontWeight: 700, marginBottom: 6 }}>
+                        Procédé dominant : {result.rhetoric_analysis.dominant_device}
+                      </div>
+                    )}
+                    {[
+                      { key: "ethos", label: "Éthos (crédibilité)" },
+                      { key: "logos", label: "Logos (logique)" },
+                      { key: "pathos", label: "Pathos (émotion)" },
+                    ].map(({ key, label }) => {
+                      const val = result.rhetoric_analysis?.[key as keyof RhetoricAnalysis];
+                      if (!val || key === "dominant_device") return null;
+                      return (
+                        <div key={key} style={{ marginBottom: 5, fontSize: 9 }}>
+                          <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>{label} — </span>
+                          <span style={{ color: "var(--text-primary)" }}>{val}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Communication Intent + Framing */}
+              {(result.communication_intent || result.framing_analysis || (result.audience_vectors && result.audience_vectors.length > 0)) && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                    Analyse Communication
+                  </div>
+                  <div style={{ padding: "8px 10px", background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.15)", borderRadius: 3, display: "flex", flexDirection: "column", gap: 6 }}>
+                    {result.communication_intent && (
+                      <div style={{ fontSize: 10, color: "var(--text-primary)", lineHeight: 1.5 }}>
+                        <span style={{ color: "#fbbf24", fontWeight: 700, fontSize: 9 }}>Intention — </span>
+                        {result.communication_intent}
+                      </div>
+                    )}
+                    {result.framing_analysis && (
+                      <div style={{ fontSize: 9, color: "var(--text-secondary)", lineHeight: 1.5, borderLeft: "2px solid rgba(251,191,36,0.3)", paddingLeft: 6 }}>
+                        {result.framing_analysis}
+                      </div>
+                    )}
+                    {result.audience_vectors && result.audience_vectors.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 8, color: "#fbbf24", fontWeight: 700, marginBottom: 3 }}>VECTEURS D&apos;AUDIENCE</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {result.audience_vectors.map((v, i) => (
+                            <span key={i} style={{ fontSize: 8, padding: "1px 6px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 2, color: "#fbbf24" }}>
+                              {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </>
@@ -330,11 +445,16 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bottom panels — 50%: Analyser · Sondages · Transparence · Discours · TV */}
+        {/* Bottom panels — 50%: Radar · Analyser · Sondages · Transparence · Discours · TV */}
         <div
           className="bottom-panels"
           style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
         >
+          {/* Radar local news — 18% */}
+          <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
+            <NewsTickerPanel />
+          </div>
+
           {/* Analyser — fills remaining space */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             <AnalyserPanel />

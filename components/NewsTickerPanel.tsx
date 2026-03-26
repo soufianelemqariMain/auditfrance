@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAppStore, NewsItem } from "../lib/store";
 
 function formatTime(iso: string): string {
@@ -15,47 +14,11 @@ function buildTickerString(items: NewsItem[]): string {
   return items.map((i) => `[${i.source.toUpperCase()}] ${i.title}`).join(" · ") + " · ";
 }
 
-function SkeletonList() {
-  return (
-    <ul style={{ listStyle: "none", padding: "8px 0" }}>
-      {[1, 2, 3, 4].map((n) => (
-        <li key={n} style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ height: 10, width: "60%", background: "var(--border)", borderRadius: 2 }} />
-          <div style={{ height: 8, width: "85%", background: "var(--border)", borderRadius: 2, opacity: 0.6 }} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function NewsTickerPanel() {
-  const newsItems = useAppStore((s) => s.newsItems);
-  const setNewsItems = useAppStore((s) => s.setNewsItems);
+  const radarNewsItems = useAppStore((s) => s.radarNewsItems);
   const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
-  const [loading, setLoading] = useState(newsItems.length === 0);
 
-  async function fetchNews() {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/news");
-      if (res.ok) {
-        const data = await res.json();
-        setNewsItems(data.items ?? []);
-      }
-    } catch {
-      // silently ignore fetch errors — stale data remains visible
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    fetchNews();
-    const id = setInterval(fetchNews, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const items = Array.isArray(newsItems) ? newsItems : [];
+  const items = Array.isArray(radarNewsItems) ? radarNewsItems : [];
   const tickerText = buildTickerString(items);
   const doubledTicker = tickerText + tickerText;
 
@@ -91,7 +54,7 @@ export default function NewsTickerPanel() {
             color: "var(--accent-green)",
           }}
         >
-          ACTUALITÉS EN DIRECT
+          RADAR LOCAL
         </span>
         <span
           style={{
@@ -103,6 +66,16 @@ export default function NewsTickerPanel() {
           }}
         >
           {items.length}
+        </span>
+        <span
+          style={{
+            fontSize: 8,
+            color: "var(--text-secondary)",
+            marginLeft: "auto",
+            letterSpacing: "0.06em",
+          }}
+        >
+          LIVE
         </span>
       </div>
 
@@ -122,13 +95,14 @@ export default function NewsTickerPanel() {
         </div>
       )}
 
-      {/* Article list — full feed, all sources */}
+      {/* Article list */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {loading ? (
-          <SkeletonList />
-        ) : items.length === 0 ? (
-          <div style={{ padding: 16, fontSize: 11, color: "var(--text-secondary)", textAlign: "center" }}>
-            Aucun article
+        {items.length === 0 ? (
+          <div style={{ padding: 16, fontSize: 11, color: "var(--text-secondary)", textAlign: "center", lineHeight: 1.8 }}>
+            <div style={{ marginBottom: 8, fontSize: 16 }}>📡</div>
+            En attente du radar…
+            <br />
+            <span style={{ fontSize: 9, opacity: 0.6 }}>Les événements apparaissent dès qu&apos;une étoile filante se déclenche</span>
           </div>
         ) : (
           <ul style={{ listStyle: "none" }}>
@@ -156,26 +130,28 @@ export default function NewsTickerPanel() {
                     {item.source}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setAnalyserInput(item.url); }}
-                      title="Analyser cet article"
-                      style={{
-                        fontSize: 8, padding: "1px 5px", borderRadius: 2,
-                        background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
-                        color: "#a5b4fc", cursor: "pointer", fontFamily: "inherit",
-                        lineHeight: 1.4, fontWeight: 700,
-                      }}
-                    >
-                      → Analyser
-                    </button>
+                    {item.url && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setAnalyserInput(item.url); }}
+                        title="Analyser cet article"
+                        style={{
+                          fontSize: 8, padding: "1px 5px", borderRadius: 2,
+                          background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
+                          color: "#a5b4fc", cursor: "pointer", fontFamily: "inherit",
+                          lineHeight: 1.4, fontWeight: 700,
+                        }}
+                      >
+                        → Analyser
+                      </button>
+                    )}
                     <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
                       {formatTime(item.publishedAt)}
                     </span>
                   </div>
                 </div>
                 <span
-                  onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
-                  style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.4, cursor: "pointer" }}
+                  onClick={() => item.url && window.open(item.url, "_blank", "noopener,noreferrer")}
+                  style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.4, cursor: item.url ? "pointer" : "default" }}
                 >
                   {item.title}
                 </span>

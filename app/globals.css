@@ -83,7 +83,7 @@ html, body {
 }
 
 .bandeau-track {
-  animation: scroll-left 45s linear infinite;
+  animation: scroll-left 120s linear infinite;
   white-space: nowrap;
 }
 

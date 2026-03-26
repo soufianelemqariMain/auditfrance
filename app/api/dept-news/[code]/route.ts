@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { DEPT_REGIONAL_PRESS } from "@/lib/regional-rss";
 
+async function resolveGoogleUrl(url: string): Promise<string> {
+  if (!url.includes("news.google.com")) return url;
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(3000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; InfoVerif/1.0)" },
+    });
+    return res.url && res.url !== url ? res.url : url;
+  } catch {
+    return url;
+  }
+}
+
 export const runtime = "nodejs";
 
 interface Article {
@@ -75,8 +90,12 @@ export async function GET(
       });
       if (!res.ok) continue;
       const xml = await res.text();
-      const articles = parseRSS(xml, outlet.name);
-      if (articles.length > 0) {
+      const rawArticles = parseRSS(xml, outlet.name);
+      if (rawArticles.length > 0) {
+        // Resolve Google News redirect URLs to actual destination URLs
+        const articles = await Promise.all(
+          rawArticles.map(async (a) => ({ ...a, url: await resolveGoogleUrl(a.url) }))
+        );
         return NextResponse.json({ articles, source: outlet.name, code }, {
           headers: { "Cache-Control": "public, s-maxage=600" },
         });

@@ -36,6 +36,10 @@ export interface AppState {
   newsItems: NewsItem[];
   setNewsItems: (items: NewsItem[]) => void;
 
+  // Live radar news items (from shooting star dept-news events)
+  radarNewsItems: NewsItem[];
+  addRadarNewsItem: (item: NewsItem) => void;
+
   // AI insight panel
   insightText: string;
   setInsightText: (text: string) => void;
@@ -79,6 +83,11 @@ export const useAppStore = create<AppState>((set) => ({
   // News
   newsItems: [],
   setNewsItems: (items: NewsItem[]) => set({ newsItems: Array.isArray(items) ? items : [] }),
+
+  // Radar news (live dept events)
+  radarNewsItems: [],
+  addRadarNewsItem: (item: NewsItem) =>
+    set((state) => ({ radarNewsItems: [item, ...state.radarNewsItems].slice(0, 25) })),
 
   // AI insight
   insightText: "",

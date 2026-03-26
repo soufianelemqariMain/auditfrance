@@ -1,3 +1,18 @@
+async function resolveGoogleUrl(url: string): Promise<string> {
+  if (!url.includes("news.google.com")) return url;
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(3000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; InfoVerif/1.0)" },
+    });
+    return res.url && res.url !== url ? res.url : url;
+  } catch {
+    return url;
+  }
+}
+
 export interface RssItem {
   id: string;
   source: string;
@@ -123,7 +138,7 @@ export async function parseRssFeed(
         id: makeId(link || url, title),
         source: sourceName,
         title,
-        url: link,
+        url: await resolveGoogleUrl(link),
         publishedAt,
       });
     }
