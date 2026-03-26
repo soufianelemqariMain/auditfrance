@@ -7,7 +7,6 @@ import NewsTickerPanel from "@/components/NewsTickerPanel";
 import TVPanel from "@/components/TVPanel";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import CommunePanel from "@/components/CommunePanel";
-import CommuneSearchBar from "@/components/CommuneSearchBar";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -307,11 +306,6 @@ export default function Home() {
     >
       <Navbar />
 
-      {/* Search bar */}
-      <div style={{ padding: "4px 16px", background: "var(--bg-secondary)", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-        <CommuneSearchBar onSelect={handleCommuneSelect} />
-      </div>
-
       <div className="main-content-area" style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
         {/* Map — 50% of available height */}
         <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
@@ -334,24 +328,24 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bottom panels — 50%: News · TV Direct · Analyser */}
+        {/* Bottom panels — 50%: Analyser · News · TV Direct */}
         <div
           className="bottom-panels"
           style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
         >
-          {/* Actualités en direct — 16% */}
-          <div style={{ flex: "0 0 16%", overflow: "hidden" }}>
-            <NewsTickerPanel />
-          </div>
-
-          {/* TV Direct — 10% */}
-          <div style={{ flex: "0 0 10%", overflow: "hidden" }}>
-            <TVPanel />
-          </div>
-
           {/* Analyser — fills remaining space */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             <AnalyserPanel />
+          </div>
+
+          {/* Actualités en direct — 16% */}
+          <div style={{ flex: "0 0 16%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+            <NewsTickerPanel />
+          </div>
+
+          {/* TV Direct — 14% */}
+          <div style={{ flex: "0 0 14%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+            <TVPanel />
           </div>
         </div>
       </div>
