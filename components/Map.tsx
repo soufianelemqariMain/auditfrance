@@ -311,7 +311,7 @@ function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number
       line.style.opacity = String(0.85 * (1 - fp));
       requestAnimationFrame(tick);
     } else {
-      svg.removeChild(line);
+      svg?.removeChild(line);
     }
   }
   requestAnimationFrame(tick);
