@@ -29,13 +29,13 @@ export async function POST(request: Request): Promise<NextResponse> {
     let res: Response;
 
     if (isUrl) {
+      const urlForm = new FormData();
+      urlForm.append("url", input);
+      urlForm.append("platform", "unknown");
       res = await fetch(`${INFOVERIF_URL}/analyze-url`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Key": apiKey,
-        },
-        body: JSON.stringify({ url: input, platform: "web" }),
+        headers: { "X-Api-Key": apiKey },
+        body: urlForm,
         signal: AbortSignal.timeout(55000),
       });
     } else {
