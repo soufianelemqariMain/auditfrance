@@ -54,13 +54,8 @@ export interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   // Layers
   layers: {
-    nuclear_plants: true,
-    military_bases: true,
-    data_centers:   true,
-    telco_hubs:     true,
-    ports:          true,
-    departments:    true,
-    heatmap_elus:   false,
+    departments:  true,
+    heatmap_elus: false,
   },
   toggleLayer: (key: string) =>
     set((state) => ({
