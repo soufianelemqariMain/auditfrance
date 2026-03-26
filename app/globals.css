@@ -82,6 +82,11 @@ html, body {
   animation-play-state: paused;
 }
 
+.bandeau-track {
+  animation: scroll-left 45s linear infinite;
+  white-space: nowrap;
+}
+
 /* ——— Mobile responsive layout (< 768px) ——— */
 @media (max-width: 767px) {
   /* Allow page scroll on mobile */
