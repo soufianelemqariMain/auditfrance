@@ -61,25 +61,25 @@ export async function GET(
     return NextResponse.json({ articles: [], code });
   }
 
-  const outlet = outlets[0]; // Use primary outlet
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(outlet.rssUrl, {
-      signal: controller.signal,
-      headers: { "User-Agent": "InfoVerif/1.0" },
-    });
-    clearTimeout(timeout);
-
-    if (!res.ok) throw new Error(`RSS ${res.status}`);
-    const xml = await res.text();
-    const articles = parseRSS(xml, outlet.name);
-
-    return NextResponse.json({ articles, source: outlet.name, code }, {
-      headers: { "Cache-Control": "public, s-maxage=600" },
-    });
-  } catch {
-    return NextResponse.json({ articles: [], source: outlet.name, code });
+  // Try each outlet in order, return first with articles
+  for (const outlet of outlets) {
+    try {
+      const res = await fetch(outlet.rssUrl, {
+        signal: AbortSignal.timeout(6000),
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; InfoVerif/1.0)" },
+        redirect: "follow",
+      });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const articles = parseRSS(xml, outlet.name);
+      if (articles.length > 0) {
+        return NextResponse.json({ articles, source: outlet.name, code }, {
+          headers: { "Cache-Control": "public, s-maxage=600" },
+        });
+      }
+    } catch {
+      // Try next outlet
+    }
   }
+  return NextResponse.json({ articles: [], code });
 }

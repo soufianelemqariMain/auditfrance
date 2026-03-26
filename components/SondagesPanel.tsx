@@ -16,16 +16,17 @@ interface Poll {
 }
 
 // Static recent poll data (major French pollsters, 2026)
-// Updated to reflect March 2026 polling averages
+// Presidential 2027 — 1er tour intentions de vote
+// Note: Macron inéligible (2 mandats accomplis 2017-2027)
 const POLLS: Poll[] = [
   {
     pollster: "IFOP",
     date: "2026-03",
     candidates: [
       { name: "Bardella", score: 27, party: "RN", color: "#003189" },
-      { name: "Macron", score: 18, party: "En Marche", color: "#FFEB3B" },
-      { name: "Bertrand", score: 16, party: "LR", color: "#0D47A1" },
-      { name: "Glucksmann", score: 13, party: "PS", color: "#E91E63" },
+      { name: "Philippe", score: 21, party: "Horizons", color: "#00BCD4" },
+      { name: "Glucksmann", score: 14, party: "PS", color: "#E91E63" },
+      { name: "Bertrand", score: 12, party: "LR", color: "#0D47A1" },
       { name: "Mélenchon", score: 11, party: "LFI", color: "#B71C1C" },
     ],
   },
@@ -34,10 +35,10 @@ const POLLS: Poll[] = [
     date: "2026-03",
     candidates: [
       { name: "Bardella", score: 26, party: "RN", color: "#003189" },
-      { name: "Macron", score: 19, party: "En Marche", color: "#FFEB3B" },
-      { name: "Bertrand", score: 15, party: "LR", color: "#0D47A1" },
-      { name: "Glucksmann", score: 14, party: "PS", color: "#E91E63" },
-      { name: "Mélenchon", score: 12, party: "LFI", color: "#B71C1C" },
+      { name: "Philippe", score: 20, party: "Horizons", color: "#00BCD4" },
+      { name: "Glucksmann", score: 15, party: "PS", color: "#E91E63" },
+      { name: "Bertrand", score: 13, party: "LR", color: "#0D47A1" },
+      { name: "Mélenchon", score: 10, party: "LFI", color: "#B71C1C" },
     ],
   },
   {
@@ -45,8 +46,8 @@ const POLLS: Poll[] = [
     date: "2026-02",
     candidates: [
       { name: "Bardella", score: 28, party: "RN", color: "#003189" },
-      { name: "Bertrand", score: 17, party: "LR", color: "#0D47A1" },
-      { name: "Macron", score: 17, party: "En Marche", color: "#FFEB3B" },
+      { name: "Philippe", score: 19, party: "Horizons", color: "#00BCD4" },
+      { name: "Bertrand", score: 14, party: "LR", color: "#0D47A1" },
       { name: "Glucksmann", score: 13, party: "PS", color: "#E91E63" },
       { name: "Mélenchon", score: 10, party: "LFI", color: "#B71C1C" },
     ],

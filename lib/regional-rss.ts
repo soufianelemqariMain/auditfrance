@@ -3,199 +3,211 @@ export interface RegionalOutlet {
   rssUrl: string;
 }
 
+// Only verified-working RSS feeds (tested March 2026).
+// Departments without a working regional feed fall through to the national fallback in the route.
+const FIGARO = { name: "Le Figaro", rssUrl: "https://www.lefigaro.fr/rss/figaro_actualites.xml" };
+const MONDE = { name: "Le Monde", rssUrl: "https://www.lemonde.fr/rss/une.xml" };
+const DEPECHE = { name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" };
+const MIDILIBRE = { name: "Midi Libre", rssUrl: "https://www.midilibre.fr/rss.xml" };
+const LEPROGRES = { name: "Le Progrès", rssUrl: "https://www.leprogres.fr/rss" };
+const DAUPHINE = { name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" };
+const BFMTV = { name: "BFM TV", rssUrl: "https://www.bfmtv.com/rss/news-24-7/" };
+const CHARENTELIBRE = { name: "Charente Libre", rssUrl: "https://www.charentelibre.fr/rss.xml" };
+const VARMATIN = { name: "Var-Matin", rssUrl: "https://www.varmatin.com/rss.xml" };
+
 export const DEPT_REGIONAL_PRESS: Record<string, RegionalOutlet[]> = {
   // Ain
-  "01": [{ name: "Le Progrès", rssUrl: "https://www.leprogres.fr/rss" }],
+  "01": [LEPROGRES, MONDE],
   // Aisne
-  "02": [{ name: "L'Aisne Nouvelle", rssUrl: "https://www.aisnenouvelle.fr/rss.xml" }],
+  "02": [BFMTV, MONDE],
   // Allier
-  "03": [{ name: "La Montagne", rssUrl: "https://www.lamontagne.fr/rss.xml" }],
+  "03": [MONDE],
   // Alpes-de-Haute-Provence
-  "04": [{ name: "La Provence", rssUrl: "https://www.laprovence.com/rss.xml" }],
+  "04": [MONDE],
   // Hautes-Alpes
-  "05": [{ name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" }],
+  "05": [DAUPHINE, MONDE],
   // Alpes-Maritimes
-  "06": [{ name: "Nice-Matin", rssUrl: "https://www.nicematin.com/rss.xml" }],
+  "06": [MONDE, FIGARO],
   // Ardèche
-  "07": [{ name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" }],
+  "07": [DAUPHINE, MONDE],
   // Ardennes
-  "08": [{ name: "L'Union", rssUrl: "https://www.lunion.fr/rss.xml" }],
+  "08": [MONDE],
   // Ariège
-  "09": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "09": [DEPECHE, MONDE],
   // Aube
-  "10": [{ name: "L'Est Éclair", rssUrl: "https://www.estrepublicain.fr/rss.xml" }],
+  "10": [MONDE],
   // Aude
-  "11": [{ name: "Midi Libre", rssUrl: "https://www.midilibre.fr/rss.xml" }],
+  "11": [MIDILIBRE, MONDE],
   // Aveyron
-  "12": [{ name: "Centre Presse Aveyron", rssUrl: "https://www.centrepresse-aveyron.fr/rss.xml" }],
+  "12": [DEPECHE, MONDE],
   // Bouches-du-Rhône
-  "13": [{ name: "La Provence", rssUrl: "https://www.laprovence.com/rss.xml" }],
+  "13": [MONDE, FIGARO],
   // Calvados
-  "14": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "14": [MONDE],
   // Cantal
-  "15": [{ name: "La Montagne", rssUrl: "https://www.lamontagne.fr/rss.xml" }],
+  "15": [MONDE],
   // Charente
-  "16": [{ name: "Charente Libre", rssUrl: "https://www.charentelibre.fr/rss.xml" }],
+  "16": [CHARENTELIBRE, MONDE],
   // Charente-Maritime
-  "17": [{ name: "Sud Ouest", rssUrl: "https://www.sudouest.fr/rss.xml" }],
+  "17": [MONDE],
   // Cher
-  "18": [{ name: "Le Berry Républicain", rssUrl: "https://www.leberry.fr/rss.xml" }],
+  "18": [MONDE],
   // Corrèze
-  "19": [{ name: "La Montagne", rssUrl: "https://www.lamontagne.fr/rss.xml" }],
+  "19": [MONDE],
   // Corse-du-Sud
-  "2A": [{ name: "Corse-Matin", rssUrl: "https://www.corsematin.com/rss.xml" }],
+  "2A": [MONDE],
   // Haute-Corse
-  "2B": [{ name: "Corse-Matin", rssUrl: "https://www.corsematin.com/rss.xml" }],
+  "2B": [MONDE],
   // Côte-d'Or
-  "21": [{ name: "Le Bien Public", rssUrl: "https://www.bienpublic.com/rss.xml" }],
+  "21": [MONDE, FIGARO],
   // Côtes-d'Armor
-  "22": [{ name: "Le Télégramme", rssUrl: "https://www.letelegramme.fr/rss" }],
+  "22": [MONDE],
   // Creuse
-  "23": [{ name: "La Creuse", rssUrl: "https://www.lamontagne.fr/rss.xml" }],
+  "23": [MONDE],
   // Dordogne
-  "24": [{ name: "Sud Ouest", rssUrl: "https://www.sudouest.fr/rss.xml" }],
+  "24": [MONDE],
   // Doubs
-  "25": [{ name: "L'Est Républicain", rssUrl: "https://www.estrepublicain.fr/rss.xml" }],
+  "25": [MONDE],
   // Drôme
-  "26": [{ name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" }],
+  "26": [DAUPHINE, MONDE],
   // Eure
-  "27": [{ name: "Paris Normandie", rssUrl: "https://www.paris-normandie.fr/rss.xml" }],
+  "27": [MONDE],
   // Eure-et-Loir
-  "28": [{ name: "L'Écho Républicain", rssUrl: "https://www.lechorepublicain.fr/rss.xml" }],
+  "28": [MONDE],
   // Finistère
-  "29": [{ name: "Le Télégramme", rssUrl: "https://www.letelegramme.fr/rss" }],
+  "29": [MONDE],
   // Gard
-  "30": [{ name: "Midi Libre", rssUrl: "https://www.midilibre.fr/rss.xml" }],
+  "30": [MIDILIBRE, MONDE],
   // Haute-Garonne
-  "31": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "31": [DEPECHE, MONDE],
   // Gers
-  "32": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "32": [DEPECHE, MONDE],
   // Gironde
-  "33": [{ name: "Sud Ouest", rssUrl: "https://www.sudouest.fr/rss.xml" }],
+  "33": [MONDE, FIGARO],
   // Hérault
-  "34": [{ name: "Midi Libre", rssUrl: "https://www.midilibre.fr/rss.xml" }],
+  "34": [MIDILIBRE, MONDE],
   // Ille-et-Vilaine
-  "35": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "35": [MONDE],
   // Indre
-  "36": [{ name: "La Nouvelle République", rssUrl: "https://www.lanouvellerepublique.fr/rss.xml" }],
+  "36": [MONDE],
   // Indre-et-Loire
-  "37": [{ name: "La Nouvelle République", rssUrl: "https://www.lanouvellerepublique.fr/rss.xml" }],
+  "37": [MONDE],
   // Isère
-  "38": [{ name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" }],
+  "38": [DAUPHINE, MONDE],
   // Jura
-  "39": [{ name: "Le Progrès", rssUrl: "https://www.leprogres.fr/rss" }],
+  "39": [LEPROGRES, MONDE],
   // Landes
-  "40": [{ name: "Sud Ouest", rssUrl: "https://www.sudouest.fr/rss.xml" }],
+  "40": [MONDE],
   // Loir-et-Cher
-  "41": [{ name: "La Nouvelle République", rssUrl: "https://www.lanouvellerepublique.fr/rss.xml" }],
+  "41": [MONDE],
   // Loire
-  "42": [{ name: "Le Progrès", rssUrl: "https://www.leprogres.fr/rss" }],
+  "42": [LEPROGRES, MONDE],
   // Haute-Loire
-  "43": [{ name: "L'Éveil de la Haute-Loire", rssUrl: "https://www.leveil.fr/rss.xml" }],
+  "43": [MONDE],
   // Loire-Atlantique
-  "44": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "44": [MONDE],
   // Loiret
-  "45": [{ name: "La République du Centre", rssUrl: "https://www.larep.fr/rss.xml" }],
+  "45": [MONDE],
   // Lot
-  "46": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "46": [DEPECHE, MONDE],
   // Lot-et-Garonne
-  "47": [{ name: "Sud Ouest", rssUrl: "https://www.sudouest.fr/rss.xml" }],
+  "47": [MONDE],
   // Lozère
-  "48": [{ name: "Midi Libre", rssUrl: "https://www.midilibre.fr/rss.xml" }],
+  "48": [MIDILIBRE, MONDE],
   // Maine-et-Loire
-  "49": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "49": [MONDE],
   // Manche
-  "50": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "50": [MONDE],
   // Marne
-  "51": [{ name: "L'Union", rssUrl: "https://www.lunion.fr/rss.xml" }],
+  "51": [MONDE],
   // Haute-Marne
-  "52": [{ name: "La Haute-Marne Libérée", rssUrl: "https://www.jhm.fr/rss.xml" }],
+  "52": [MONDE],
   // Mayenne
-  "53": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "53": [MONDE],
   // Meurthe-et-Moselle
-  "54": [{ name: "Le Républicain Lorrain", rssUrl: "https://www.republicain-lorrain.fr/rss.xml" }],
+  "54": [MONDE],
   // Meuse
-  "55": [{ name: "Le Républicain Lorrain", rssUrl: "https://www.republicain-lorrain.fr/rss.xml" }],
+  "55": [MONDE],
   // Morbihan
-  "56": [{ name: "Le Télégramme", rssUrl: "https://www.letelegramme.fr/rss" }],
+  "56": [MONDE],
   // Moselle
-  "57": [{ name: "Le Républicain Lorrain", rssUrl: "https://www.republicain-lorrain.fr/rss.xml" }],
+  "57": [MONDE],
   // Nièvre
-  "58": [{ name: "Le Journal du Centre", rssUrl: "https://www.lejdc.fr/rss.xml" }],
+  "58": [MONDE],
   // Nord
-  "59": [{ name: "La Voix du Nord", rssUrl: "https://www.lavoixdunord.fr/rss.xml" }],
+  "59": [BFMTV, MONDE],
   // Oise
-  "60": [{ name: "Le Courrier Picard", rssUrl: "https://www.courrier-picard.fr/rss.xml" }],
+  "60": [MONDE, FIGARO],
   // Orne
-  "61": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "61": [MONDE],
   // Pas-de-Calais
-  "62": [{ name: "La Voix du Nord", rssUrl: "https://www.lavoixdunord.fr/rss.xml" }],
+  "62": [BFMTV, MONDE],
   // Puy-de-Dôme
-  "63": [{ name: "La Montagne", rssUrl: "https://www.lamontagne.fr/rss.xml" }],
+  "63": [MONDE],
   // Pyrénées-Atlantiques
-  "64": [{ name: "Sud Ouest", rssUrl: "https://www.sudouest.fr/rss.xml" }],
+  "64": [MONDE],
   // Hautes-Pyrénées
-  "65": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "65": [DEPECHE, MONDE],
   // Pyrénées-Orientales
-  "66": [{ name: "L'Indépendant", rssUrl: "https://www.lindependant.fr/rss.xml" }],
+  "66": [MIDILIBRE, MONDE],
   // Bas-Rhin
-  "67": [{ name: "Les DNA", rssUrl: "https://www.dna.fr/rss.xml" }],
+  "67": [MONDE, FIGARO],
   // Haut-Rhin
-  "68": [{ name: "L'Alsace", rssUrl: "https://www.lalsace.fr/rss.xml" }],
+  "68": [MONDE],
   // Rhône
-  "69": [{ name: "Le Progrès", rssUrl: "https://www.leprogres.fr/rss" }],
+  "69": [LEPROGRES, MONDE],
   // Haute-Saône
-  "70": [{ name: "L'Est Républicain", rssUrl: "https://www.estrepublicain.fr/rss.xml" }],
+  "70": [MONDE],
   // Saône-et-Loire
-  "71": [{ name: "Le Journal de Saône-et-Loire", rssUrl: "https://www.lejsl.com/rss.xml" }],
+  "71": [LEPROGRES, MONDE],
   // Sarthe
-  "72": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "72": [MONDE],
   // Savoie
-  "73": [{ name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" }],
+  "73": [DAUPHINE, MONDE],
   // Haute-Savoie
-  "74": [{ name: "Le Dauphiné Libéré", rssUrl: "https://www.ledauphine.com/rss" }],
+  "74": [DAUPHINE, MONDE],
   // Paris
-  "75": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "75": [FIGARO, MONDE],
   // Seine-Maritime
-  "76": [{ name: "Paris Normandie", rssUrl: "https://www.paris-normandie.fr/rss.xml" }],
+  "76": [MONDE, FIGARO],
   // Seine-et-Marne
-  "77": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "77": [MONDE, FIGARO],
   // Yvelines
-  "78": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "78": [MONDE, FIGARO],
   // Deux-Sèvres
-  "79": [{ name: "Nouvelle République", rssUrl: "https://www.lanouvellerepublique.fr/rss.xml" }],
+  "79": [MONDE],
   // Somme
-  "80": [{ name: "Le Courrier Picard", rssUrl: "https://www.courrier-picard.fr/rss.xml" }],
+  "80": [BFMTV, MONDE],
   // Tarn
-  "81": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "81": [DEPECHE, MONDE],
   // Tarn-et-Garonne
-  "82": [{ name: "La Dépêche du Midi", rssUrl: "https://www.ladepeche.fr/rss.xml" }],
+  "82": [DEPECHE, MONDE],
   // Var
-  "83": [{ name: "Var-Matin", rssUrl: "https://www.varmatin.com/rss.xml" }],
+  "83": [VARMATIN, MONDE],
   // Vaucluse
-  "84": [{ name: "La Provence", rssUrl: "https://www.laprovence.com/rss.xml" }],
+  "84": [MONDE],
   // Vendée
-  "85": [{ name: "Ouest-France", rssUrl: "https://rss.ouest-france.fr/rss/france" }],
+  "85": [MONDE],
   // Vienne
-  "86": [{ name: "La Nouvelle République", rssUrl: "https://www.lanouvellerepublique.fr/rss.xml" }],
+  "86": [MONDE],
   // Haute-Vienne
-  "87": [{ name: "L'Echo du Centre", rssUrl: "https://www.lamontagne.fr/rss.xml" }],
+  "87": [MONDE],
   // Vosges
-  "88": [{ name: "Les Vosges Matin", rssUrl: "https://www.estrepublicain.fr/rss.xml" }],
+  "88": [MONDE],
   // Yonne
-  "89": [{ name: "L'Yonne Républicaine", rssUrl: "https://www.lyonne.fr/rss.xml" }],
+  "89": [MONDE],
   // Territoire de Belfort
-  "90": [{ name: "L'Est Républicain", rssUrl: "https://www.estrepublicain.fr/rss.xml" }],
+  "90": [MONDE],
   // Essonne
-  "91": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "91": [MONDE, FIGARO],
   // Hauts-de-Seine
-  "92": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "92": [MONDE, FIGARO],
   // Seine-Saint-Denis
-  "93": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "93": [BFMTV, MONDE],
   // Val-de-Marne
-  "94": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
+  "94": [MONDE, FIGARO],
   // Val-d'Oise
-  "95": [{ name: "Le Parisien", rssUrl: "https://www.leparisien.fr/rss.xml" }],
-  // Default / national fallback
-  "default": [{ name: "France Info", rssUrl: "https://www.francetvinfo.fr/rss.xml" }],
+  "95": [MONDE, FIGARO],
+  // National fallback
+  "default": [BFMTV, MONDE],
 };

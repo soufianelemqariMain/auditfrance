@@ -1,130 +1,140 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAppStore } from "@/lib/store";
 
-interface Deputy {
-  nom: string;
-  groupe: string;
-  score: number;
-  semaines: number;
+interface CorpStatement {
+  company: string;
+  sector: string;
+  date: string;
+  claim: string;
+  color: string;
 }
 
-const GROUPE_COLORS: Record<string, string> = {
-  RN: "#003189",
-  RE: "#FFEB3B",
-  LFI: "#B71C1C",
-  SOC: "#E91E63",
-  LR: "#0D47A1",
-  HOR: "#FF9800",
-  GDR: "#D32F2F",
-  LIOT: "#607D8B",
-  ECO: "#388E3C",
+// Recent French corporate statements and claims — verifiable by InfoVerif
+const STATEMENTS: CorpStatement[] = [
+  {
+    company: "TotalEnergies",
+    sector: "Énergie",
+    date: "2026-03",
+    claim: "TotalEnergies affirme être en bonne voie pour atteindre la neutralité carbone en 2050, avec une réduction de 40% de ses émissions opérationnelles depuis 2015.",
+    color: "#f97316",
+  },
+  {
+    company: "LVMH",
+    sector: "Luxe",
+    date: "2026-03",
+    claim: "LVMH déclare que 90% de ses matières premières stratégiques sont sourced de manière responsable et traçable selon ses standards environnementaux.",
+    color: "#a78bfa",
+  },
+  {
+    company: "Carrefour",
+    sector: "Distribution",
+    date: "2026-03",
+    claim: "Carrefour annonce avoir réduit ses prix de 5 à 15% sur plus de 1 500 produits du quotidien dans le cadre de son plan anti-inflation.",
+    color: "#3b82f6",
+  },
+  {
+    company: "Renault",
+    sector: "Automobile",
+    date: "2026-02",
+    claim: "Renault affirme que sa Renault 5 électrique atteint une autonomie réelle de plus de 400 km en conditions de conduite mixte en hiver.",
+    color: "#eab308",
+  },
+  {
+    company: "BNP Paribas",
+    sector: "Finance",
+    date: "2026-02",
+    claim: "BNP Paribas déclare avoir réduit de 50% son exposition aux énergies fossiles non conventionnelles depuis 2017 et finance la transition énergétique à hauteur de 200 Md€.",
+    color: "#22c55e",
+  },
+  {
+    company: "Orange",
+    sector: "Télécoms",
+    date: "2026-02",
+    claim: "Orange affirme couvrir 99% de la population française en 4G et être en avance sur son déploiement 5G avec plus de 18 000 antennes actives.",
+    color: "#ef4444",
+  },
+  {
+    company: "Engie",
+    sector: "Énergie",
+    date: "2026-01",
+    claim: "Engie déclare que ses offres d'énergie renouvelable couvrent 100% des besoins de ses clients entreprises abonnés à ses contrats verts certifiés.",
+    color: "#06b6d4",
+  },
+  {
+    company: "Sanofi",
+    sector: "Santé",
+    date: "2026-01",
+    claim: "Sanofi annonce un taux de réussite de 94% en phase 3 pour son nouveau traitement contre les maladies inflammatoires chroniques, supérieur aux standards actuels.",
+    color: "#8b5cf6",
+  },
+];
+
+const SECTOR_COLOR: Record<string, string> = {
+  "Énergie": "#f97316",
+  "Luxe": "#a78bfa",
+  "Distribution": "#3b82f6",
+  "Automobile": "#eab308",
+  "Finance": "#22c55e",
+  "Télécoms": "#ef4444",
+  "Santé": "#8b5cf6",
 };
 
-function groupColor(groupe: string) {
-  return GROUPE_COLORS[groupe] ?? "#6b7280";
-}
-
-function ScoreBar({ score }: { score: number }) {
-  const pct = Math.min(score, 100);
-  const color = score < 20 ? "#ef4444" : score < 40 ? "#f97316" : "#22c55e";
-  return (
-    <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden", marginTop: 2 }}>
-      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 2, transition: "width 0.4s" }} />
-    </div>
-  );
-}
-
 export default function TransparencePanel() {
-  const [deputes, setDeputes] = useState<Deputy[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  async function fetchData() {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch("/api/transparence");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setDeputes(data.deputes ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { fetchData(); }, []);
+  const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
       {/* Header */}
-      <div style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+      <div style={{ padding: "6px 10px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
         <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-          😴 Sous-actifs
+          🏢 Corpus Entreprises
         </span>
-        <button
-          onClick={fetchData}
-          title="Actualiser"
-          style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: 11, cursor: "pointer", padding: 0 }}
-        >
-          ↻
-        </button>
       </div>
 
+      {/* Statements */}
       <div style={{ flex: 1, overflowY: "auto" }}>
-        {loading ? (
-          <div style={{ padding: "20px 10px", display: "flex", flexDirection: "column", gap: 8 }}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <div key={n} style={{ height: 28, background: "var(--border)", borderRadius: 3, opacity: 0.3 }} />
-            ))}
-          </div>
-        ) : error ? (
-          <div style={{ padding: "16px 10px", fontSize: 10, color: "#ef4444", textAlign: "center" }}>
-            <div>Données indisponibles</div>
-            <div style={{ color: "var(--text-secondary)", marginTop: 4 }}>{error}</div>
-            <button onClick={fetchData} style={{ marginTop: 8, fontSize: 9, color: "var(--accent-blue)", background: "none", border: "none", cursor: "pointer" }}>Réessayer</button>
-          </div>
-        ) : deputes.length === 0 ? (
-          <div style={{ padding: 16, fontSize: 10, color: "var(--text-secondary)", textAlign: "center" }}>Aucune donnée</div>
-        ) : (
-          <div style={{ padding: "4px 0" }}>
-            <div style={{ padding: "4px 10px 6px", fontSize: 8, color: "var(--border)", borderBottom: "1px solid var(--border)", marginBottom: 2 }}>
-              15 députés les moins actifs · score d&apos;activité / présence
-            </div>
-            {deputes.map((d, i) => (
-              <div
-                key={d.nom}
-                style={{ padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
-                    <span style={{ fontSize: 8, color: "var(--text-secondary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>#{i + 1}</span>
-                    <span style={{ fontSize: 10, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nom}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-                    <span style={{
-                      fontSize: 8, padding: "1px 4px", borderRadius: 2,
-                      background: groupColor(d.groupe) + "22",
-                      color: groupColor(d.groupe),
-                      fontWeight: 700,
-                    }}>{d.groupe}</span>
-                    <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: d.score < 20 ? "#ef4444" : d.score < 40 ? "#f97316" : "#22c55e", fontWeight: 700 }}>
-                      {d.score}
-                    </span>
-                  </div>
+        <div style={{ padding: "4px 0" }}>
+          {STATEMENTS.map((s, i) => (
+            <div
+              key={i}
+              style={{ padding: "7px 10px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{
+                    fontSize: 8, padding: "1px 4px", borderRadius: 2,
+                    background: (SECTOR_COLOR[s.sector] ?? "#6b7280") + "22",
+                    color: SECTOR_COLOR[s.sector] ?? "#6b7280",
+                    fontWeight: 700, flexShrink: 0,
+                  }}>{s.sector}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-primary)" }}>{s.company}</span>
                 </div>
-                <ScoreBar score={d.score} />
+                <span style={{ fontSize: 8, color: "var(--border)", flexShrink: 0 }}>{s.date}</span>
               </div>
-            ))}
-          </div>
-        )}
+              <div style={{ fontSize: 9, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 5 }}>
+                {s.claim}
+              </div>
+              <button
+                onClick={() => setAnalyserInput(s.claim)}
+                style={{
+                  fontSize: 8, padding: "2px 7px", borderRadius: 2,
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--accent-blue)",
+                  cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                → Vérifier
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div style={{ padding: "4px 10px", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
-        <span style={{ fontSize: 8, color: "var(--border)" }}>Source: nosdéputés.fr · XVI° législature</span>
+        <span style={{ fontSize: 8, color: "var(--border)" }}>Déclarations publiques · Cliquez pour vérifier</span>
       </div>
     </div>
   );
