@@ -19,24 +19,27 @@ const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 /* ── Inline analyser types & helpers ───────────────────────── */
 interface Technique {
-  id?: string;
+  // Backend fields
+  disarm_code?: string;
+  disarm_tactic?: string;
   name: string;
+  evidence?: string;
+  severity?: string;
+  confidence?: number | string;
+  explanation?: string;
+  cognitive_mechanism?: string;
+  contextual_impact?: string;
+  recommended_action?: string;
+  // Legacy aliases
+  id?: string;
   tactic?: string;
-  confidence?: number;
   excerpt?: string;
 }
-interface NarrativeSchema {
-  hero?: string;
-  villain?: string;
-  victim?: string;
-  quest?: string;
-  summary?: string;
-}
-interface RhetoricAnalysis {
-  ethos?: string;
-  logos?: string;
-  pathos?: string;
-  dominant_device?: string;
+interface CorrectionAdvice {
+  instead_of?: string;
+  say_instead?: string;
+  because?: string;
+  technique_code?: string;
 }
 interface VerifResult {
   propaganda_score?: number;
@@ -44,15 +47,24 @@ interface VerifResult {
   misinfo_score?: number;
   overall_influence?: number;
   verdict_level?: string;
+  verdict_label?: string;
+  viewpoint_balance?: string;
+  nuance_note?: string;
+  transparency_of_advocacy?: string;
+  audience_targeted?: string;
+  urgency_framing?: boolean;
+  red_flags_summary?: string;
+  pattern_tags?: string[];
+  content_summary?: string;
+  manipulation_summary?: string;
   techniques?: Technique[];
+  technique_interactions?: Array<{ technique_1: string; technique_2: string; interaction: string }>;
+  fact_check_priority?: string[];
+  top_recommendations?: string[];
+  correction_advice?: CorrectionAdvice[];
   summary?: string;
+  reasoning_summary?: string;
   error?: string;
-  // Enriched narrative/rhetoric analysis
-  narrative_schema?: NarrativeSchema;
-  rhetoric_analysis?: RhetoricAnalysis;
-  communication_intent?: string;
-  audience_vectors?: string[];
-  framing_analysis?: string;
 }
 const VERDICT_COLOR: Record<string, string> = {
   low: "#22c55e", medium: "#eab308", high: "#f97316", critical: "#ef4444",
@@ -238,7 +250,7 @@ function AnalyserPanel() {
 
           {status === "done" && result && !result.error && (
             <>
-              {/* Verdict */}
+              {/* Verdict header */}
               <div style={{
                 display: "flex", alignItems: "center", gap: 10, marginBottom: 10, padding: "8px 12px",
                 background: verdictColor + "14", border: `1px solid ${verdictColor}40`, borderRadius: 5,
@@ -246,14 +258,49 @@ function AnalyserPanel() {
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{VERDICT_ICON[result.verdict_level ?? ""] ?? "🔎"}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: verdictColor }}>
-                    {VERDICT_FR[result.verdict_level ?? ""] ?? result.verdict_level}
+                    {result.verdict_label ?? (VERDICT_FR[result.verdict_level ?? ""] ?? result.verdict_level)}
                   </div>
-                  <div style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
-                    Influence globale : {scoreLabel(result.overall_influence)}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 3 }}>
+                    <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+                      Influence : {scoreLabel(result.overall_influence)}
+                    </span>
+                    {result.audience_targeted && (
+                      <span style={{ fontSize: 8, color: "#fbbf24", background: "rgba(251,191,36,0.1)", padding: "0 5px", borderRadius: 2 }}>
+                        {result.audience_targeted}
+                      </span>
+                    )}
+                    {result.urgency_framing && (
+                      <span style={{ fontSize: 8, color: "#ef4444", background: "rgba(239,68,68,0.1)", padding: "0 5px", borderRadius: 2 }}>
+                        ⚠ urgence
+                      </span>
+                    )}
+                    {result.viewpoint_balance && (
+                      <span style={{ fontSize: 8, color: "var(--text-secondary)", background: "rgba(255,255,255,0.05)", padding: "0 5px", borderRadius: 2 }}>
+                        {result.viewpoint_balance}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button onClick={reset} style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: 10, cursor: "pointer", padding: 0, fontFamily: "inherit", flexShrink: 0 }}>✕</button>
               </div>
+
+              {/* Red flags summary */}
+              {result.red_flags_summary && (
+                <div style={{ marginBottom: 8, padding: "6px 10px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 3, fontSize: 10, color: "#fca5a5", lineHeight: 1.5 }}>
+                  {result.red_flags_summary}
+                </div>
+              )}
+
+              {/* Pattern tags */}
+              {result.pattern_tags && result.pattern_tags.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+                  {result.pattern_tags.map((tag, i) => (
+                    <span key={i} style={{ fontSize: 8, padding: "1px 6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 2, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Scores */}
               <div style={{ marginBottom: 10 }}>
@@ -262,10 +309,26 @@ function AnalyserPanel() {
                 <ScoreBar label="Complotisme" value={result.conspiracy_score} color="#a78bfa" />
               </div>
 
-              {/* Summary */}
-              {result.summary && (
-                <div style={{ marginBottom: 10, fontSize: 10, color: "var(--text-secondary)", lineHeight: 1.5, borderLeft: "2px solid var(--border)", paddingLeft: 8 }}>
-                  {result.summary}
+              {/* Content summary */}
+              {result.content_summary && (
+                <div style={{ marginBottom: 8, fontSize: 10, color: "var(--text-secondary)", lineHeight: 1.5, borderLeft: "2px solid var(--border)", paddingLeft: 8 }}>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: "var(--border)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Contenu</div>
+                  {result.content_summary}
+                </div>
+              )}
+
+              {/* Manipulation summary */}
+              {result.manipulation_summary && (
+                <div style={{ marginBottom: 10, fontSize: 10, color: "var(--text-secondary)", lineHeight: 1.5, borderLeft: "2px solid rgba(239,68,68,0.4)", paddingLeft: 8 }}>
+                  <div style={{ fontSize: 8, fontWeight: 700, color: "#fca5a5", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Stratégie de manipulation</div>
+                  {result.manipulation_summary}
+                </div>
+              )}
+
+              {/* Nuance note */}
+              {result.nuance_note && (
+                <div style={{ marginBottom: 8, fontSize: 9, color: "#86efac", lineHeight: 1.5, borderLeft: "2px solid rgba(34,197,94,0.4)", paddingLeft: 8 }}>
+                  {result.nuance_note}
                 </div>
               )}
 
@@ -275,20 +338,86 @@ function AnalyserPanel() {
                   <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
                     Techniques DISARM ({result.techniques.length})
                   </div>
-                  {result.techniques.map((t, i) => (
-                    <div key={i} style={{ marginBottom: 5, padding: "6px 8px", background: "rgba(255,255,255,0.03)", borderRadius: 3, border: "1px solid rgba(255,255,255,0.05)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                        <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", minWidth: 0 }}>
-                          {t.id && <span style={{ fontSize: 8, fontFamily: "var(--font-mono)", color: "var(--text-secondary)", background: "rgba(255,255,255,0.06)", padding: "0 3px", borderRadius: 2, flexShrink: 0 }}>{t.id}</span>}
-                          <span style={{ fontSize: 10, color: "var(--text-primary)", fontWeight: 600 }}>{t.name}</span>
+                  {result.techniques.map((t, i) => {
+                    const code = t.disarm_code ?? t.id;
+                    const confRaw = t.confidence;
+                    const confStr = confRaw != null
+                      ? (typeof confRaw === "string" ? confRaw : confLabel(confRaw as number))
+                      : null;
+                    const sevColor: Record<string, string> = { high: "#ef4444", medium: "#f97316", low: "#eab308" };
+                    return (
+                      <div key={i} style={{ marginBottom: 6, padding: "7px 9px", background: "rgba(255,255,255,0.03)", borderRadius: 3, border: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
+                          <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap", minWidth: 0 }}>
+                            {code && <span style={{ fontSize: 8, fontFamily: "var(--font-mono)", color: "var(--text-secondary)", background: "rgba(255,255,255,0.06)", padding: "0 3px", borderRadius: 2, flexShrink: 0 }}>{code}</span>}
+                            <span style={{ fontSize: 10, color: "var(--text-primary)", fontWeight: 600 }}>{t.name}</span>
+                          </div>
+                          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                            {t.severity && <span style={{ fontSize: 8, color: sevColor[t.severity] ?? "var(--text-secondary)" }}>{t.severity}</span>}
+                            {confStr && <span style={{ fontSize: 8, fontFamily: "var(--font-mono)", color: "#6366f1" }}>{confStr}</span>}
+                          </div>
                         </div>
-                        {t.confidence != null && (
-                          <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "#6366f1", flexShrink: 0 }}>{confLabel(t.confidence)}</span>
+                        {(t.evidence ?? t.excerpt) && (
+                          <div style={{ fontSize: 8, color: "var(--text-secondary)", fontStyle: "italic", marginBottom: 3, lineHeight: 1.4, borderLeft: "2px solid rgba(255,255,255,0.1)", paddingLeft: 6 }}>
+                            &ldquo;{t.evidence ?? t.excerpt}&rdquo;
+                          </div>
+                        )}
+                        {t.cognitive_mechanism && (
+                          <div style={{ fontSize: 8, color: "#a78bfa", lineHeight: 1.4, marginBottom: 2 }}>
+                            🧠 {t.cognitive_mechanism}
+                          </div>
+                        )}
+                        {t.explanation && (
+                          <div style={{ fontSize: 8, color: "var(--text-secondary)", lineHeight: 1.4, marginBottom: 2 }}>
+                            {t.explanation}
+                          </div>
+                        )}
+                        {t.recommended_action && (
+                          <div style={{ fontSize: 8, color: "#86efac", lineHeight: 1.4, marginTop: 3 }}>
+                            → {t.recommended_action}
+                          </div>
                         )}
                       </div>
-                      {t.excerpt && (
-                        <div style={{ fontSize: 8, color: "var(--text-secondary)", fontStyle: "italic", marginTop: 3, lineHeight: 1.4, borderLeft: "2px solid rgba(255,255,255,0.1)", paddingLeft: 6 }}>
-                          &ldquo;{t.excerpt}&rdquo;
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Fact check priority */}
+              {result.fact_check_priority && result.fact_check_priority.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>
+                    À vérifier ({result.fact_check_priority.length})
+                  </div>
+                  {result.fact_check_priority.map((claim, i) => (
+                    <div key={i} style={{ fontSize: 9, color: "var(--text-secondary)", lineHeight: 1.5, padding: "4px 8px", marginBottom: 3, background: "rgba(56,189,248,0.04)", border: "1px solid rgba(56,189,248,0.12)", borderRadius: 3 }}>
+                      {i + 1}. {claim}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Correction advice */}
+              {result.correction_advice && result.correction_advice.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>
+                    Correction suggérée
+                  </div>
+                  {result.correction_advice.map((c, i) => (
+                    <div key={i} style={{ marginBottom: 6, padding: "7px 9px", background: "rgba(251,191,36,0.04)", border: "1px solid rgba(251,191,36,0.15)", borderRadius: 3 }}>
+                      {c.instead_of && (
+                        <div style={{ fontSize: 8, color: "#ef4444", fontStyle: "italic", marginBottom: 3 }}>
+                          ✗ &ldquo;{c.instead_of}&rdquo;
+                        </div>
+                      )}
+                      {c.say_instead && (
+                        <div style={{ fontSize: 8, color: "#86efac", marginBottom: 3 }}>
+                          ✓ {c.say_instead}
+                        </div>
+                      )}
+                      {c.because && (
+                        <div style={{ fontSize: 8, color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                          {c.because}
                         </div>
                       )}
                     </div>
@@ -296,98 +425,17 @@ function AnalyserPanel() {
                 </div>
               )}
 
-              {/* Narrative Schema */}
-              {result.narrative_schema && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-                    Schéma Narratif
+              {/* Top recommendations */}
+              {result.top_recommendations && result.top_recommendations.length > 0 && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: "#86efac", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>
+                    Recommandations
                   </div>
-                  <div style={{ padding: "8px 10px", background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.15)", borderRadius: 3 }}>
-                    {result.narrative_schema.summary && (
-                      <div style={{ fontSize: 10, color: "var(--text-primary)", lineHeight: 1.5, marginBottom: 8 }}>
-                        {result.narrative_schema.summary}
-                      </div>
-                    )}
-                    {[
-                      { key: "hero", label: "Héros", color: "#22c55e" },
-                      { key: "villain", label: "Antagoniste", color: "#ef4444" },
-                      { key: "victim", label: "Victime", color: "#f97316" },
-                      { key: "quest", label: "Enjeu", color: "#a78bfa" },
-                    ].map(({ key, label, color }) => {
-                      const val = result.narrative_schema?.[key as keyof NarrativeSchema];
-                      if (!val || key === "summary") return null;
-                      return (
-                        <div key={key} style={{ display: "flex", gap: 6, marginBottom: 4, fontSize: 9, lineHeight: 1.4 }}>
-                          <span style={{ color, fontWeight: 700, flexShrink: 0, minWidth: 62 }}>{label}</span>
-                          <span style={{ color: "var(--text-secondary)" }}>{val}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Rhetoric Analysis */}
-              {result.rhetoric_analysis && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-                    Analyse Rhétorique
-                  </div>
-                  <div style={{ padding: "8px 10px", background: "rgba(56,189,248,0.05)", border: "1px solid rgba(56,189,248,0.15)", borderRadius: 3 }}>
-                    {result.rhetoric_analysis.dominant_device && (
-                      <div style={{ fontSize: 10, color: "#38bdf8", fontWeight: 700, marginBottom: 6 }}>
-                        Procédé dominant : {result.rhetoric_analysis.dominant_device}
-                      </div>
-                    )}
-                    {[
-                      { key: "ethos", label: "Éthos (crédibilité)" },
-                      { key: "logos", label: "Logos (logique)" },
-                      { key: "pathos", label: "Pathos (émotion)" },
-                    ].map(({ key, label }) => {
-                      const val = result.rhetoric_analysis?.[key as keyof RhetoricAnalysis];
-                      if (!val || key === "dominant_device") return null;
-                      return (
-                        <div key={key} style={{ marginBottom: 5, fontSize: 9 }}>
-                          <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>{label} — </span>
-                          <span style={{ color: "var(--text-primary)" }}>{val}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Communication Intent + Framing */}
-              {(result.communication_intent || result.framing_analysis || (result.audience_vectors && result.audience_vectors.length > 0)) && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "#fbbf24", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-                    Analyse Communication
-                  </div>
-                  <div style={{ padding: "8px 10px", background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.15)", borderRadius: 3, display: "flex", flexDirection: "column", gap: 6 }}>
-                    {result.communication_intent && (
-                      <div style={{ fontSize: 10, color: "var(--text-primary)", lineHeight: 1.5 }}>
-                        <span style={{ color: "#fbbf24", fontWeight: 700, fontSize: 9 }}>Intention — </span>
-                        {result.communication_intent}
-                      </div>
-                    )}
-                    {result.framing_analysis && (
-                      <div style={{ fontSize: 9, color: "var(--text-secondary)", lineHeight: 1.5, borderLeft: "2px solid rgba(251,191,36,0.3)", paddingLeft: 6 }}>
-                        {result.framing_analysis}
-                      </div>
-                    )}
-                    {result.audience_vectors && result.audience_vectors.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: 8, color: "#fbbf24", fontWeight: 700, marginBottom: 3 }}>VECTEURS D&apos;AUDIENCE</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                          {result.audience_vectors.map((v, i) => (
-                            <span key={i} style={{ fontSize: 8, padding: "1px 6px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.2)", borderRadius: 2, color: "#fbbf24" }}>
-                              {v}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {result.top_recommendations.map((r, i) => (
+                    <div key={i} style={{ fontSize: 9, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 3 }}>
+                      {i + 1}. {r}
+                    </div>
+                  ))}
                 </div>
               )}
             </>
@@ -445,19 +493,19 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bottom panels — 50%: Radar · Analyser · Sondages · Transparence · Discours · TV */}
+        {/* Bottom panels — 50%: Analyser · Infos en direct · Sondages · Transparence · Discours · TV */}
         <div
           className="bottom-panels"
           style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
         >
-          {/* Radar local news — 18% */}
-          <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
-            <NewsTickerPanel />
-          </div>
-
           {/* Analyser — fills remaining space */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             <AnalyserPanel />
+          </div>
+
+          {/* Infos en direct (live radar news) — 18% */}
+          <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
+            <NewsTickerPanel />
           </div>
 
           {/* Sondages 2027 — 13% */}

@@ -2,88 +2,6 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
-interface EnrichedAnalysis {
-  narrative_schema?: {
-    hero?: string;
-    villain?: string;
-    victim?: string;
-    quest?: string;
-    summary?: string;
-  };
-  rhetoric_analysis?: {
-    ethos?: string;
-    logos?: string;
-    pathos?: string;
-    dominant_device?: string;
-  };
-  communication_intent?: string;
-  audience_vectors?: string[];
-  framing_analysis?: string;
-}
-
-async function enrichWithNarrativeAnalysis(
-  summary: string,
-  techniques: Array<{ name: string; tactic?: string }>,
-  inputText: string,
-): Promise<EnrichedAnalysis> {
-  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!anthropicKey) return {};
-
-  const techniquesList = techniques.map((t) => `- ${t.name}${t.tactic ? ` (${t.tactic})` : ""}`).join("\n");
-  const prompt = `Tu es expert en analyse rhétorique et narratologique pour des professionnels de la communication.
-
-Analyse ce contenu médiatique et fournis une analyse structurée en JSON.
-
-Résumé DISARM: ${summary || "(non fourni)"}
-Techniques détectées:
-${techniquesList || "(aucune)"}
-Texte/URL analysé: ${inputText.slice(0, 500)}
-
-Réponds UNIQUEMENT avec un JSON valide (pas de markdown) avec cette structure exacte:
-{
-  "narrative_schema": {
-    "hero": "qui est présenté comme le héros/sauveur",
-    "villain": "qui est présenté comme la menace/antagoniste",
-    "victim": "qui est présenté comme victime",
-    "quest": "quel est l'enjeu narratif central",
-    "summary": "résumé du schéma narratif en 1-2 phrases"
-  },
-  "rhetoric_analysis": {
-    "ethos": "comment l'autorité/crédibilité est construite",
-    "logos": "comment la logique/preuve est mobilisée",
-    "pathos": "quelles émotions sont sollicitées",
-    "dominant_device": "procédé rhétorique dominant (ex: appel à la peur, fausse dichotomie, etc.)"
-  },
-  "communication_intent": "intention communicationnelle principale en 1 phrase (ex: mobiliser contre, légitimer, discréditer...)",
-  "audience_vectors": ["vecteur1", "vecteur2", "vecteur3"],
-  "framing_analysis": "analyse du cadrage (framing) en 1-2 phrases: quelle réalité est construite et quelles alternatives sont occultées"
-}`;
-
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 800,
-        messages: [{ role: "user", content: prompt }],
-      }),
-      signal: AbortSignal.timeout(20000),
-    });
-
-    if (!res.ok) return {};
-    const json = await res.json();
-    const text: string = json.content?.[0]?.text ?? "";
-    return JSON.parse(text) as EnrichedAnalysis;
-  } catch {
-    return {};
-  }
-}
-
 const INFOVERIF_URL =
   process.env.INFOVERIF_BACKEND_URL ?? "https://infoveriforg-production.up.railway.app";
 
@@ -157,15 +75,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const data = await res.json();
-
-    // Secondary enrichment: narrative + rhetoric analysis (requires ANTHROPIC_API_KEY)
-    const enriched = await enrichWithNarrativeAnalysis(
-      data.summary ?? "",
-      data.techniques ?? [],
-      input,
-    );
-
-    return NextResponse.json({ ...data, ...enriched, _input_type: isUrl ? "url" : "text" });
+    return NextResponse.json({ ...data, _input_type: isUrl ? "url" : "text" });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Request failed" },

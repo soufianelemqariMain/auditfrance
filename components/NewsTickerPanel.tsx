@@ -54,7 +54,7 @@ export default function NewsTickerPanel() {
             color: "var(--accent-green)",
           }}
         >
-          RADAR LOCAL
+          INFOS EN DIRECT
         </span>
         <span
           style={{
