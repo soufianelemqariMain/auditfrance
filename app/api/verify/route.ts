@@ -5,6 +5,26 @@ export const maxDuration = 60;
 const INFOVERIF_URL =
   process.env.INFOVERIF_BACKEND_URL ?? "https://infoveriforg-production.up.railway.app";
 
+/** Resolve a Google News redirect URL to the actual article URL using Jina Reader. */
+async function resolveGoogleNewsUrl(url: string): Promise<string> {
+  if (!url.includes("news.google.com")) return url;
+  try {
+    const res = await fetch(`https://r.jina.ai/${url}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return url;
+    const json = await res.json();
+    const resolved: unknown = json?.data?.url ?? json?.url;
+    if (typeof resolved === "string" && resolved.startsWith("http") && !resolved.includes("news.google.com")) {
+      return resolved;
+    }
+  } catch {
+    // fallback to original URL
+  }
+  return url;
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   const apiKey = process.env.INFOVERIF_API_KEY?.trim();
   if (!apiKey) {
@@ -18,12 +38,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const input = (body.input ?? "").trim();
-  if (!input) {
+  const rawInput = (body.input ?? "").trim();
+  if (!rawInput) {
     return NextResponse.json({ error: "input is required" }, { status: 400 });
   }
 
-  const isUrl = /^https?:\/\//i.test(input);
+  const isUrl = /^https?:\/\//i.test(rawInput);
+  // Resolve Google News redirect URLs to actual article URLs before analysis
+  const input = isUrl ? await resolveGoogleNewsUrl(rawInput) : rawInput;
 
   try {
     let res: Response;
