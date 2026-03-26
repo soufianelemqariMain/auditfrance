@@ -338,7 +338,7 @@ function startNewsRadar(
         const res = await fetch(`/api/dept-news/${code}?bust=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) continue;
         const data = await res.json();
-        const articles: Array<{ title: string; source: string; url: string }> = data.articles ?? [];
+        const articles: Array<{ title: string; source: string; url: string; description?: string }> = data.articles ?? [];
         const fresh = articles.filter((a) => a.title && !seenTitles.has(a.title));
         if (!fresh.length) continue;
         fresh.forEach((a) => seenTitles.add(a.title));
@@ -359,6 +359,7 @@ function startNewsRadar(
           title: first.title,
           url: first.url || "",
           publishedAt: new Date().toISOString(),
+          description: first.description,
         });
 
         // 2) Pulse marker (fires after star arrives)

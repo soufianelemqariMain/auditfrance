@@ -11,6 +11,7 @@ export interface NewsItem {
   title: string;
   url: string;
   publishedAt: string;
+  description?: string;
 }
 
 export interface MapState {

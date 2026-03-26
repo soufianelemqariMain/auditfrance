@@ -41,6 +41,7 @@ interface Article {
   url: string;
   source: string;
   publishedAt: string;
+  description?: string;
 }
 
 function extractTag(xml: string, tag: string): string {
@@ -80,8 +81,13 @@ function parseRSS(xml: string, sourceName: string): Article[] {
     const itemSource = extractTag(item, "source") || sourceName;
     // Strip " - Outlet Name" suffix that Google News appends to titles
     const title = rawTitle.replace(/ - [^-]{2,40}$/, "").trim();
+    // Extract plain-text snippet from <description> (may contain HTML)
+    const rawDesc = extractTag(item, "description");
+    const description = rawDesc
+      ? rawDesc.replace(/<[^>]+>/g, " ").replace(/&nbsp;|&amp;|&lt;|&gt;|&quot;|&#39;/g, " ").replace(/\s+/g, " ").trim().slice(0, 600) || undefined
+      : undefined;
     if (title && link) {
-      items.push({ title, url: link, source: itemSource, publishedAt: pubDate });
+      items.push({ title, url: link, source: itemSource, publishedAt: pubDate, description });
     }
   }
   return items;

@@ -130,9 +130,22 @@ export default function NewsTickerPanel() {
                     {item.source}
                   </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                    {item.url && (
+                    {(item.url || item.title) && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setAnalyserInput(item.url); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (item.url && !item.url.includes("news.google.com")) {
+                            setAnalyserInput(item.url);
+                          } else {
+                            // Google News URL can't be resolved server-side — send title + snippet as text
+                            const text = [
+                              `Titre : ${item.title}`,
+                              item.source ? `Source : ${item.source}` : "",
+                              item.description ? `\n${item.description}` : "",
+                            ].filter(Boolean).join("\n");
+                            setAnalyserInput(text);
+                          }
+                        }}
                         title="Analyser cet article"
                         style={{
                           fontSize: 8, padding: "1px 5px", borderRadius: 2,
