@@ -1,15 +1,25 @@
-async function resolveGoogleUrl(url: string): Promise<string> {
-  if (!url.includes("news.google.com")) return url;
+function decodeGoogleNewsUrl(googleUrl: string): string {
+  if (!googleUrl.includes("news.google.com")) return googleUrl;
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      signal: AbortSignal.timeout(3000),
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; InfoVerif/1.0)" },
-    });
-    return res.url && res.url !== url ? res.url : url;
+    const parsed = new URL(googleUrl);
+    const segments = parsed.pathname.split("/");
+    const encoded = segments[segments.length - 1];
+    if (!encoded || encoded.length < 10) return googleUrl;
+
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = (4 - (normalized.length % 4)) % 4;
+    const buf = Buffer.from(normalized + "=".repeat(padding), "base64");
+
+    const httpIdx = buf.indexOf(Buffer.from("http"));
+    if (httpIdx < 0) return googleUrl;
+
+    let end = httpIdx;
+    while (end < buf.length && buf[end] >= 0x20 && buf[end] <= 0x7e) end++;
+
+    const decoded = buf.slice(httpIdx, end).toString("utf-8");
+    return decoded.startsWith("http") ? decoded : googleUrl;
   } catch {
-    return url;
+    return googleUrl;
   }
 }
 
@@ -138,7 +148,7 @@ export async function parseRssFeed(
         id: makeId(link || url, title),
         source: sourceName,
         title,
-        url: await resolveGoogleUrl(link),
+        url: decodeGoogleNewsUrl(link),
         publishedAt,
       });
     }

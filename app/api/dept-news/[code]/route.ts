@@ -1,18 +1,36 @@
 import { NextResponse } from "next/server";
 import { DEPT_REGIONAL_PRESS } from "@/lib/regional-rss";
 
-async function resolveGoogleUrl(url: string): Promise<string> {
-  if (!url.includes("news.google.com")) return url;
+/**
+ * Decode a Google News article URL to the actual publisher URL.
+ * Google News RSS links are base64-encoded protobufs containing the real URL.
+ * This avoids network round-trips (Google blocks server-side redirects).
+ */
+function decodeGoogleNewsUrl(googleUrl: string): string {
+  if (!googleUrl.includes("news.google.com")) return googleUrl;
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      signal: AbortSignal.timeout(3000),
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; InfoVerif/1.0)" },
-    });
-    return res.url && res.url !== url ? res.url : url;
+    const parsed = new URL(googleUrl);
+    const segments = parsed.pathname.split("/");
+    const encoded = segments[segments.length - 1];
+    if (!encoded || encoded.length < 10) return googleUrl;
+
+    // Google News uses standard base64 with URL-safe chars; pad as needed
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = (4 - (normalized.length % 4)) % 4;
+    const buf = Buffer.from(normalized + "=".repeat(padding), "base64");
+
+    // Find first occurrence of "http" in the decoded bytes
+    const httpIdx = buf.indexOf(Buffer.from("http"));
+    if (httpIdx < 0) return googleUrl;
+
+    // Extract until first non-printable/non-URL byte
+    let end = httpIdx;
+    while (end < buf.length && buf[end] >= 0x20 && buf[end] <= 0x7e) end++;
+
+    const decoded = buf.slice(httpIdx, end).toString("utf-8");
+    return decoded.startsWith("http") ? decoded : googleUrl;
   } catch {
-    return url;
+    return googleUrl;
   }
 }
 
@@ -92,10 +110,8 @@ export async function GET(
       const xml = await res.text();
       const rawArticles = parseRSS(xml, outlet.name);
       if (rawArticles.length > 0) {
-        // Resolve Google News redirect URLs to actual destination URLs
-        const articles = await Promise.all(
-          rawArticles.map(async (a) => ({ ...a, url: await resolveGoogleUrl(a.url) }))
-        );
+        // Decode Google News encoded URLs to actual publisher article URLs
+        const articles = rawArticles.map((a) => ({ ...a, url: decodeGoogleNewsUrl(a.url) }));
         return NextResponse.json({ articles, source: outlet.name, code }, {
           headers: { "Cache-Control": "public, s-maxage=600" },
         });
