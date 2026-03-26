@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
 import TVPanel from "@/components/TVPanel";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import CommunePanel from "@/components/CommunePanel";
+import SondagesPanel from "@/components/SondagesPanel";
+import TransparencePanel from "@/components/TransparencePanel";
+import { useAppStore } from "@/lib/store";
 
 // MapLibre requires browser APIs — load client-side only
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -58,6 +61,18 @@ function ScoreBar({ label, value, color }: { label: string; value?: number; colo
 function AnalyserPanel() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const analyserInput = useAppStore((s) => s.analyserInput);
+  const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
+
+  // When a news article sends a URL, prefill and start analysis
+  useEffect(() => {
+    if (analyserInput && analyserInput !== input) {
+      setInput(analyserInput);
+      setStatus("idle");
+      setResult(null);
+      setAnalyserInput(""); // clear so re-sending same URL works
+    }
+  }, [analyserInput]); // eslint-disable-line react-hooks/exhaustive-deps
   const [result, setResult] = useState<VerifResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -328,7 +343,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bottom panels — 50%: Analyser · News · TV Direct */}
+        {/* Bottom panels — 50%: Analyser · Sondages · Transparence · News · TV */}
         <div
           className="bottom-panels"
           style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
@@ -338,13 +353,23 @@ export default function Home() {
             <AnalyserPanel />
           </div>
 
-          {/* Actualités en direct — 16% */}
-          <div style={{ flex: "0 0 16%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+          {/* Sondages 2027 — 15% */}
+          <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
+            <SondagesPanel />
+          </div>
+
+          {/* Transparence / Sous-actifs — 15% */}
+          <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
+            <TransparencePanel />
+          </div>
+
+          {/* Actualités en direct — 20% */}
+          <div style={{ flex: "0 0 20%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
             <NewsTickerPanel />
           </div>
 
-          {/* TV Direct — 14% */}
-          <div style={{ flex: "0 0 14%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+          {/* TV Direct — 15% */}
+          <div style={{ flex: "0 0 15%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
             <TVPanel />
           </div>
         </div>

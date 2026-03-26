@@ -42,6 +42,10 @@ export interface AppState {
   insightLoading: boolean;
   setInsightLoading: (v: boolean) => void;
 
+  // Analyser quick-fill (from news articles)
+  analyserInput: string;
+  setAnalyserInput: (url: string) => void;
+
   // 3D globe toggle
   is3D: boolean;
   toggle3D: () => void;
@@ -86,6 +90,10 @@ export const useAppStore = create<AppState>((set) => ({
   setInsightText: (text: string) => set({ insightText: text }),
   insightLoading: false,
   setInsightLoading: (v: boolean) => set({ insightLoading: v }),
+
+  // Analyser quick-fill
+  analyserInput: "",
+  setAnalyserInput: (url: string) => set({ analyserInput: url }),
 
   // 3D toggle
   is3D: false,

@@ -31,6 +31,7 @@ function SkeletonList() {
 export default function NewsTickerPanel() {
   const newsItems = useAppStore((s) => s.newsItems);
   const setNewsItems = useAppStore((s) => s.setNewsItems);
+  const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
   const [loading, setLoading] = useState(newsItems.length === 0);
 
   async function fetchNews() {
@@ -134,11 +135,9 @@ export default function NewsTickerPanel() {
             {items.map((item) => (
               <li
                 key={item.id}
-                onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
                 style={{
                   padding: "8px 12px",
                   borderBottom: "1px solid var(--border)",
-                  cursor: "pointer",
                   display: "flex",
                   flexDirection: "column",
                   gap: 4,
@@ -156,11 +155,28 @@ export default function NewsTickerPanel() {
                   >
                     {item.source}
                   </span>
-                  <span style={{ fontSize: 10, color: "var(--text-secondary)", flexShrink: 0 }}>
-                    {formatTime(item.publishedAt)}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAnalyserInput(item.url); }}
+                      title="Analyser cet article"
+                      style={{
+                        fontSize: 8, padding: "1px 5px", borderRadius: 2,
+                        background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
+                        color: "#a5b4fc", cursor: "pointer", fontFamily: "inherit",
+                        lineHeight: 1.4, fontWeight: 700,
+                      }}
+                    >
+                      → Analyser
+                    </button>
+                    <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+                      {formatTime(item.publishedAt)}
+                    </span>
+                  </div>
                 </div>
-                <span style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.4 }}>
+                <span
+                  onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
+                  style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.4, cursor: "pointer" }}
+                >
                   {item.title}
                 </span>
               </li>
