@@ -10,6 +10,7 @@ interface Intervention {
   date: string;
   type: string;
   texte: string;
+  url?: string;
 }
 
 const GROUPE_COLORS: Record<string, string> = {
@@ -35,6 +36,7 @@ export default function DiscoursPanel() {
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<"live" | "static">("static");
+  const [sessionUrl, setSessionUrl] = useState<string | null>(null);
   const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
 
   async function fetchData() {
@@ -45,6 +47,7 @@ export default function DiscoursPanel() {
       const data = await res.json();
       setInterventions(data.interventions ?? []);
       setSource(data.source ?? "static");
+      setSessionUrl(data.sessionUrl ?? null);
     } catch {
       setInterventions([]);
     } finally {
@@ -122,21 +125,34 @@ export default function DiscoursPanel() {
                   </div>
 
                   {/* Analyser button */}
-                  <button
-                    onClick={() => setAnalyserInput(item.texte)}
-                    style={{
-                      fontSize: 8, padding: "2px 7px", borderRadius: 2,
-                      border: "1px solid rgba(139,92,246,0.4)",
-                      background: "rgba(139,92,246,0.08)",
-                      color: "#a78bfa",
-                      cursor: "pointer", fontFamily: "inherit",
-                      transition: "background 0.15s",
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.18)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.08)"; }}
-                  >
-                    → Analyser
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <button
+                      onClick={() => setAnalyserInput(item.texte)}
+                      style={{
+                        fontSize: 8, padding: "2px 7px", borderRadius: 2,
+                        border: "1px solid rgba(139,92,246,0.4)",
+                        background: "rgba(139,92,246,0.08)",
+                        color: "#a78bfa",
+                        cursor: "pointer", fontFamily: "inherit",
+                        transition: "background 0.15s",
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.18)"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.08)"; }}
+                    >
+                      → Analyser
+                    </button>
+                    {item.url && (
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: 8, color: "var(--border)", textDecoration: "none" }}
+                        title="Voir sur assemblee-nationale.fr"
+                      >
+                        ↗ source
+                      </a>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -146,7 +162,13 @@ export default function DiscoursPanel() {
 
       {/* Footer */}
       <div style={{ padding: "4px 10px", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
-        <span style={{ fontSize: 8, color: "var(--border)" }}>Source : nosdéputés.fr · XVII° législature</span>
+        {sessionUrl ? (
+          <a href={sessionUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 8, color: "var(--border)", textDecoration: "none" }}>
+            Source : assemblee-nationale.fr · XVII° législature
+          </a>
+        ) : (
+          <span style={{ fontSize: 8, color: "var(--border)" }}>Source : assemblee-nationale.fr · XVII° législature</span>
+        )}
       </div>
     </div>
   );

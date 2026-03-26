@@ -9,9 +9,9 @@ interface Intervention {
   date: string;
   type: string;
   texte: string;
+  url?: string;
 }
 
-// Static fallback — notable recent interventions (when API unavailable)
 const STATIC_INTERVENTIONS: Intervention[] = [
   {
     id: "1", depute: "Mathilde Panot", groupe: "LFI-NFP", date: "2026-03-25", type: "Assemblée",
@@ -23,7 +23,7 @@ const STATIC_INTERVENTIONS: Intervention[] = [
   },
   {
     id: "3", depute: "Gabriel Attal", groupe: "EPR", date: "2026-03-24", type: "Assemblée",
-    texte: "Le projet de loi sur la compétitivité économique vise à réduire les charges des PME de 4 milliards d'euros sur cinq ans et à stimuler l'investissement dans les secteurs d'avenir tels que l'intelligence artificielle, la biotechnologie et la transition énergétique. La France crée aujourd'hui plus de startups que l'Allemagne et le Royaume-Uni réunis. Notre écosystème d'innovation est le premier en Europe continentale selon le classement StartupBlink 2025. Nous devons capitaliser sur ces succès.",
+    texte: "Le projet de loi sur la compétitivité économique vise à réduire les charges des PME de 4 milliards d'euros sur cinq ans et à stimuler l'investissement dans les secteurs d'avenir tels que l'intelligence artificielle, la biotechnologie et la transition énergétique. La France crée aujourd'hui plus de startups que l'Allemagne et le Royaume-Uni réunis. Notre écosystème d'innovation est le premier en Europe continentale selon le classement StartupBlink 2025.",
   },
   {
     id: "4", depute: "Marine Le Pen", groupe: "RN", date: "2026-03-23", type: "Assemblée",
@@ -47,32 +47,139 @@ const STATIC_INTERVENTIONS: Intervention[] = [
   },
 ];
 
+const AN_BASE = "https://www.assemblee-nationale.fr";
+const XHR_HEADERS = {
+  "X-Requested-With": "XMLHttpRequest",
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+};
+const MONTHS: Record<string, string> = {
+  janvier: "01", fevrier: "02", "février": "02", mars: "03", avril: "04",
+  mai: "05", juin: "06", juillet: "07", aout: "08", "août": "08",
+  septembre: "09", octobre: "10", novembre: "11", decembre: "12", "décembre": "12",
+};
+
+async function fetchLatestSessionDate(): Promise<string | null> {
+  const res = await fetch(
+    `${AN_BASE}/dyn/api/agendas/seance-publique/getAvailableReunionDate`,
+    { headers: XHR_HEADERS, signal: AbortSignal.timeout(5000), cache: "no-store" }
+  );
+  const dates: string[] = await res.json();
+  // Dates sorted oldest→newest; find last date that's not in the future
+  const today = new Date().toISOString().slice(0, 10);
+  const past = dates.filter((d) => d <= today);
+  return past[past.length - 1] ?? dates[dates.length - 1] ?? null;
+}
+
+async function fetchSessionUrl(date: string): Promise<string | null> {
+  const [year, month, day] = date.split("-");
+  const dateFormatted = `${day}/${month}/${year}`;
+  const url = `${AN_BASE}/dyn/17/comptes-rendus/seance?seance_date=${encodeURIComponent(dateFormatted)}`;
+  const res = await fetch(url, { headers: XHR_HEADERS, signal: AbortSignal.timeout(8000), cache: "no-store" });
+  const html = await res.text();
+  // Find session URL (not PDF, not anchor)
+  const match = html.match(/href="(\/dyn\/17\/comptes-rendus\/seance\/[^"#]+)(?<!\.pdf)"/);
+  return match ? `${AN_BASE}${match[1]}` : null;
+}
+
+function extractDateFromSlug(url: string): string {
+  const match = url.match(/(\d{1,2})-([a-z\u00e0-\u00ff]+)-(\d{4})(?:$|#)/);
+  if (match) {
+    const day = match[1].padStart(2, "0");
+    const monthKey = match[2].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const month = MONTHS[monthKey] ?? MONTHS[match[2]] ?? "01";
+    const year = match[3];
+    return `${year}-${month}-${day}`;
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
+function stripHtml(s: string): string {
+  return s
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseInterventions(html: string, date: string, sessionUrl: string): Intervention[] {
+  const results: Intervention[] = [];
+
+  const parts = html.split(/(?=<div\s+id="\d+"\s+class="crs-inter)/);
+
+  for (const part of parts) {
+    if (!part.includes('class="orateur"')) continue;
+
+    // Extract numeric ID
+    const idM = part.match(/<div\s+id="(\d+)"/);
+    const id = idM ? idM[1] : String(results.length + 1);
+
+    // Extract speaker (first span in p.orateur)
+    const orateurM = part.match(/class="orateur"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
+    const speaker = orateurM ? orateurM[1].trim() : null;
+
+    if (!speaker) continue;
+    // Skip president/procedural
+    if (/[Pp]r[eé]sid[ei]/.test(speaker)) continue;
+    if (speaker === "M. le président" || speaker === "Mme la présidente") continue;
+
+    // Extract role from span.italique
+    const roleM = part.match(/class="italique"[^>]*>([\s\S]*?)<\/span>/);
+    const role = roleM ? stripHtml(roleM[1]).replace(/^,\s*/, "").trim() : "";
+
+    // Extract speech text: look for <p class=""> containing a <span> with actual text
+    // Pattern: after the share div, we get <p class=""><span>TEXT</span></p>
+    const textM = part.match(/<p class="">\s*<span>([\s\S]+?)<\/span>\s*<\/p>/);
+    if (!textM) continue;
+
+    const texte = stripHtml(textM[1]);
+    if (texte.length < 80) continue;
+
+    const isGovt = /ministre|secrétaire d'[ée]tat|Premier ministre|[Pp]r[ée]mier ministre/i.test(role);
+
+    results.push({
+      id,
+      depute: speaker,
+      groupe: role || "Assemblée nationale",
+      date,
+      type: isGovt ? "Gouvernement" : "Assemblée",
+      texte: texte.slice(0, 3000),
+      url: `${sessionUrl}#${id}`,
+    });
+
+    if (results.length >= 12) break;
+  }
+
+  return results;
+}
+
 export async function GET() {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const date = await fetchLatestSessionDate();
+    if (!date) throw new Error("no date");
 
-    const res = await fetch("https://www.nosdeputes.fr/interventions/json?limit=20", {
-      signal: controller.signal,
+    const sessionUrl = await fetchSessionUrl(date);
+    if (!sessionUrl) throw new Error("no session url");
+
+    const sessionDate = extractDateFromSlug(sessionUrl);
+
+    const res = await fetch(sessionUrl, {
+      headers: XHR_HEADERS,
+      signal: AbortSignal.timeout(15000),
       cache: "no-store",
     });
-    clearTimeout(timeout);
+    const html = await res.text();
 
-    if (!res.ok) throw new Error(`nosdeputes ${res.status}`);
+    const interventions = parseInterventions(html, sessionDate, sessionUrl);
+    if (interventions.length < 2) throw new Error("too few");
 
-    const data = await res.json();
-    const interventions: Intervention[] = (data.interventions ?? [])
-      .slice(0, 15)
-      .map((item: Record<string, unknown>, i: number) => ({
-        id: String(i),
-        depute: String(item.depute_nom ?? item.nom ?? "Inconnu"),
-        groupe: String(item.groupe_sigle ?? ""),
-        date: String(item.date ?? "").slice(0, 10),
-        type: String(item.type ?? "Assemblée"),
-        texte: String(item.contenu ?? item.texte ?? "").slice(0, 4000),
-      }));
-
-    return NextResponse.json({ interventions, source: "live" });
+    return NextResponse.json({ interventions, source: "live", sessionUrl });
   } catch {
     return NextResponse.json({ interventions: STATIC_INTERVENTIONS, source: "static" });
   }
