@@ -8,7 +8,6 @@ import NewsBandeau from "@/components/NewsBandeau";
 import TVPanel from "@/components/TVPanel";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import CommunePanel from "@/components/CommunePanel";
-import SondagesPanel from "@/components/SondagesPanel";
 import TransparencePanel from "@/components/TransparencePanel";
 import DiscoursPanel from "@/components/DiscoursPanel";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
@@ -493,7 +492,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bottom panels — 50%: Analyser · Infos en direct · Sondages · Transparence · Discours · TV */}
+        {/* Bottom panels — 50%: Analyser · Infos en direct · Transparence · Discours · TV */}
         <div
           className="bottom-panels"
           style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
@@ -508,11 +507,6 @@ export default function Home() {
             <NewsTickerPanel />
           </div>
 
-          {/* Sondages 2027 — 13% */}
-          <div style={{ flex: "0 0 13%", overflow: "hidden" }}>
-            <SondagesPanel />
-          </div>
-
           {/* Transparence — 12% */}
           <div style={{ flex: "0 0 12%", overflow: "hidden" }}>
             <TransparencePanel />
@@ -523,8 +517,8 @@ export default function Home() {
             <DiscoursPanel />
           </div>
 
-          {/* TV Direct — 10% */}
-          <div style={{ flex: "0 0 10%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+          {/* TV Direct — 23% (enlarged after sunset of Sondages) */}
+          <div style={{ flex: "0 0 23%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
             <TVPanel />
           </div>
         </div>
