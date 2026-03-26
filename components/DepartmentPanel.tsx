@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { getDeptInfo, fmtPop } from "@/lib/deptData";
 import { getPresidentCR } from "@/lib/elusData";
+import { useAppStore } from "@/lib/store";
 import OffresTab from "./OffresTab";
 
 interface Props {
@@ -19,7 +20,7 @@ function fmtDate(s: string): string {
 
 export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: Props) {
   const info = getDeptInfo(code);
-  const [tab, setTab] = useState<"apercu" | "budget" | "elus" | "recrutement">("apercu");
+  const [tab, setTab] = useState<"apercu" | "budget" | "elus" | "recrutement" | "presse">("apercu");
 
   return (
     <div
@@ -81,7 +82,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 0, marginTop: 10, overflowX: "auto" }}>
-          {(["apercu", "elus", "budget", "recrutement"] as const).map((t) => (
+          {(["apercu", "elus", "budget", "recrutement", "presse"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -100,7 +101,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
                 flexShrink: 0,
               }}
             >
-              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "budget" ? "Budget" : "Offres d'emploi"}
+              {t === "apercu" ? "Aperçu" : t === "elus" ? "Élus" : t === "budget" ? "Budget" : t === "recrutement" ? "Offres d'emploi" : "Presse Régionale"}
             </button>
           ))}
         </div>
@@ -118,6 +119,7 @@ export default function DepartmentPanel({ code, nom, onClose, onCommuneClick }: 
           <BudgetTab code={code} nom={nom} />
         )}
         {tab === "recrutement" && <OffresTab dept={code} />}
+        {tab === "presse" && <PresseTab code={code} />}
       </div>
     </div>
   );
@@ -431,6 +433,128 @@ function MiniStat({ label, value, unit, color }: { label: string; value: number;
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{label}</span>
       <span style={{ fontSize: 10, fontWeight: 700, color, fontFamily: "var(--font-mono)" }}>{value}{unit ? " " + unit : ""}</span>
+    </div>
+  );
+}
+
+// --- Presse Régionale tab ---
+interface PresseArticle {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+}
+
+function PresseTab({ code }: { code: string }) {
+  const [articles, setArticles] = useState<PresseArticle[]>([]);
+  const [source, setSource] = useState<string>("");
+  const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
+  const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
+
+  useEffect(() => {
+    setStatus("loading");
+    fetch(`/api/dept-news/${code}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setArticles(data.articles ?? []);
+        setSource(data.source ?? "");
+        setStatus("done");
+      })
+      .catch(() => setStatus("error"));
+  }, [code]);
+
+  function fmtDate(raw: string): string {
+    if (!raw) return "";
+    try {
+      return new Date(raw).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    } catch {
+      return raw.slice(0, 10);
+    }
+  }
+
+  return (
+    <div>
+      {source && (
+        <div style={{ fontSize: 10, color: "var(--text-secondary)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 9, color: "var(--border)" }}>Source :</span>
+          <span style={{ fontWeight: 600, color: "var(--accent-blue)" }}>{source}</span>
+        </div>
+      )}
+
+      {status === "loading" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[1, 2, 3].map((n) => (
+            <div key={n} style={{ height: 56, background: "rgba(255,255,255,0.04)", borderRadius: 4, border: "1px solid var(--border)", opacity: 0.5 }} />
+          ))}
+        </div>
+      )}
+
+      {status === "error" && (
+        <div style={{ fontSize: 11, color: "#ef4444" }}>Impossible de charger la presse régionale.</div>
+      )}
+
+      {status === "done" && articles.length === 0 && (
+        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Aucun article disponible pour ce département.</div>
+      )}
+
+      {status === "done" && articles.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {articles.map((article, i) => (
+            <div
+              key={i}
+              style={{
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid var(--border)",
+                borderRadius: 5,
+                padding: "8px 10px",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 6 }}>
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: 11, fontWeight: 600, color: "var(--text-primary)",
+                    textDecoration: "none", lineHeight: 1.4, flex: 1,
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--accent-blue)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
+                >
+                  {article.title}
+                </a>
+                {article.publishedAt && (
+                  <span style={{ fontSize: 9, color: "var(--border)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                    {fmtDate(article.publishedAt)}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 9, color: "var(--text-secondary)" }}>{article.source}</span>
+                <button
+                  onClick={() => setAnalyserInput(article.url)}
+                  style={{
+                    fontSize: 9, padding: "2px 7px", borderRadius: 2,
+                    border: "1px solid rgba(0,85,164,0.3)",
+                    background: "rgba(0,85,164,0.08)",
+                    color: "var(--accent-blue)",
+                    cursor: "pointer", fontFamily: "inherit",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,85,164,0.18)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(0,85,164,0.08)"; }}
+                >
+                  → Analyser
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, fontSize: 10, color: "var(--border)" }}>
+        Presse régionale · flux RSS public
+      </div>
     </div>
   );
 }

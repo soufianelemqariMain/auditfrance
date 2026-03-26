@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { track } from "@vercel/analytics";
 import Navbar from "@/components/Navbar";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
 import TVPanel from "@/components/TVPanel";
@@ -9,6 +10,7 @@ import DepartmentPanel from "@/components/DepartmentPanel";
 import CommunePanel from "@/components/CommunePanel";
 import SondagesPanel from "@/components/SondagesPanel";
 import TransparencePanel from "@/components/TransparencePanel";
+import DiscoursPanel from "@/components/DiscoursPanel";
 import { useAppStore } from "@/lib/store";
 
 // MapLibre requires browser APIs — load client-side only
@@ -82,6 +84,7 @@ function AnalyserPanel() {
   async function analyse() {
     if (!input.trim() || status === "loading") return;
     setStatus("loading");
+    track("analyse_submitted", { input_type: isUrl ? "url" : "text" });
     setResult(null);
     try {
       const res = await fetch("/api/verify", {
@@ -323,7 +326,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* Bottom panels — 50%: Analyser · Sondages · Transparence · News · TV */}
+        {/* Bottom panels — 50%: Analyser · Sondages · Transparence · Discours · News · TV */}
         <div
           className="bottom-panels"
           style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
@@ -333,23 +336,28 @@ export default function Home() {
             <AnalyserPanel />
           </div>
 
-          {/* Sondages 2027 — 15% */}
-          <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
+          {/* Sondages 2027 — 13% */}
+          <div style={{ flex: "0 0 13%", overflow: "hidden" }}>
             <SondagesPanel />
           </div>
 
-          {/* Transparence / Sous-actifs — 15% */}
-          <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
+          {/* Transparence / Sous-actifs — 12% */}
+          <div style={{ flex: "0 0 12%", overflow: "hidden" }}>
             <TransparencePanel />
           </div>
 
-          {/* Actualités en direct — 20% */}
-          <div style={{ flex: "0 0 20%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+          {/* Discours & Interventions — 15% */}
+          <div style={{ flex: "0 0 15%", overflow: "hidden" }}>
+            <DiscoursPanel />
+          </div>
+
+          {/* Actualités en direct — 18% */}
+          <div style={{ flex: "0 0 18%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
             <NewsTickerPanel />
           </div>
 
-          {/* TV Direct — 15% */}
-          <div style={{ flex: "0 0 15%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
+          {/* TV Direct — 10% */}
+          <div style={{ flex: "0 0 10%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
             <TVPanel />
           </div>
         </div>
