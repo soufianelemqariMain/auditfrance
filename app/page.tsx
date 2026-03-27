@@ -536,12 +536,21 @@ export default function Home() {
         <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>OPEN SOURCE</span>
         <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
         <a
-          href="https://github.com/soufianelemqariMain/auditfrance"
+          href="https://infoverif.org"
           target="_blank"
           rel="noopener noreferrer"
           style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em" }}
         >
           infoverif.org
+        </a>
+        <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
+        <a
+          href="https://github.com/soufianelemqariMain/auditfrance"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em" }}
+        >
+          GitHub
         </a>
         <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
         <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>MIT</span>
