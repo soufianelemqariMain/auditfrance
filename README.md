@@ -142,7 +142,7 @@ Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif 
 - **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + Mistral + embeddings custom)
 - **[Vercel Analytics](https://vercel.com/analytics)** — Usage anonymisé
 
-**Backend repo** : 🔒 Private — available to [GitHub Sponsors](https://github.com/sponsors/soufianelemqariMain). Sponsors get access to the full FastAPI backend (DISARM pipeline, Mistral AI, fact-checking engine).
+**Backend** : 🔒 Dépôt privé — accès réservé aux [sponsors GitHub](https://github.com/sponsors/soufianelemqariMain). Sponsoriser donne accès au code source complet du backend (pipeline DISARM, Mistral AI, moteur de fact-checking) hébergé sur [GenerativSchoolLaborg/infoverif.org-backend](https://github.com/GenerativSchoolLaborg/infoverif.org-backend).
 
 ---
 
@@ -225,11 +225,16 @@ Deux angles complémentaires, deux missions distinctes :
 
 ## Soutenir le projet
 
-InfoVerif est gratuit, open source, et maintenu bénévolement. Si l'outil vous est utile, vous pouvez nous soutenir via GitHub Sponsors :
+InfoVerif est gratuit et open source. Si l'outil vous est utile, vous pouvez soutenir le projet via GitHub Sponsors.
 
-[![❤️ Sponsor InfoVerif](https://img.shields.io/badge/Sponsor-❤️-red?logo=github&style=for-the-badge)](https://github.com/sponsors/soufianelemqariMain)
+**En sponsorisant, vous obtenez :**
+- 🔓 Accès au dépôt privé du backend ([infoverif.org-backend](https://github.com/GenerativSchoolLaborg/infoverif.org-backend)) — code source complet du pipeline DISARM, Mistral AI, et moteur de fact-checking
+- La possibilité d'héberger votre propre instance d'InfoVerif
+- Un accès anticipé aux nouvelles fonctionnalités
 
-Chaque contribution aide à maintenir les serveurs, améliorer les fonctionnalités, et garder l'outil accessible à tous.
+[![❤️ Sponsoriser InfoVerif](https://img.shields.io/badge/Sponsoriser-❤️-red?logo=github&style=for-the-badge)](https://github.com/sponsors/soufianelemqariMain)
+
+Chaque contribution aide à couvrir les coûts Railway et d'inférence IA, et à garder l'outil accessible à tous.
 
 ---
 
