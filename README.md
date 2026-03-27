@@ -142,6 +142,8 @@ Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif 
 - **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + Mistral + embeddings custom)
 - **[Vercel Analytics](https://vercel.com/analytics)** — Usage anonymisé
 
+**Backend repo** : [github.com/soufianelemqariMain/infoverif.org](https://github.com/soufianelemqariMain/infoverif.org) — API FastAPI, pipeline DISARM, Mistral AI
+
 ---
 
 ## Lancer en local
