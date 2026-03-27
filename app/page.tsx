@@ -8,7 +8,7 @@ import NewsBandeau from "@/components/NewsBandeau";
 import TVPanel from "@/components/TVPanel";
 import DepartmentPanel from "@/components/DepartmentPanel";
 import CommunePanel from "@/components/CommunePanel";
-import TransparencePanel from "@/components/TransparencePanel";
+import CorpusPolitiquePanel from "@/components/CorpusPolitiquePanel";
 import DiscoursPanel from "@/components/DiscoursPanel";
 import NewsTickerPanel from "@/components/NewsTickerPanel";
 import { useAppStore } from "@/lib/store";
@@ -507,9 +507,9 @@ export default function Home() {
             <NewsTickerPanel />
           </div>
 
-          {/* Transparence — 12% */}
+          {/* Corpus Politique 2027 — 12% */}
           <div style={{ flex: "0 0 12%", overflow: "hidden" }}>
-            <TransparencePanel />
+            <CorpusPolitiquePanel />
           </div>
 
           {/* Discours & Interventions — 15% */}
