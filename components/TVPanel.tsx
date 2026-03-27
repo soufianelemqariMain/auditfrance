@@ -37,6 +37,7 @@ const CHANNELS: TVChannel[] = [
 
 export default function TVPanel() {
   const [active, setActive] = useState(0);
+  const [muted, setMuted] = useState(true);
   const ch = CHANNELS[active];
 
   return (
@@ -72,7 +73,7 @@ export default function TVPanel() {
         >
           TV DIRECT
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div
             style={{
               width: 6,
@@ -86,6 +87,23 @@ export default function TVPanel() {
           <span style={{ fontSize: 9, color: "var(--accent-red)", letterSpacing: "0.1em" }}>
             EN DIRECT
           </span>
+          <button
+            onClick={() => setMuted((m) => !m)}
+            title={muted ? "Activer le son" : "Couper le son"}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: 3,
+              color: muted ? "var(--text-secondary)" : "var(--text-primary)",
+              cursor: "pointer",
+              fontSize: 9,
+              letterSpacing: "0.08em",
+              padding: "2px 5px",
+              fontFamily: "inherit",
+            }}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
         </div>
       </div>
 
@@ -123,7 +141,7 @@ export default function TVPanel() {
 
       {/* HLS video */}
       <div style={{ flex: 1, overflow: "hidden", background: "#000" }}>
-        <HLSPlayer key={ch.hlsUrl} hlsUrl={ch.hlsUrl} />
+        <HLSPlayer key={ch.hlsUrl} hlsUrl={ch.hlsUrl} muted={muted} />
       </div>
 
       {/* Channel info */}

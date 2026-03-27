@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 interface HLSPlayerProps {
   hlsUrl: string;
+  muted?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -11,9 +12,15 @@ interface HLSPlayerProps {
  * Plays an HLS (m3u8) stream.
  * Uses native HLS on Safari, hls.js on all other browsers.
  */
-export default function HLSPlayer({ hlsUrl, style }: HLSPlayerProps) {
+export default function HLSPlayer({ hlsUrl, muted = true, style }: HLSPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
+
+  // Sync muted state with video element imperatively (avoids React re-render killing autoplay)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) video.muted = muted;
+  }, [muted]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -95,7 +102,7 @@ export default function HLSPlayer({ hlsUrl, style }: HLSPlayerProps) {
   return (
     <video
       ref={videoRef}
-      muted
+      muted={muted}
       autoPlay
       playsInline
       style={{
