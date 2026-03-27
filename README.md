@@ -78,7 +78,7 @@ InfoVerif permet à n'importe quel citoyen de vérifier ce que disent les élus 
 
 ### 🔍 Analyser un contenu — Détection DISARM
 
-Colle n'importe quoi : URL, article de presse, discours politique, post réseau social, vidéo YouTube. Le moteur envoie au backend Railway (Mistral + embeddings custom) et retourne :
+Colle n'importe quoi : URL, article de presse, discours politique, post réseau social, vidéo YouTube. Le moteur envoie au backend Railway (OpenAI GPT-4o + Whisper) et retourne :
 
 | Sortie | Description |
 |---|---|
@@ -123,7 +123,7 @@ Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif 
 |---|---|---|
 | Actualités locales | Google News RSS (par département) | 5 min |
 | Actualités nationales (bandeau) | Google News RSS | 30 s |
-| Analyse DISARM | Backend Railway (Mistral + embeddings custom) | Temps réel |
+| Analyse DISARM | Backend Railway (OpenAI GPT-4o + Whisper) | Temps réel |
 | Vidéos politiques | YouTube RSS (channel IDs directs) | 1 h |
 | Interventions AN | assemblee-nationale.fr | Live |
 | TV directe | Flux HLS (chaînes publiques françaises) | Continu |
@@ -139,10 +139,12 @@ Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif 
 - **[Zustand](https://zustand-demo.pmnd.rs)** — Store partagé carte ↔ panneaux
 - **[hls.js](https://github.com/video-dev/hls.js)** — Lecture des streams TV
 - **[Vercel](https://vercel.com)** — Déploiement frontend
-- **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + Mistral + embeddings custom)
+- **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + OpenAI GPT-4o + Whisper)
 - **[Vercel Analytics](https://vercel.com/analytics)** — Usage anonymisé
 
-**Backend** : 🔒 Dépôt privé — accès réservé aux [sponsors GitHub](https://github.com/sponsors/soufianelemqariMain). Sponsoriser donne accès au code source complet du backend (pipeline DISARM, Mistral AI, moteur de fact-checking) hébergé sur [GenerativSchoolLaborg/infoverif.org-backend](https://github.com/GenerativSchoolLaborg/infoverif.org-backend).
+**Backend** : 🔒 Dépôt privé — accès réservé aux [sponsors GitHub](https://github.com/sponsors/soufianelemqariMain). Sponsoriser donne accès au code source complet du backend (pipeline DISARM, OpenAI, moteur de fact-checking) hébergé sur [GenerativSchoolLaborg/infoverif.org-backend](https://github.com/GenerativSchoolLaborg/infoverif.org-backend).
+
+> **Note (mars 2026) :** On a tenté une migration vers Mistral AI pour réduire les coûts. Revertée après 24h — `voxtral-mini-2507` (modèle audio Mistral) n'est pas encore fonctionnel via l'API Python. Retour sur OpenAI (GPT-4o + Whisper) qui est stable en production.
 
 ---
 
@@ -228,7 +230,7 @@ Deux angles complémentaires, deux missions distinctes :
 InfoVerif est gratuit et open source. Si l'outil vous est utile, vous pouvez soutenir le projet via GitHub Sponsors.
 
 **En sponsorisant, vous obtenez :**
-- 🔓 Accès au dépôt privé du backend ([infoverif.org-backend](https://github.com/GenerativSchoolLaborg/infoverif.org-backend)) — code source complet du pipeline DISARM, Mistral AI, et moteur de fact-checking
+- 🔓 Accès au dépôt privé du backend ([infoverif.org-backend](https://github.com/GenerativSchoolLaborg/infoverif.org-backend)) — code source complet du pipeline DISARM, OpenAI, et moteur de fact-checking
 - La possibilité d'héberger votre propre instance d'InfoVerif
 - Un accès anticipé aux nouvelles fonctionnalités
 
