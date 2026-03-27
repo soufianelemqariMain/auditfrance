@@ -1,117 +1,127 @@
 <div align="center">
 
-# 🇫🇷 Audit France
+# 🔍 InfoVerif
 
-### Le tableau de bord de la République — en temps réel
+### Surveillance médiatique & vérification de contenu — France, en temps réel
 
-*Marchés publics. Élus. Budgets. Appels d'offres. Sondages. Tout ce que l'État publie, rendu lisible.*
+*Carte de France live. Actualités par département. Analyse DISARM. Vidéos des candidats 2027. TV en direct.*
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-22c55e.svg)](LICENSE)
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
 [![Deploy with Vercel](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
-[![GitHub Sponsors](https://img.shields.io/badge/Soutenir%20le%20projet-%E2%9D%A4-ff69b4?logo=github-sponsors)](https://github.com/sponsors/soufianelemqariMain)
-[![PRs bienvenues](https://img.shields.io/badge/PRs-bienvenues-brightgreen.svg)](https://github.com/soufianelemqariMain/auditfrance/issues)
 
-[**→ Démo live**](https://auditfrance.vercel.app) &nbsp;·&nbsp; [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Soutenir le projet ❤️](https://github.com/sponsors/soufianelemqariMain)
+[**→ infoverif.org**](https://www.infoverif.org) &nbsp;·&nbsp; [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues)
 
 </div>
 
 ---
 
-## Pourquoi ce projet existe
+## Ce que c'est
 
-La transparence de l'État, c'est pas un concept. C'est des APIs. Des fichiers JSON. Des millions de lignes publiées chaque jour sur data.gouv.fr, BOAMP, DECP, nosdeputes.fr — et que personne ne lit parce qu'elles sont inaccessibles.
+InfoVerif est un tableau de bord de surveillance médiatique pour la France. L'interface combine une carte interactive des 101 départements avec des outils d'analyse de contenu en temps réel : détection de propagande et désinformation via le framework DISARM, flux d'actualités locales live, vidéos des candidats à la présidentielle 2027, interventions à l'Assemblée Nationale, et TV française en direct.
 
-**Audit France, c'est la traduction de ces données brutes en quelque chose d'humain.**
-
-Pas de compte à créer. Pas d'abonnement. Pas d'algorithme qui filtre ce que tu vois. Juste les données officielles de la République, présentées clairement, pour n'importe quel citoyen qui veut comprendre comment fonctionne l'État qui le gouverne.
-
-L'argent public appartient au public. Les décisions publiques méritent d'être publiques. C'est tout.
+Tout est gratuit, open source, sans compte, sans tracking.
 
 ---
 
 ## Ce que tu vois en ouvrant l'application
 
-### 🗺️ Carte nationale — 101 départements, 35 000 communes
+### 🗺️ Carte de France interactive
 
-Clique sur n'importe quel département. En une seconde, tu accèdes à :
+- **Shooting stars** — quand une actualité se déclenche, une ligne SVG bleu électrique part du bord de la carte vers le département concerné
+- **Pulse markers** — les marqueurs de département pulsent à chaque événement d'actu
+- **Toast notifications** — 550ms après la shooting star, une notification apparaît en bas à gauche avec le nom de l'outlet et le titre de l'article
 
-| Onglet | Ce que ça montre |
+**Clic sur un département :**
+- 5 actualités locales live (Google News RSS, URLs réelles décodées — plus de redirections `news.google.com`)
+- Statistiques locales
+
+**Clic sur une commune :**
+- Données statistiques de la commune
+
+### 📰 Bandeau Breaking News
+
+Ticker horizontal sous la navbar, mise à jour toutes les 30 secondes. Ne répète jamais un titre déjà affiché. Badge `BREAKING` rouge, défilement droite-à-gauche (240s).
+
+---
+
+### Panneaux bas (50% de l'écran)
+
+| Panneau | Largeur | Ce que ça fait |
+|---|---|---|
+| **🔍 Analyser un contenu** | ~32% | Colle une URL, un texte, un discours, une vidéo YouTube → analyse DISARM complète |
+| **📡 Infos en direct** | 18% | Radar live des 25 dernières actus issues des shooting stars |
+| **🎬 Vidéos Politique** | 12% | YouTube RSS · 8 candidats 2027 · groupés Aujourd'hui / Cette semaine / Récentes |
+| **🏛️ Discours & AN** | 15% | Interventions live à l'Assemblée Nationale |
+| **📺 TV Direct** | 23% | Flux HLS de chaînes françaises en direct |
+
+---
+
+### 🔍 Analyser un contenu — Détection DISARM
+
+Colle n'importe quoi : URL, article de presse, discours politique, post réseau social, vidéo YouTube. Le moteur envoie au backend Railway (OpenAI) et retourne :
+
+| Sortie | Description |
 |---|---|
-| **Aperçu** | Population, superficie, densité, préfecture |
-| **Élus** | Président du conseil + tous les députés avec leur score d'activité parlementaire en direct |
-| **Appels d'offres** | Marchés publics actifs du département — flux live BOAMP |
-| **Budget** | Ventilation des dépenses départementales — ratios OFGL par habitant |
-| **Communes** | Zoom sur n'importe quelle commune : maire, budget, marchés locaux |
-| **Recrutement** | Offres CDI ouvertes dans le département — top recruteurs en temps réel |
+| **Score d'influence** | 0–100, niveau : Faible / Modéré / Élevé / Critique |
+| **Scores détaillés** | Propagande · Désinformation · Complotisme |
+| **Verdict** | Label spécifique + résumé |
+| **Techniques DISARM** | Code DISARM, mécanisme cognitif, sévérité, confiance, extrait |
+| **Red flags** | Synthèse des signaux d'alerte |
+| **Stratégie de manipulation** | Description du schéma détecté |
+| **Nuance** | Note de contre-balancement |
+| **Correction suggérée** | Au lieu de X, dire Y — parce que Z |
+| **À vérifier** | Liste de claims prioritaires à fact-checker |
+| **Recommandations** | Actions concrètes |
+| **Badges** | `audience_targeted` · `urgency_framing` · `viewpoint_balance` · `pattern_tags` |
 
-### 📊 Barre de veille en temps réel
+Supporte : texte libre · URLs d'articles · vidéos YouTube · import de fichiers `.txt`
 
-Six panneaux permanents en bas d'écran :
+---
 
-| Panneau | Ce que ça montre | Mise à jour |
-|---|---|---|
-| **Fil d'actu** | France Info, Le Monde, Le Figaro, RFI, France 24 | 5 min |
-| **TV en direct** | France 24 · Arte · Euronews FR — stream HLS natif | Continu |
-| **Sous-actifs** | Députés avec faible activité parlementaire | 1 heure |
-| **AO ouverts** | Appels d'offres actifs (BOAMP) | 15 min |
-| **CAC 40** | ~40 valeurs — cours en quasi-temps réel | 60 sec |
-| **Recrutement** | Top recruteurs CDI nationaux — France Travail | 30 min |
-| **Sondages 2027** | Intentions de vote présidentielle 2027 par candidat | Mensuel |
-| **🔍 Vérifier une info** | Analyse Infoverif — propagande, désinformation, complot | Temps réel |
+### 🎬 Vidéos Politique 2027
 
-### 🔍 Vérifier une info — Infoverif
+YouTube RSS des 8 principaux candidats à la présidentielle 2027, channel IDs vérifiés :
 
-Panneau intégré directement dans le tableau de bord. Colle un texte, un article, un discours ou une URL — le moteur [Infoverif](https://infoverif.org) analyse le contenu en temps réel via le framework [DISARM](https://www.disarm.foundation/) (391 techniques référencées) et retourne :
+| Candidat | Parti |
+|---|---|
+| Marine Le Pen | RN |
+| Jean-Luc Mélenchon | LFI |
+| Jordan Bardella | RN |
+| Édouard Philippe | Horizons |
+| Gabriel Attal | Renaissance |
+| Éric Zemmour | Reconquête |
+| François Ruffin | Indép. |
+| Raphaël Glucksmann | PS |
 
-- **Score de risque global** (0-100) avec niveau : Faible / Modéré / Élevé / Critique
-- **Scores détaillés** : Propagande · Désinformation · Complot
-- **Techniques détectées** avec identifiant DISARM, niveau de confiance et extrait
-- **Résumé** de l'analyse
-
-Supporte le texte libre, les URLs, et l'import de fichiers texte. Propulsé par [Infoverif.org](https://infoverif.org).
-
-### 📋 Page Audit national (`/audit`)
-
-| Onglet | Source | Contenu |
-|---|---|---|
-| **Budget PLF** | budget.gouv.fr | PLF par ministère |
-| **Marchés attribués** | DECP | Top prestataires par volume de commande publique |
-| **Marchés ouverts** | BOAMP | Tous les appels d'offres actifs, filtrables par département |
-| **Subventions** | data-subventions.beta.gouv.fr | Subventions attribuées + programmes de financement ouverts |
+Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif (analysé via yt-dlp côté backend). Les vidéos sont groupées par : **Aujourd'hui** · **Cette semaine** · **Récentes**. Cache 1h.
 
 ---
 
 ## Sources de données
 
-Tout vient des APIs officielles de l'État français. Aucune base privée. Aucun partenariat commercial. Aucun intermédiaire.
-
-| Données | Source officielle | Cache |
+| Données | Source | Cache |
 |---|---|---|
-| Marchés attribués | [DECP — data.economie.gouv.fr](https://data.economie.gouv.fr) | 15 min |
-| Appels d'offres | [BOAMP — boamp-datadila.opendatasoft.com](https://boamp-datadila.opendatasoft.com) | 15 min |
-| Subventions | [data-subventions.beta.gouv.fr](https://data-subventions.beta.gouv.fr) | 20 min |
-| Aides territoires | [aides-territoires.beta.gouv.fr](https://aides-territoires.beta.gouv.fr) | 20 min |
-| Activité des députés | [nosdeputes.fr](https://www.nosdeputes.fr) | 1 heure |
-| Offres d'emploi CDI | [France Travail API](https://francetravail.io) | 30 min |
-| Actualités | RSS (France Info, Le Monde, Le Figaro, RFI, France 24) | 5 min |
-| Bourse | Yahoo Finance | 60 sec |
-| Données électorales | data.gouv.fr | Statique |
-| Budgets locaux | OFGL | Statique |
+| Actualités locales | Google News RSS (par département) | 5 min |
+| Actualités nationales (bandeau) | Google News RSS | 30 s |
+| Analyse DISARM | Backend Railway (OpenAI) | Temps réel |
+| Vidéos politiques | YouTube RSS (channel IDs directs) | 1 h |
+| Interventions AN | assemblee-nationale.fr | Live |
+| TV directe | Flux HLS (chaînes publiques françaises) | Continu |
 
 ---
 
 ## Stack technique
 
-- **[Next.js 16](https://nextjs.org)** — App Router, routes API serveur, rendu hybride
+- **[Next.js 15](https://nextjs.org)** — App Router, routes API serveur
 - **[React 19](https://react.dev)** — Interface réactive
 - **[TypeScript](https://www.typescriptlang.org)** — Typage bout en bout
 - **[MapLibre GL](https://maplibre.org)** — Carte vectorielle interactive
-- **[Tailwind CSS](https://tailwindcss.com)** — Styles utilitaires
+- **[Zustand](https://zustand-demo.pmnd.rs)** — Store partagé carte ↔ panneaux
 - **[hls.js](https://github.com/video-dev/hls.js)** — Lecture des streams TV
-- **[Vercel](https://vercel.com)** — Déploiement et edge functions
-
-Aucune base de données. Aucune infrastructure propre. Tout passe par les APIs publiques.
+- **[Vercel](https://vercel.com)** — Déploiement frontend
+- **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + OpenAI)
+- **[Vercel Analytics](https://vercel.com/analytics)** — Usage anonymisé
 
 ---
 
@@ -124,83 +134,67 @@ npm install
 npm run dev
 ```
 
-Ouvrir [http://localhost:3000](http://localhost:3000). **Aucune clé API requise pour démarrer** — la majorité des fonctionnalités marchent sans configuration.
+Ouvrir [http://localhost:3000](http://localhost:3000).
 
-### Variables d'environnement optionnelles
+### Variables d'environnement
 
-Crée un fichier `.env.local` pour activer les données enrichies :
+Crée un fichier `.env.local` :
 
 ```env
-# Offres d'emploi CDI en temps réel (inscription gratuite sur francetravail.io)
-FRANCE_TRAVAIL_CLIENT_ID=...
-FRANCE_TRAVAIL_CLIENT_SECRET=...
+# Backend DISARM (Railway) — requis pour l'analyse de contenu
+INFOVERIF_API_URL=https://...railway.app
+INFOVERIF_API_KEY=...
 ```
 
-### Déployer sur Vercel en un clic
+Sans ces variables, le panneau Analyser retournera une erreur de connexion. Toutes les autres fonctionnalités (carte, actualités, vidéos, TV) fonctionnent sans configuration.
+
+### Déployer sur Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
 
 ---
 
-## Contribuer
+## Architecture
 
-L'architecture est volontairement modulaire. Chaque panneau est un composant isolé. Chaque source de données est une route API indépendante. Ajouter une nouvelle fonctionnalité, c'est généralement un seul fichier.
+L'architecture est volontairement modulaire. Chaque panneau est un composant React isolé. Chaque source de données est une route API Next.js indépendante. Ajouter une fonctionnalité = généralement un composant + une route.
 
-**Bonnes premières contributions :**
-- Ajouter une nouvelle source de données au panneau département
-- Améliorer le scoring d'activité des élus (votes, questions, rapports)
-- Fil d'actu filtré par département
-- Responsive mobile
-- Nouvelles sources de marchés publics (au-delà de BOAMP)
-- Historique et graphiques temporels
+```
+app/
+  page.tsx                  # Layout principal + AnalyserPanel inline
+  api/
+    verify/                 # Proxy vers backend Railway (DISARM)
+    dept-news/[code]/        # Google News RSS par département
+    news/                   # Actualités nationales (bandeau)
+    corpus-politique/        # YouTube RSS candidats 2027
+    discours/                # Interventions AN
+    speech/                  # Proxy speech complet + contexte
 
-**Pour contribuer :**
+components/
+  Map.tsx                   # Carte MapLibre + shooting stars + toasts
+  NewsBandeau.tsx            # Ticker breaking news
+  NewsTickerPanel.tsx        # Radar live shooting stars
+  CorpusPolitiquePanel.tsx   # Vidéos politique 2027
+  DiscoursPanel.tsx          # Interventions AN
+  TVPanel.tsx                # TV HLS direct
+  DepartmentPanel.tsx        # Panneau département
+  CommunePanel.tsx           # Panneau commune
 
-1. Forker le repo
-2. Créer une branche : `git checkout -b feature/ma-contribution`
-3. Coder
-4. Pousser : `git push origin feature/ma-contribution`
-5. Ouvrir une PR
-
-Une fonctionnalité par PR. TypeScript obligatoire. Variables CSS pour les styles. Si tu touches à une source de données, documente ce que tu récupères et pourquoi.
-
----
-
-## Soutenir le projet ❤️
-
-Audit France est gratuit, open source, sans publicité et sans collecte de données. Si l'outil t'est utile et que tu veux soutenir son développement :
-
-**[→ Faire un don via GitHub Sponsors](https://github.com/sponsors/soufianelemqariMain)**
-
-Chaque contribution aide à maintenir les intégrations API, améliorer la couverture des données et garder le projet vivant.
-
----
-
-## Inspiré par worldmonitor.app
-
-Ce projet s'inspire de [worldmonitor.app](https://worldmonitor.app), tableau de bord de surveillance mondiale qui centralise données géopolitiques, économiques et médiatiques à l'échelle internationale. Merci à eux pour l'inspiration.
-
-Là où worldmonitor est global, Audit France est délibérément local et institutionnel :
-
-| | worldmonitor.app | Audit France |
-|---|---|---|
-| **Périmètre** | Monde entier | France uniquement |
-| **Focus** | Géopolitique, macro | Transparence publique : marchés, élus, subventions, budgets |
-| **Sources** | Données internationales | APIs officielles françaises exclusivement |
-| **Granularité** | Pays | Département, commune |
+lib/
+  store.ts                  # Zustand : analyserInput, radarNewsItems
+```
 
 ---
 
 ## Licence
 
-MIT — voir [LICENSE](LICENSE). Fais-en ce que tu veux. Cite la source, c'est tout.
+MIT — voir [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-*L'efficacité de l'État, ça se mesure. Et ça se publie.*
+*Vérifier. Comprendre. Décider.*
 
-**[Démo live](https://auditfrance.vercel.app) · [GitHub Sponsors ❤️](https://github.com/sponsors/soufianelemqariMain)**
+**[→ infoverif.org](https://www.infoverif.org)**
 
 </div>
