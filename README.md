@@ -57,6 +57,24 @@ Ticker horizontal sous la navbar, mise à jour toutes les 30 secondes. Ne répè
 
 ---
 
+### 🏛️ Vérification citoyenne — Élus & Déclarations politiques
+
+InfoVerif permet à n'importe quel citoyen de vérifier ce que disent les élus et les candidats.
+
+**Interventions à l'Assemblée Nationale (live)**
+- Discours et interventions des députés récupérés en direct depuis assemblee-nationale.fr
+- Chaque intervention affiche : député, groupe politique, type (discours / question / amendement), extrait
+- Bouton **→ Analyser** : envoie le texte complet du discours (proxied via `/api/speech` avec contexte des interventions précédentes) au moteur DISARM pour détection de propagande, manipulation, techniques rhétoriques
+
+**Vidéos des candidats 2027**
+- Dernières vidéos YouTube de chaque candidat, analysables en un clic
+- Le bouton **→ Analyser** passe l'URL YouTube directement à InfoVerif — le backend extrait et analyse le contenu audio/vidéo
+
+**Saisie libre**
+- Colle n'importe quelle déclaration politique, discours, interview, tweet, post TikTok — le moteur détecte les techniques de manipulation et produit un rapport DISARM complet
+
+---
+
 ### 🔍 Analyser un contenu — Détection DISARM
 
 Colle n'importe quoi : URL, article de presse, discours politique, post réseau social, vidéo YouTube. Le moteur envoie au backend Railway (OpenAI) et retourne :
