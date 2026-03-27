@@ -52,6 +52,36 @@ const XHR_HEADERS = {
   "X-Requested-With": "XMLHttpRequest",
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 };
+
+function groupNameToCode(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("rassemblement national")) return "RN";
+  if (n.includes("france insoumise")) return "LFI-NFP";
+  if (n.includes("ensemble pour la république") || n.includes("renaissance")) return "EPR";
+  if (n.includes("socialiste")) return "SOC";
+  if (n.includes("droite républicaine") || n.includes("les républicains")) return "DR";
+  if (n.includes("écologiste") || n.includes("verts")) return "EcoS";
+  if (n.includes("démocrates")) return "Dem";
+  if (n.includes("horizons")) return "HOR";
+  if (n.includes("liot") || n.includes("libertés, indépendants")) return "LIOT";
+  if (n.includes("gauche démocrate")) return "GDR";
+  if (n.includes("union des droites")) return "UDR";
+  return "NI";
+}
+
+async function fetchGroupCode(actorId: string, date: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `${AN_BASE}/dyn/embed/acteur-info-card/${actorId}?date=${encodeURIComponent(date + " 09:00:00")}`,
+      { headers: XHR_HEADERS, signal: AbortSignal.timeout(3000), cache: "no-store" }
+    );
+    const html = await res.text();
+    const m = html.match(/acteur-info-card-groupe[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
+    return m ? groupNameToCode(m[1].trim()) : "NI";
+  } catch {
+    return "NI";
+  }
+}
 const MONTHS: Record<string, string> = {
   janvier: "01", fevrier: "02", "février": "02", mars: "03", avril: "04",
   mai: "05", juin: "06", juillet: "07", aout: "08", "août": "08",
@@ -108,8 +138,12 @@ function stripHtml(s: string): string {
     .trim();
 }
 
-function parseInterventions(html: string, date: string, sessionUrl: string): Intervention[] {
-  const results: Intervention[] = [];
+interface RawIntervention extends Intervention {
+  actorId: string | null;
+}
+
+function parseRawInterventions(html: string, date: string, sessionUrl: string): RawIntervention[] {
+  const results: RawIntervention[] = [];
 
   const parts = html.split(/(?=<div\s+id="\d+"\s+class="crs-inter)/);
 
@@ -120,21 +154,25 @@ function parseInterventions(html: string, date: string, sessionUrl: string): Int
     const idM = part.match(/<div\s+id="(\d+)"/);
     const id = idM ? idM[1] : String(results.length + 1);
 
-    // Extract speaker (first span in p.orateur)
-    const orateurM = part.match(/class="orateur"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
-    const speaker = orateurM ? orateurM[1].trim() : null;
+    // Extract speaker span (may have data-tipsy actor ID for deputies)
+    const orateurM = part.match(/class="orateur"[^>]*>[\s\S]*?<span([^>]*)>([^<]+)<\/span>/);
+    if (!orateurM) continue;
+    const spanAttrs = orateurM[1];
+    const speaker = orateurM[2].trim();
 
     if (!speaker) continue;
     // Skip president/procedural
     if (/[Pp]r[eé]sid[ei]/.test(speaker)) continue;
-    if (speaker === "M. le président" || speaker === "Mme la présidente") continue;
+
+    // Extract actor ID from data-tipsy (present for deputies, absent for ministers)
+    const actorM = spanAttrs.match(/data-tipsy=\/dyn\/embed\/acteur-info-card\/(PA\d+)/);
+    const actorId = actorM ? actorM[1] : null;
 
     // Extract role from span.italique
     const roleM = part.match(/class="italique"[^>]*>([\s\S]*?)<\/span>/);
     const role = roleM ? stripHtml(roleM[1]).replace(/^,\s*/, "").trim() : "";
 
-    // Extract speech text: look for <p class=""> containing a <span> with actual text
-    // Pattern: after the share div, we get <p class=""><span>TEXT</span></p>
+    // Extract speech text
     const textM = part.match(/<p class="">\s*<span>([\s\S]+?)<\/span>\s*<\/p>/);
     if (!textM) continue;
 
@@ -146,17 +184,31 @@ function parseInterventions(html: string, date: string, sessionUrl: string): Int
     results.push({
       id,
       depute: speaker,
-      groupe: role || "Assemblée nationale",
+      groupe: isGovt ? "Gouvernement" : "",  // enriched below for deputies
       date,
       type: isGovt ? "Gouvernement" : "Assemblée",
       texte: texte.slice(0, 3000),
       url: `${sessionUrl}#${id}`,
+      actorId,
     });
 
     if (results.length >= 12) break;
   }
 
   return results;
+}
+
+async function enrichWithGroups(raw: RawIntervention[], date: string): Promise<Intervention[]> {
+  return Promise.all(
+    raw.map(async (item) => {
+      const groupe = item.actorId
+        ? await fetchGroupCode(item.actorId, date)
+        : item.groupe || "NI";
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { actorId: _, ...rest } = item;
+      return { ...rest, groupe };
+    })
+  );
 }
 
 export async function GET() {
@@ -176,8 +228,9 @@ export async function GET() {
     });
     const html = await res.text();
 
-    const interventions = parseInterventions(html, sessionDate, sessionUrl);
-    if (interventions.length < 2) throw new Error("too few");
+    const raw = parseRawInterventions(html, sessionDate, sessionUrl);
+    if (raw.length < 2) throw new Error("too few");
+    const interventions = await enrichWithGroups(raw, sessionDate);
 
     return NextResponse.json({ interventions, source: "live", sessionUrl });
   } catch {

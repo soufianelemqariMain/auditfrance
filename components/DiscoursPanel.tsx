@@ -127,7 +127,7 @@ export default function DiscoursPanel() {
                   {/* Analyser button */}
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <button
-                      onClick={() => setAnalyserInput(item.texte)}
+                      onClick={() => setAnalyserInput(item.url ?? item.texte)}
                       style={{
                         fontSize: 8, padding: "2px 7px", borderRadius: 2,
                         border: "1px solid rgba(139,92,246,0.4)",
