@@ -9,8 +9,9 @@
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-22c55e.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
 [![Deploy with Vercel](https://img.shields.io/badge/deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/soufianelemqariMain/auditfrance)
+[![Support on GitHub](https://img.shields.io/badge/Support-%E2%9D%A4-red?logo=github)](https://github.com/sponsors/soufianelemqariMain)
 
-[**→ infoverif.org**](https://www.infoverif.org) &nbsp;·&nbsp; [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues)
+[**→ infoverif.org**](https://www.infoverif.org) &nbsp;·&nbsp; [Signaler un bug](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [Proposer une fonctionnalité](https://github.com/soufianelemqariMain/auditfrance/issues) &nbsp;·&nbsp; [❤️ Nous soutenir](https://github.com/sponsors/soufianelemqariMain)
 
 </div>
 
@@ -200,6 +201,33 @@ components/
 lib/
   store.ts                  # Zustand : analyserInput, radarNewsItems
 ```
+
+---
+
+## Inspiration
+
+InfoVerif s'inscrit dans la lignée de projets comme **[WorldMonitor](https://worldmonitor.org)**, qui cartographie les événements géopolitiques mondiaux en temps réel.
+
+Là où WorldMonitor surveille les conflits, les crises diplomatiques et les dynamiques de pouvoir à l'échelle internationale, InfoVerif se concentre sur **la transparence de l'information en France** : actualités locales par département, discours politiques, candidats à la présidentielle 2027, et détection de désinformation dans les médias français.
+
+Deux angles complémentaires, deux missions distinctes :
+
+| | WorldMonitor | InfoVerif |
+|---|---|---|
+| **Focus** | Géopolitique mondiale | Actualités & politique française |
+| **Utilisateurs** | Analystes, diplomates, journalistes internationaux | Citoyens français, journalistes locaux |
+| **Objectif** | Cartographier les événements géopolitiques | Vérifier les discours, détecter la propagande |
+| **Données** | Conflits, crises, mouvements géopolitiques | Médias locaux, élus, candidats 2027 |
+
+---
+
+## Soutenir le projet
+
+InfoVerif est gratuit, open source, et maintenu bénévolement. Si l'outil vous est utile, vous pouvez nous soutenir via GitHub Sponsors :
+
+[![❤️ Sponsor InfoVerif](https://img.shields.io/badge/Sponsor-❤️-red?logo=github&style=for-the-badge)](https://github.com/sponsors/soufianelemqariMain)
+
+Chaque contribution aide à maintenir les serveurs, améliorer les fonctionnalités, et garder l'outil accessible à tous.
 
 ---
 
