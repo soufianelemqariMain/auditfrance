@@ -10,6 +10,7 @@ export interface PoliticianVideo {
   videoTitle: string;
   videoUrl: string;
   publishedAt: string;
+  isToday: boolean;
 }
 
 const CANDIDATES = [
@@ -68,9 +69,10 @@ async function fetchLatestVideo(
 
     const rawTitle = titleMatch[1].replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
     const videoId = videoIdMatch[1].trim();
+    const today = new Date().toISOString().slice(0, 10);
     const publishedAt = publishedMatch
       ? publishedMatch[1].slice(0, 10)
-      : new Date().toISOString().slice(0, 10);
+      : today;
 
     return {
       politician: candidate.name,
@@ -79,6 +81,7 @@ async function fetchLatestVideo(
       videoTitle: rawTitle,
       videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
       publishedAt,
+      isToday: publishedAt === today,
     };
   } catch {
     return null;

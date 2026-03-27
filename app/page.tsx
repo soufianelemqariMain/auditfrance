@@ -507,7 +507,7 @@ export default function Home() {
             <NewsTickerPanel />
           </div>
 
-          {/* Corpus Politique 2027 — 12% */}
+          {/* Vidéos Politique — 12% */}
           <div style={{ flex: "0 0 12%", overflow: "hidden" }}>
             <CorpusPolitiquePanel />
           </div>
