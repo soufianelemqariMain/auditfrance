@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
+const APP_BASE = "https://www.infoverif.org";
+
 interface Intervention {
   id: string;
   depute: string;
@@ -10,6 +12,7 @@ interface Intervention {
   type: string;
   texte: string;
   url?: string;
+  speechUrl?: string;
 }
 
 const STATIC_INTERVENTIONS: Intervention[] = [
@@ -189,6 +192,7 @@ function parseRawInterventions(html: string, date: string, sessionUrl: string): 
       type: isGovt ? "Gouvernement" : "Assemblée",
       texte: texte.slice(0, 3000),
       url: `${sessionUrl}#${id}`,
+      speechUrl: `${APP_BASE}/api/speech?session=${encodeURIComponent(sessionUrl)}&id=${id}`,
       actorId,
     });
 
