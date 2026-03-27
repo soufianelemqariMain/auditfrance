@@ -22,16 +22,55 @@ function stripHtml(s: string): string {
     .trim();
 }
 
+interface SpeakerBlock {
+  id: string;
+  speaker: string;
+  role: string;
+  paragraphs: string[];
+}
+
+function extractBlock(part: string): SpeakerBlock | null {
+  const idM = part.match(/<div\s+id="(\d+)"/);
+  if (!idM) return null;
+  const id = idM[1];
+
+  const orateurM = part.match(/class="orateur"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
+  const speaker = orateurM ? orateurM[1].trim() : "";
+  if (!speaker) return null;
+
+  const roleM = part.match(/class="italique"[^>]*>([\s\S]*?)<\/span>/);
+  const role = roleM ? stripHtml(roleM[1]).replace(/^,\s*/, "").trim() : "";
+
+  const paragraphs: string[] = [];
+  const textRe = /<p class="">\s*<span>([\s\S]+?)<\/span>\s*<\/p>/g;
+  let m: RegExpExecArray | null;
+  while ((m = textRe.exec(part)) !== null) {
+    const t = stripHtml(m[1]);
+    if (t.length > 20) paragraphs.push(t);
+  }
+
+  return { id, speaker, role, paragraphs };
+}
+
+function renderBlock(b: SpeakerBlock, session: string, isMain: boolean): string {
+  const anchor = `${session}#${b.id}`;
+  return `<section${isMain ? ' class="main-intervention"' : ""}>
+<h2><a href="${anchor}">${b.speaker}</a>${b.role ? ` <em>(${b.role})</em>` : ""}</h2>
+${b.paragraphs.map((p) => `<p>${p}</p>`).join("\n")}
+</section>`;
+}
+
 export async function GET(request: Request): Promise<NextResponse | Response> {
   const { searchParams } = new URL(request.url);
   const session = searchParams.get("session");
   const id = searchParams.get("id");
+  // context=N: include up to N preceding interventions for exchange context (default 2)
+  const contextN = Math.min(parseInt(searchParams.get("context") ?? "2", 10), 5);
 
   if (!session || !id) {
     return NextResponse.json({ error: "Missing session or id params" }, { status: 400 });
   }
 
-  // Only allow assemblee-nationale.fr URLs
   if (!session.startsWith("https://www.assemblee-nationale.fr/")) {
     return NextResponse.json({ error: "Invalid session URL" }, { status: 400 });
   }
@@ -48,48 +87,42 @@ export async function GET(request: Request): Promise<NextResponse | Response> {
     return NextResponse.json({ error: "Failed to fetch session" }, { status: 502 });
   }
 
-  // Find the specific crs-inter block by ID
-  const parts = html.split(/(?=<div\s+id="\d+"\s+class="crs-inter)/);
-  const block = parts.find((p) => new RegExp(`^<div\\s+id="${id}"`).test(p));
+  // Split into crs-inter blocks and extract only those with speakers
+  const rawParts = html.split(/(?=<div\s+id="\d+"\s+class="crs-inter)/);
+  const blocks: SpeakerBlock[] = [];
+  for (const part of rawParts) {
+    if (!part.includes('class="orateur"')) continue;
+    const b = extractBlock(part);
+    if (b && b.paragraphs.length > 0) blocks.push(b);
+  }
 
-  if (!block) {
+  const mainIdx = blocks.findIndex((b) => b.id === id);
+  if (mainIdx === -1) {
     return NextResponse.json({ error: "Intervention not found" }, { status: 404 });
   }
 
-  // Extract speaker
-  const orateurM = block.match(/class="orateur"[^>]*>[\s\S]*?<span[^>]*>([^<]+)<\/span>/);
-  const speaker = orateurM ? orateurM[1].trim() : "Orateur inconnu";
+  const mainBlock = blocks[mainIdx];
 
-  // Extract role
-  const roleM = block.match(/class="italique"[^>]*>([\s\S]*?)<\/span>/);
-  const role = roleM ? stripHtml(roleM[1]).replace(/^,\s*/, "").trim() : "";
+  // Include up to contextN preceding speaker blocks for exchange context
+  const startIdx = Math.max(0, mainIdx - contextN);
+  const contextBlocks = blocks.slice(startIdx, mainIdx);
 
-  // Extract ALL speech paragraphs (no truncation)
-  const paragraphs: string[] = [];
-  const textRe = /<p class="">\s*<span>([\s\S]+?)<\/span>\s*<\/p>/g;
-  let m: RegExpExecArray | null;
-  while ((m = textRe.exec(block)) !== null) {
-    const t = stripHtml(m[1]);
-    if (t.length > 20) paragraphs.push(t);
-  }
+  const sections = [
+    ...contextBlocks.map((b) => renderBlock(b, session, false)),
+    renderBlock(mainBlock, session, true),
+  ].join("\n\n");
 
-  if (paragraphs.length === 0) {
-    return NextResponse.json({ error: "No speech text found" }, { status: 404 });
-  }
-
-  const texte = paragraphs.join("\n\n");
-  const sourceUrl = `${session}#${id}`;
+  const title = `${mainBlock.speaker} — Assemblée nationale`;
+  const hasContext = contextBlocks.length > 0;
 
   const page = `<!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="utf-8"><title>${speaker} — Assemblée nationale</title></head>
+<head><meta charset="utf-8"><title>${title}</title></head>
 <body>
-<h1>${speaker}</h1>
-${role ? `<p><em>${role}</em></p>` : ""}
-<p>Source : <a href="${sourceUrl}">${sourceUrl}</a></p>
-<article>
-${paragraphs.map((p) => `<p>${p}</p>`).join("\n")}
-</article>
+<h1>${title}</h1>
+${hasContext ? `<p><em>Contexte : ${contextBlocks.length} intervention(s) précédente(s) incluse(s) pour le fil de la délibération.</em></p>` : ""}
+<p>Source : <a href="${session}#${id}">${session}#${id}</a></p>
+${sections}
 </body>
 </html>`;
 
