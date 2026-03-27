@@ -78,7 +78,7 @@ InfoVerif permet à n'importe quel citoyen de vérifier ce que disent les élus 
 
 ### 🔍 Analyser un contenu — Détection DISARM
 
-Colle n'importe quoi : URL, article de presse, discours politique, post réseau social, vidéo YouTube. Le moteur envoie au backend Railway (OpenAI) et retourne :
+Colle n'importe quoi : URL, article de presse, discours politique, post réseau social, vidéo YouTube. Le moteur envoie au backend Railway (Mistral + embeddings custom) et retourne :
 
 | Sortie | Description |
 |---|---|
@@ -123,7 +123,7 @@ Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif 
 |---|---|---|
 | Actualités locales | Google News RSS (par département) | 5 min |
 | Actualités nationales (bandeau) | Google News RSS | 30 s |
-| Analyse DISARM | Backend Railway (OpenAI) | Temps réel |
+| Analyse DISARM | Backend Railway (Mistral + embeddings custom) | Temps réel |
 | Vidéos politiques | YouTube RSS (channel IDs directs) | 1 h |
 | Interventions AN | assemblee-nationale.fr | Live |
 | TV directe | Flux HLS (chaînes publiques françaises) | Continu |
@@ -139,7 +139,7 @@ Le bouton **→ Analyser** envoie l'URL YouTube directement au moteur InfoVerif 
 - **[Zustand](https://zustand-demo.pmnd.rs)** — Store partagé carte ↔ panneaux
 - **[hls.js](https://github.com/video-dev/hls.js)** — Lecture des streams TV
 - **[Vercel](https://vercel.com)** — Déploiement frontend
-- **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + OpenAI)
+- **[Railway](https://railway.app)** — Backend analyse DISARM (FastAPI + Mistral + embeddings custom)
 - **[Vercel Analytics](https://vercel.com/analytics)** — Usage anonymisé
 
 ---
@@ -206,7 +206,7 @@ lib/
 
 ## Inspiration
 
-InfoVerif s'inscrit dans la lignée de projets comme **[WorldMonitor](https://worldmonitor.org)**, qui cartographie les événements géopolitiques mondiaux en temps réel.
+InfoVerif s'inscrit dans la lignée de projets comme **[WorldMonitor](https://worldmonitor.app)**, qui cartographie les événements géopolitiques mondiaux en temps réel.
 
 Là où WorldMonitor surveille les conflits, les crises diplomatiques et les dynamiques de pouvoir à l'échelle internationale, InfoVerif se concentre sur **la transparence de l'information en France** : actualités locales par département, discours politiques, candidats à la présidentielle 2027, et détection de désinformation dans les médias français.
 
