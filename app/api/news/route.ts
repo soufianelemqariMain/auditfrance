@@ -1,5 +1,7 @@
 import { parseRssFeed, RssItem } from "@/lib/rss-parser";
 
+export const revalidate = 1800; // 30 min cache
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Content-Type": "application/json",
