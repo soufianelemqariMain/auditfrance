@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { DEPT_REGIONAL_PRESS } from "@/lib/regional-rss";
 
+export const revalidate = 3600; // cache per-department for 1 hour
+
 /**
  * Decode a Google News article URL to the actual publisher URL.
  * Works for old-format protobufs (pre-2023). Falls back to googleUrl for new format.

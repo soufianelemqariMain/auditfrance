@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const revalidate = 1800; // 30 min cache — AN sessions update a few times per day
 
 const APP_BASE = "https://www.infoverif.org";
 
