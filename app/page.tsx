@@ -303,6 +303,10 @@ function AnalyserPanel() {
 
               {/* Scores */}
               <div style={{ marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "var(--text-secondary)", opacity: 0.55, marginBottom: 6, fontFamily: "var(--font-mono)" }}>
+                  <span>0 = neutre</span>
+                  <span>100 = sévère</span>
+                </div>
                 <ScoreBar label="Propagande" value={result.propaganda_score} color="#ef4444" />
                 <ScoreBar label="Désinformation" value={result.misinfo_score} color="#f97316" />
                 <ScoreBar label="Complotisme" value={result.conspiracy_score} color="#a78bfa" />
@@ -369,6 +373,11 @@ function AnalyserPanel() {
                         {t.explanation && (
                           <div style={{ fontSize: 8, color: "var(--text-secondary)", lineHeight: 1.4, marginBottom: 2 }}>
                             {t.explanation}
+                          </div>
+                        )}
+                        {t.contextual_impact && (
+                          <div style={{ fontSize: 8, color: "#fbbf24", lineHeight: 1.4, marginBottom: 2, borderLeft: "2px solid rgba(251,191,36,0.3)", paddingLeft: 5 }}>
+                            ⚡ {t.contextual_impact}
                           </div>
                         )}
                         {t.recommended_action && (

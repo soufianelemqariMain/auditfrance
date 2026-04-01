@@ -17,6 +17,21 @@ function formatUTC(date: Date): string {
 export default function Navbar() {
   const [clock, setClock] = useState("");
   const [copied, setCopied] = useState(false);
+  const [light, setLight] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("infoverif_theme");
+    const preferLight = stored ? stored === "light" : window.matchMedia("(prefers-color-scheme: light)").matches;
+    setLight(preferLight);
+    document.body.classList.toggle("light", preferLight);
+  }, []);
+
+  function toggleTheme() {
+    const next = !light;
+    setLight(next);
+    document.body.classList.toggle("light", next);
+    localStorage.setItem("infoverif_theme", next ? "light" : "dark");
+  }
 
   useEffect(() => {
     // Set immediately on mount to avoid server/client mismatch (hydration)
@@ -110,6 +125,21 @@ export default function Navbar() {
           }}
         >
           {copied ? "COPIÉ" : "PARTAGER"}
+        </button>
+
+        <button
+          onClick={toggleTheme}
+          title={light ? "Thème sombre" : "Thème clair"}
+          style={{
+            background: "transparent",
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+            fontSize: 13,
+            padding: "3px 8px",
+            cursor: "pointer",
+          }}
+        >
+          {light ? "🌙" : "☀️"}
         </button>
 
         <button

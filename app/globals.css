@@ -87,6 +87,29 @@ html, body {
   white-space: nowrap;
 }
 
+/* ——— Light theme ——— */
+body.light {
+  --bg-primary:   #f0f2f5;
+  --bg-secondary: #e4e8ed;
+  --bg-panel:     #f7f8fa;
+  --border:       #c8d4e0;
+  --text-primary:   #0c1c2e;
+  --text-secondary: #4a6278;
+  --accent-blue:   #0055A4;
+  --accent-white:  #F5F5F5;
+  --accent-red:    #EF4135;
+  --accent-green:  #0055A4;
+  --accent-yellow: #C9A227;
+}
+
+/* ——— Reduced motion ——— */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ——— Mobile responsive layout (< 768px) ——— */
 @media (max-width: 767px) {
   /* Allow page scroll on mobile */

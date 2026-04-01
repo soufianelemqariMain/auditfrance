@@ -1,3 +1,15 @@
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#x([0-9A-Fa-f]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#([0-9]+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)));
+}
+
 function decodeGoogleNewsUrl(googleUrl: string): string {
   if (!googleUrl.includes("news.google.com")) return googleUrl;
   try {
@@ -124,7 +136,7 @@ export async function parseRssFeed(
     const results: RssItem[] = [];
 
     for (const itemXml of rawItems.slice(0, 10)) {
-      const title = extractTag(itemXml, "title") || "(sans titre)";
+      const title = decodeHtmlEntities(extractTag(itemXml, "title") || "(sans titre)");
 
       // <link> in RSS 2.0 can be a text node or an Atom-style self-closing tag;
       // try <link> text node first, then fall back to href attribute.

@@ -16,6 +16,7 @@ function buildTickerString(items: NewsItem[]): string {
 
 export default function NewsTickerPanel() {
   const radarNewsItems = useAppStore((s) => s.radarNewsItems);
+  const setAnalyserInput = useAppStore((s) => s.setAnalyserInput);
 
   const items = Array.isArray(radarNewsItems) ? radarNewsItems : [];
   const tickerText = buildTickerString(items);
@@ -134,12 +135,35 @@ export default function NewsTickerPanel() {
                     </span>
                   </div>
                 </div>
-                <span
-                  onClick={() => item.url && window.open(item.url, "_blank", "noopener,noreferrer")}
-                  style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.4, cursor: item.url ? "pointer" : "default" }}
-                >
-                  {item.title}
-                </span>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                  <span
+                    onClick={() => item.url && window.open(item.url, "_blank", "noopener,noreferrer")}
+                    style={{ fontSize: 11, color: "var(--text-primary)", lineHeight: 1.4, cursor: item.url ? "pointer" : "default", flex: 1 }}
+                  >
+                    {item.title}
+                  </span>
+                  {item.url && (
+                    <button
+                      onClick={() => setAnalyserInput(item.url)}
+                      title="Analyser cet article"
+                      style={{
+                        background: "rgba(0,85,164,0.15)",
+                        border: "1px solid rgba(0,85,164,0.35)",
+                        color: "var(--accent-blue)",
+                        fontSize: 8,
+                        padding: "2px 5px",
+                        cursor: "pointer",
+                        borderRadius: 2,
+                        flexShrink: 0,
+                        fontFamily: "var(--font-mono)",
+                        letterSpacing: "0.06em",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ANALYSER
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
