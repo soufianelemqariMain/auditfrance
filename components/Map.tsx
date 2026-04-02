@@ -17,6 +17,7 @@ const WORLD_CENTROIDS: Record<string, [number, number]> = {
 
 // Minimal inline style — no external tile server to conflict with globe projection.
 // All geography comes from the GeoJSON choropleth in loadWorldLayer.
+// Background is dark ocean blue so the globe sphere is visible against the black container.
 const GLOBE_STYLE = {
   version: 8 as const,
   sources: {},
@@ -24,7 +25,9 @@ const GLOBE_STYLE = {
     {
       id: "background",
       type: "background" as const,
-      paint: { "background-color": "#060d1f" },
+      // Dark ocean blue — clearly distinct from the CSS container background (#000008)
+      // so the globe sphere shape is always visible.
+      paint: { "background-color": "#0a1a3a" },
     },
   ],
 };
@@ -64,16 +67,10 @@ export default function Map() {
         // Belt-and-suspenders: set projection after load too
         map.setProjection("globe");
 
-        // Fog creates the sphere-in-space appearance.
-        // space-color must be near-black to contrast against the dark map background.
-        map.setFog({
-          range: [0.5, 10],
-          color: "rgba(100,150,230,0.5)",
-          "horizon-blend": 0.05,
-          "high-color": "#1a4fad",
-          "space-color": "#000005",
-          "star-intensity": 0.3,
-        });
+        // Note: MapLibre GL JS does not have setFog() — that is Mapbox-only.
+        // Globe sphere is visible because background layer (#0a1a3a) contrasts
+        // against the CSS container background (#000008). Atmosphere glow is
+        // done via CSS box-shadow in injectOverlayCSS().
 
         injectOverlayCSS();
         const wrapper = mapContainer.current!.parentElement!;
@@ -117,7 +114,7 @@ export default function Map() {
   }, []);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" style={{ background: "#000008" }}>
       <div ref={mapContainer} className="w-full h-full" />
     </div>
   );
