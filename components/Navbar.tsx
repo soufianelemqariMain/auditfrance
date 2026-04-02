@@ -109,7 +109,7 @@ export default function Navbar() {
             opacity: 0.85,
           }}
         >
-          Prédictions
+          Live Claims
         </Link>
         <Link
           href="/analyse"
