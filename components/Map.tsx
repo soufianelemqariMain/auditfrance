@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 // Centroids [lon, lat] for major countries — for vote events & claim dots
 const WORLD_CENTROIDS: Record<string, [number, number]> = {
@@ -43,6 +43,14 @@ interface ClaimDot {
   region: string;
 }
 
+// Canvas-rendered shooting stars — store geo coords so they track globe rotation
+interface ActiveStar {
+  x0: number; y0: number;   // fixed screen origin (edge of viewport)
+  lng: number; lat: number; // geographic target — reprojected each frame
+  t0: number;               // performance.now() at fire time
+  isYes: boolean;           // true = TRUE vote (red), false = FALSE vote (blue)
+}
+
 interface PanelClaim {
   id: number;
   claim_text: string;
@@ -69,6 +77,7 @@ export default function Map() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const voteRadarRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const claimDotsRef = useRef<ClaimDot[]>([]);
+  const activeStarsRef = useRef<ActiveStar[]>([]);
   const topicsRef = useRef<Array<{ slug: string; region?: string; avg_probability?: number; yes_percent?: number }>>([]);
   // showPanel is called from inside the canvas click handler (not React land)
   const showPanelRef = useRef<(isoCode: string) => void>(() => {});
@@ -253,6 +262,52 @@ export default function Map() {
           ctx.fillStyle = color;
           ctx.fill();
         });
+
+        // Canvas shooting stars — reprojected every frame so they track globe rotation
+        const now = performance.now();
+        activeStarsRef.current = activeStarsRef.current.filter((star) => {
+          const el = now - star.t0;
+          const DRAW = 480, HOLD = 180, FADE = 380, TOTAL = DRAW + HOLD + FADE;
+          if (el > TOTAL) return false;
+
+          const p = projection([star.lng, star.lat]);
+          if (!p) return el < TOTAL; // on back of globe — keep alive but skip draw
+
+          const [tx, ty] = p;
+          const baseAlpha = el > DRAW + HOLD ? 0.85 * (1 - (el - DRAW - HOLD) / FADE) : 0.85;
+          const progress = el < DRAW ? Math.pow(el / DRAW, 0.55) : 1;
+          const cx = star.x0 + (tx - star.x0) * progress;
+          const cy = star.y0 + (ty - star.y0) * progress;
+          const lineColor = star.isYes
+            ? `rgba(239,80,80,${baseAlpha})`
+            : `rgba(80,140,255,${baseAlpha})`;
+
+          // Shooting line
+          ctx.beginPath();
+          ctx.moveTo(star.x0, star.y0);
+          ctx.lineTo(cx, cy);
+          ctx.strokeStyle = lineColor;
+          ctx.lineWidth = 1.3;
+          ctx.stroke();
+
+          // Expanding ring at target once line arrives
+          if (el > DRAW) {
+            const ringProgress = Math.min((el - DRAW) / (HOLD + FADE), 1);
+            const ringR = ringProgress * 14;
+            const ringAlpha = baseAlpha * (1 - ringProgress * 0.7);
+            ctx.beginPath();
+            ctx.arc(tx, ty, ringR, 0, 2 * Math.PI);
+            ctx.strokeStyle = star.isYes ? `rgba(239,80,80,${ringAlpha})` : `rgba(80,140,255,${ringAlpha})`;
+            ctx.lineWidth = 0.9;
+            ctx.stroke();
+            // Core dot
+            ctx.beginPath();
+            ctx.arc(tx, ty, 2.5, 0, 2 * Math.PI);
+            ctx.fillStyle = lineColor;
+            ctx.fill();
+          }
+          return true;
+        });
       };
 
       // ── Load land + generate halftone dots ────────────────────────────────────
@@ -378,17 +433,11 @@ export default function Map() {
       canvas.addEventListener("click", canvasClick);
       canvas.style.cursor = "pointer";
 
-      // ── Vote radar overlays ───────────────────────────────────────────────────
+      // ── Vote radar — canvas stars + vote feed toasts ─────────────────────────
       injectOverlayCSS();
-      addOverlays(wrapper);
+      addToastOverlay(wrapper);
 
-      const projectFn = (lnglat: [number, number]): { x: number; y: number } | null => {
-        const p = projection(lnglat);
-        if (!p) return null;
-        return { x: p[0], y: p[1] };
-      };
-
-      voteRadarRef.current = startVoteRadar(wrapper, projectFn);
+      voteRadarRef.current = startVoteRadar(wrapper, w, h, activeStarsRef);
     };
 
     init();
@@ -557,17 +606,13 @@ function pointInFeature(point: [number, number], feature: any): boolean {
 
 // ── Overlay helpers ───────────────────────────────────────────────────────────
 
-function addOverlays(wrapper: HTMLElement) {
-  if (wrapper.querySelector(".star-svg")) return;
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("class", "star-svg");
-  svg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;";
-  wrapper.appendChild(svg);
-
+// Toast wrap only — shooting stars are now rendered on canvas
+function addToastOverlay(wrapper: HTMLElement) {
+  if (wrapper.querySelector(".news-toast-wrap")) return;
   const toastWrap = document.createElement("div");
   toastWrap.className = "news-toast-wrap";
   toastWrap.style.cssText =
-    "position:absolute;bottom:80px;left:14px;display:flex;flex-direction:column;gap:5px;z-index:20;pointer-events:none;max-width:260px;";
+    "position:absolute;bottom:80px;left:14px;display:flex;flex-direction:column;gap:5px;z-index:20;pointer-events:none;max-width:280px;";
   wrapper.appendChild(toastWrap);
 }
 
@@ -576,118 +621,57 @@ function injectOverlayCSS() {
   const style = document.createElement("style");
   style.id = "map-overlay-style";
   style.textContent = `
-    @keyframes pulse-ring {
-      0%   { transform: scale(1); opacity: 0.9; }
-      70%  { transform: scale(3.5); opacity: 0.3; }
-      100% { transform: scale(5); opacity: 0; }
-    }
-    @keyframes pulse-dot-fade { 0% { opacity:1; } 80% { opacity:1; } 100% { opacity:0; } }
     @keyframes toast-in  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     @keyframes toast-out { from { opacity:1; } to { opacity:0; } }
-    .news-pulse-wrap {
-      position:absolute; width:12px; height:12px; transform:translate(-50%,-50%);
-      pointer-events:none; z-index:10;
-    }
-    .news-pulse-dot {
-      position:absolute; inset:0; border-radius:50%; background:#00d4ff;
-      box-shadow:0 0 8px #00d4ff88; animation:pulse-dot-fade 5s ease-out forwards;
-    }
-    .news-pulse-ring {
-      position:absolute; inset:0; border-radius:50%; border:1.5px solid #00d4ff;
-      animation:pulse-ring 1.8s ease-out infinite;
-    }
-    .news-pulse-ring.d { animation-delay:0.9s; }
     .news-toast {
-      background:rgba(8,12,24,0.88); border:1px solid rgba(0,212,255,0.3);
-      border-radius:3px; padding:5px 8px; animation:toast-in 0.2s ease-out forwards;
-      backdrop-filter:blur(4px);
+      background:rgba(6,10,22,0.92); border-radius:3px; padding:6px 10px;
+      animation:toast-in 0.18s ease-out forwards; backdrop-filter:blur(6px);
+      border-left:2px solid currentColor;
     }
-    .news-toast.out { animation:toast-out 0.3s ease-in forwards; }
-    .toast-src { font-size:8px; color:#00d4ff; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:2px; font-family:var(--font-mono,monospace); }
-    .toast-title { font-size:9.5px; color:#e5e7eb; line-height:1.4; display:block; }
+    .news-toast.out { animation:toast-out 0.25s ease-in forwards; }
+    .toast-vote {
+      font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:2px;
+      display:block; margin-bottom:3px; font-family:var(--font-mono,monospace);
+    }
+    .toast-meta {
+      font-size:9px; color:rgba(229,231,235,0.55); line-height:1.4; display:block;
+      font-family:var(--font-mono,monospace);
+    }
   `;
   document.head.appendChild(style);
 }
 
-function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number }) {
-  const svg = wrapper.querySelector(".star-svg") as SVGSVGElement | null;
-  if (!svg) return;
-  const w = wrapper.clientWidth;
-  const h = wrapper.clientHeight;
-  const side = Math.floor(Math.random() * 4);
-  let x0: number, y0: number;
-  if (side === 0)      { x0 = Math.random() * w; y0 = -10; }
-  else if (side === 1) { x0 = w + 10; y0 = Math.random() * h; }
-  else if (side === 2) { x0 = Math.random() * w; y0 = h + 10; }
-  else                 { x0 = -10; y0 = Math.random() * h; }
-
-  const dx = targetPx.x - x0;
-  const dy = targetPx.y - y0;
-  const length = Math.sqrt(dx * dx + dy * dy);
-
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", String(x0)); line.setAttribute("y1", String(y0));
-  line.setAttribute("x2", String(targetPx.x)); line.setAttribute("y2", String(targetPx.y));
-  line.setAttribute("stroke", "#00d4ff"); line.setAttribute("stroke-width", "1.2");
-  line.setAttribute("stroke-linecap", "round");
-  line.setAttribute("stroke-dasharray", String(length));
-  line.setAttribute("stroke-dashoffset", String(length));
-  line.style.opacity = "0.85";
-  svg.appendChild(line);
-
-  const DRAW = 500, HOLD = 150, FADE = 350;
-  let t0: number | null = null;
-  function tick(ts: number) {
-    if (!t0) t0 = ts;
-    const el = ts - t0;
-    if (el < DRAW) {
-      line.setAttribute("stroke-dashoffset", String(length * (1 - Math.pow(1 - el / DRAW, 3))));
-      requestAnimationFrame(tick);
-    } else if (el < DRAW + HOLD) {
-      line.setAttribute("stroke-dashoffset", "0");
-      requestAnimationFrame(tick);
-    } else if (el < DRAW + HOLD + FADE) {
-      line.style.opacity = String(0.85 * (1 - (el - DRAW - HOLD) / FADE));
-      requestAnimationFrame(tick);
-    } else {
-      svg?.removeChild(line);
-    }
-  }
-  requestAnimationFrame(tick);
-}
-
-function firePulse(wrapper: HTMLElement, px: { x: number; y: number }) {
-  const el = document.createElement("div");
-  el.className = "news-pulse-wrap";
-  el.style.left = `${px.x}px`;
-  el.style.top = `${px.y}px`;
-  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-dot" }));
-  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-ring" }));
-  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-ring d" }));
-  wrapper.appendChild(el);
-  setTimeout(() => el.remove(), 8000);
-}
-
-function showVoteToast(wrapper: HTMLElement, topic: string, claimText: string, vote: string) {
+function showVoteFeedToast(wrapper: HTMLElement, topic: string, countries: string[], vote: string) {
   const toastWrap = wrapper.querySelector(".news-toast-wrap");
   if (!toastWrap) return;
   const existing = toastWrap.querySelectorAll(".news-toast");
-  if (existing.length >= 3) existing[0].remove();
-  const voteColor = vote === "yes" ? "#ef4444" : "#3b82f6";
-  const voteLabel = vote === "yes" ? "TRUE" : "FALSE";
+  if (existing.length >= 4) existing[0].remove();
+
+  const isYes = vote === "yes";
+  const color = isYes ? "#ef4444" : "#3b82f6";
+  const label = isYes ? "VOTED TRUE" : "VOTED FALSE";
+  const countryNames = countries
+    .map((iso) => COUNTRY_NAMES[iso] ?? iso)
+    .slice(0, 2)
+    .join(", ");
+
   const toast = document.createElement("div");
   toast.className = "news-toast";
-  toast.innerHTML = `<span class="toast-src" style="color:${voteColor}">${topic} · ${voteLabel}</span><span class="toast-title">${claimText.slice(0, 80)}${claimText.length > 80 ? "…" : ""}</span>`;
+  toast.style.color = color;
+  toast.innerHTML = `<span class="toast-vote">${label}</span><span class="toast-meta">${topic}${countryNames ? " · " + countryNames : ""}</span>`;
   toastWrap.appendChild(toast);
   setTimeout(() => {
     toast.classList.add("out");
-    setTimeout(() => toast.remove(), 350);
-  }, 5000);
+    setTimeout(() => toast.remove(), 280);
+  }, 4500);
 }
 
+// startVoteRadar: pushes canvas-tracked stars to activeStarsRef, shows vote-feed toasts
 function startVoteRadar(
   wrapper: HTMLElement,
-  projectFn: (lnglat: [number, number]) => { x: number; y: number } | null,
+  viewportW: number,
+  viewportH: number,
+  activeStarsRef: React.MutableRefObject<ActiveStar[]>,
 ): ReturnType<typeof setInterval> {
   let lastSeenVoteId: number | null = null;
 
@@ -697,8 +681,7 @@ function startVoteRadar(
       if (!res.ok) return;
       const data = await res.json();
       const events: Array<{
-        vote_id: number; claim_text: string; topic_display: string;
-        vote: string; countries: string[];
+        vote_id: number; topic_display: string; vote: string; countries: string[];
       }> = data.events ?? [];
       if (!events.length) return;
 
@@ -708,17 +691,27 @@ function startVoteRadar(
       if (newEvents.length) lastSeenVoteId = newEvents[0].vote_id;
 
       for (const event of newEvents.slice(0, 4)) {
+        // Show vote-feed toast (topic + country, not claim text)
+        showVoteFeedToast(wrapper, event.topic_display, event.countries, event.vote);
+
         for (const iso of event.countries) {
           const centroid = WORLD_CENTROIDS[iso];
           if (!centroid) continue;
-          const px = projectFn(centroid);
-          if (!px) continue;
-          fireShootingStar(wrapper, px);
-          setTimeout(() => {
-            const px2 = projectFn(centroid);
-            if (px2) firePulse(wrapper, px2);
-            showVoteToast(wrapper, event.topic_display, event.claim_text, event.vote);
-          }, 550);
+
+          // Pick a random screen-edge origin
+          const side = Math.floor(Math.random() * 4);
+          let x0: number, y0: number;
+          if (side === 0)      { x0 = Math.random() * viewportW; y0 = -10; }
+          else if (side === 1) { x0 = viewportW + 10; y0 = Math.random() * viewportH; }
+          else if (side === 2) { x0 = Math.random() * viewportW; y0 = viewportH + 10; }
+          else                 { x0 = -10; y0 = Math.random() * viewportH; }
+
+          activeStarsRef.current.push({
+            x0, y0,
+            lng: centroid[0], lat: centroid[1],
+            t0: performance.now(),
+            isYes: event.vote === "yes",
+          });
         }
       }
     } catch {/* silent */}
