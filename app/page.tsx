@@ -101,15 +101,15 @@ export default function Home() {
       {/* ── Ticker bar ── */}
       <div style={{
         position: "absolute", top: 0, left: 0, right: 0, zIndex: 20,
-        height: 30, display: "flex", alignItems: "center",
-        background: "rgba(4,6,14,0.95)", borderBottom: "1px solid rgba(0,212,255,0.18)",
+        height: 40, display: "flex", alignItems: "center",
+        background: "rgba(4,6,14,0.97)", borderBottom: "1px solid rgba(0,212,255,0.25)",
         overflow: "hidden",
       }}>
         {/* Brand */}
         <div style={{
-          flexShrink: 0, padding: "0 14px",
+          flexShrink: 0, padding: "0 16px",
           borderRight: "1px solid rgba(0,212,255,0.2)",
-          fontFamily: "var(--font-mono)", fontSize: 9.5, fontWeight: 700,
+          fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
           color: "#00d4ff", textTransform: "uppercase", letterSpacing: "2.5px",
           whiteSpace: "nowrap",
         }}>
@@ -120,8 +120,8 @@ export default function Home() {
         <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
           <div className="iv-ticker" style={{
             display: "inline-block", whiteSpace: "nowrap",
-            fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(229,231,235,0.92)",
-            letterSpacing: "0.04em",
+            fontFamily: "var(--font-mono)", fontSize: 13, color: "#e5e7eb",
+            letterSpacing: "0.05em",
           }}>
             {/* Double the text for seamless loop */}
             <span>{tickerText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
@@ -140,9 +140,9 @@ export default function Home() {
             { href: "/pro", label: "Pro", accent: true },
           ].map(({ href, label, accent }) => (
             <Link key={href} href={href} style={{
-              fontSize: 8, fontFamily: "var(--font-mono)", textTransform: "uppercase",
+              fontSize: 10, fontFamily: "var(--font-mono)", textTransform: "uppercase",
               letterSpacing: "1px", textDecoration: "none",
-              color: accent ? "#00d4ff" : "rgba(229,231,235,0.5)",
+              color: accent ? "#00d4ff" : "rgba(229,231,235,0.65)",
             }}>
               {label}
             </Link>
@@ -151,7 +151,7 @@ export default function Home() {
       </div>
 
       {/* ── Full-screen globe ── */}
-      <div style={{ position: "absolute", inset: 0, top: 30 }}>
+      <div style={{ position: "absolute", inset: 0, top: 40 }}>
         <Map />
       </div>
 

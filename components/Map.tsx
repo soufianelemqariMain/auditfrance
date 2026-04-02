@@ -64,14 +64,15 @@ export default function Map() {
         // Belt-and-suspenders: set projection after load too
         map.setProjection("globe");
 
-        // Fog creates the sphere-in-space appearance
+        // Fog creates the sphere-in-space appearance.
+        // space-color must be near-black to contrast against the dark map background.
         map.setFog({
-          range: [0.8, 8],
-          color: "#1a1f3c",
-          "horizon-blend": 0.4,
-          "high-color": "#0f1428",
-          "space-color": "#060a18",
-          "star-intensity": 0.15,
+          range: [0.5, 10],
+          color: "rgba(100,150,230,0.5)",
+          "horizon-blend": 0.05,
+          "high-color": "#1a4fad",
+          "space-color": "#000005",
+          "star-intensity": 0.3,
         });
 
         injectOverlayCSS();
