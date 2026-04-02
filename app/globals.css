@@ -156,8 +156,12 @@ body.light {
   .bp-ao          { flex: none !important; width: 100% !important; height: 300px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
   .bp-cac         { flex: none !important; width: 100% !important; height: 260px !important; border-left: none !important; border-top: 1px solid var(--border) !important; }
 
-  /* Department panel: full-width bottom sheet */
+  /* Department panel: fixed full-width bottom sheet on mobile.
+     Must be position:fixed (not absolute) so it breaks out of the
+     60dvh map-section container — otherwise the header/close button
+     and tabs are clipped out of view. */
   .dept-panel {
+    position: fixed !important;
     width: 100% !important;
     height: 75dvh !important;
     top: auto !important;
@@ -166,6 +170,7 @@ body.light {
     right: 0 !important;
     border-left: none !important;
     border-top: 2px solid var(--accent-blue) !important;
+    z-index: 1000 !important;
   }
 
   /* Navbar: hide secondary items */

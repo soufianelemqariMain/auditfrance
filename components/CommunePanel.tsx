@@ -57,6 +57,7 @@ export default function CommunePanel({ code, nom, onClose }: Props) {
 
   return (
     <div
+      className="dept-panel"
       style={{
         position: "absolute",
         top: 0,
