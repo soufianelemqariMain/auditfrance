@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
 interface LeaderboardEntry {
@@ -87,8 +88,25 @@ export default function LeaderboardPage() {
             Loading…
           </div>
         ) : entries.length === 0 ? (
-          <div style={{ padding: 24, textAlign: "center", fontSize: 11, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
-            No data yet. Be the first to vote!
+          <div style={{ padding: 40, textAlign: "center", fontFamily: "var(--font-mono)" }}>
+            <div style={{ fontSize: 13, color: "var(--accent-white)", marginBottom: 8 }}>No ranked predictors yet.</div>
+            <div style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 20 }}>
+              Cast your first vote to appear on the leaderboard. Accuracy earns XP — top predictors gain Oracle status.
+            </div>
+            <Link href="/predictions" style={{
+              display: "inline-block",
+              padding: "8px 20px",
+              fontSize: 10,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              background: "var(--accent-blue)",
+              color: "var(--accent-white)",
+              textDecoration: "none",
+              borderRadius: "2px",
+              fontFamily: "var(--font-mono)",
+            }}>
+              Start Predicting →
+            </Link>
           </div>
         ) : (
           <div style={{ borderRadius: 4, overflow: "hidden", border: "1px solid var(--border)" }}>
