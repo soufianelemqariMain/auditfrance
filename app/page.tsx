@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
@@ -24,64 +24,54 @@ function getOrCreateVoterId(): string {
   return id;
 }
 
+function PctColor(pct: number): string {
+  if (pct >= 60) return "#ef4444";
+  if (pct <= 40) return "#3b82f6";
+  return "#eab308";
+}
+
 export default function Home() {
   const [claims, setClaims] = useState<Claim[]>([]);
-  const [featured, setFeatured] = useState<Claim | null>(null);
-  const [dismissed, setDismissed] = useState(false);
-  const [voted, setVoted] = useState<"yes" | "no" | null>(null);
-  const [voting, setVoting] = useState(false);
+  const [sidebarVoted, setSidebarVoted] = useState<Record<number, "yes" | "no">>({});
+  const [sidebarVoting, setSidebarVoting] = useState<Record<number, boolean>>({});
+
+  const fetchClaims = useCallback(async () => {
+    try {
+      const res = await fetch("/api/claims?limit=20&status=open", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list: Claim[] = Array.isArray(data) ? data : (data.claims ?? data.items ?? []);
+      if (!list.length) return;
+      // Sort by vote count descending
+      setClaims([...list].sort((a, b) => (b.vote_count ?? 0) - (a.vote_count ?? 0)));
+    } catch { /* silent */ }
+  }, []);
 
   useEffect(() => {
-    async function fetchClaims() {
-      try {
-        const res = await fetch("/api/claims?limit=24&status=open", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const list: Claim[] = Array.isArray(data) ? data : (data.claims ?? data.items ?? []);
-        if (!list.length) return;
-        setClaims(list);
-        // Featured = highest vote count, rotate every 60s
-        const sorted = [...list].sort((a, b) => (b.vote_count ?? 0) - (a.vote_count ?? 0));
-        setFeatured(sorted[0]);
-      } catch { /* silent */ }
-    }
     fetchClaims();
     const t = setInterval(fetchClaims, 30_000);
     return () => clearInterval(t);
-  }, []);
+  }, [fetchClaims]);
 
-  // Rotate featured every 45s
-  useEffect(() => {
-    if (claims.length < 2) return;
-    const t = setInterval(() => {
-      setFeatured(prev => {
-        const idx = claims.findIndex(c => c.id === prev?.id);
-        return claims[(idx + 1) % claims.length];
-      });
-      setVoted(null);
-    }, 45_000);
-    return () => clearInterval(t);
-  }, [claims]);
-
-  async function castVote(v: "yes" | "no") {
-    if (voting || voted || !featured) return;
-    setVoting(true);
+  async function castSidebarVote(id: number, v: "yes" | "no") {
+    if (sidebarVoting[id] || sidebarVoted[id]) return;
+    setSidebarVoting(p => ({ ...p, [id]: true }));
     try {
       const voterId = getOrCreateVoterId();
-      await fetch(`/api/claims/${featured.id}/vote`, {
+      await fetch(`/api/claims/${id}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Voter-Id": voterId },
         body: JSON.stringify({ vote: v }),
       });
-      setVoted(v);
+      setSidebarVoted(p => ({ ...p, [id]: v }));
     } catch { /* silent */ } finally {
-      setVoting(false);
+      setSidebarVoting(p => ({ ...p, [id]: false }));
     }
   }
 
-  // Build ticker text — doubled for seamless CSS loop
+  // Ticker text from top 16 claims
   const tickerParts = claims.length
-    ? claims.map(c => {
+    ? claims.slice(0, 16).map(c => {
         const pct = Math.round((c.probability ?? 0.5) * 100);
         const tag = c.topic_display ?? c.topic_slug ?? "";
         return `${tag ? `[${tag}] ` : ""}${c.text.length > 72 ? c.text.slice(0, 72) + "…" : c.text}  ${pct}% YES`;
@@ -89,32 +79,29 @@ export default function Home() {
     : ["Loading predictions…"];
   const tickerText = tickerParts.join("     ·     ");
 
-  const featuredPct = Math.round((featured?.probability ?? 0.5) * 100);
-  const pctColor = featuredPct >= 60 ? "#ef4444" : featuredPct <= 40 ? "#3b82f6" : "#eab308";
-
   return (
     <div style={{
       position: "relative", width: "100vw", height: "100vh",
-      background: "#04060e", overflow: "hidden",
+      background: "#04060e", overflow: "hidden", display: "flex", flexDirection: "column",
     }}>
 
       {/* ── Ticker bar ── */}
       <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, zIndex: 20,
-        height: 40, display: "flex", alignItems: "center",
+        flexShrink: 0, height: 40, display: "flex", alignItems: "center",
         background: "rgba(4,6,14,0.97)", borderBottom: "1px solid rgba(0,212,255,0.25)",
-        overflow: "hidden",
+        overflow: "hidden", zIndex: 20,
       }}>
-        {/* Brand */}
-        <div style={{
+        {/* Brand — links home */}
+        <Link href="/" style={{
           flexShrink: 0, padding: "0 16px",
           borderRight: "1px solid rgba(0,212,255,0.2)",
           fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
           color: "#00d4ff", textTransform: "uppercase", letterSpacing: "2.5px",
-          whiteSpace: "nowrap",
+          whiteSpace: "nowrap", textDecoration: "none", display: "flex", alignItems: "center", gap: 7,
         }}>
+          <span className="live-dot" />
           INFOVERIF
-        </div>
+        </Link>
 
         {/* Scrolling ticker */}
         <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
@@ -123,7 +110,6 @@ export default function Home() {
             fontFamily: "var(--font-mono)", fontSize: 13, color: "#e5e7eb",
             letterSpacing: "0.05em",
           }}>
-            {/* Double the text for seamless loop */}
             <span>{tickerText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
             <span aria-hidden="true">{tickerText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
           </div>
@@ -136,13 +122,13 @@ export default function Home() {
         }}>
           {[
             { href: "/predictions", label: "Predictions" },
-            { href: "/leaderboard", label: "Board" },
-            { href: "/pro", label: "Pro", accent: true },
+            { href: "/leaderboard", label: "Leaderboard" },
+            { href: "/pro", label: "VerifPro", accent: true },
           ].map(({ href, label, accent }) => (
             <Link key={href} href={href} style={{
               fontSize: 10, fontFamily: "var(--font-mono)", textTransform: "uppercase",
               letterSpacing: "1px", textDecoration: "none",
-              color: accent ? "#00d4ff" : "rgba(229,231,235,0.65)",
+              color: accent ? "#f59e0b" : "rgba(229,231,235,0.65)",
             }}>
               {label}
             </Link>
@@ -150,94 +136,135 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Full-screen globe ── */}
-      <div style={{ position: "absolute", inset: 0, top: 40 }}>
-        <Map />
+      {/* ── Main content: Globe + Live Claims Panel ── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+
+        {/* Globe */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <Map />
+          {/* Discoverability hint */}
+          <div style={{
+            position: "absolute", bottom: 14, left: 14, zIndex: 10,
+            fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(229,231,235,0.35)",
+            textTransform: "uppercase", letterSpacing: "1px",
+            pointerEvents: "none",
+          }}>
+            Click any country for claims →
+          </div>
+        </div>
+
+        {/* ── Live Claims Sidebar ── */}
+        <div style={{
+          width: 290, flexShrink: 0,
+          background: "rgba(4,8,20,0.96)", borderLeft: "1px solid rgba(0,212,255,0.18)",
+          display: "flex", flexDirection: "column", overflowY: "auto",
+          fontFamily: "var(--font-mono, monospace)",
+        }}>
+          {/* Sidebar header */}
+          <div style={{
+            padding: "10px 14px", borderBottom: "1px solid rgba(0,212,255,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <span className="live-dot" />
+              <span style={{ fontSize: 10, color: "#00d4ff", fontWeight: 700, textTransform: "uppercase", letterSpacing: "2px" }}>
+                LIVE PREDICTIONS
+              </span>
+            </div>
+            <span style={{ fontSize: 9, color: "rgba(229,231,235,0.35)" }}>
+              {claims.length} open
+            </span>
+          </div>
+
+          {/* Claims list */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {claims.length === 0 && (
+              <div style={{ padding: "20px 14px", color: "rgba(229,231,235,0.35)", fontSize: 11, textAlign: "center" }}>
+                Loading…
+              </div>
+            )}
+            {claims.map((claim) => {
+              const pct = Math.round((claim.probability ?? 0.5) * 100);
+              const voted = sidebarVoted[claim.id];
+              const voting = sidebarVoting[claim.id];
+              return (
+                <div key={claim.id} style={{
+                  padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)",
+                }}>
+                  {claim.topic_display && (
+                    <div style={{ fontSize: 7.5, color: "#00d4ff", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 4, fontWeight: 700 }}>
+                      {claim.topic_display}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 10.5, color: "#e5e7eb", lineHeight: 1.45, marginBottom: 7 }}>
+                    {claim.text.length > 90 ? claim.text.slice(0, 90) + "…" : claim.text}
+                  </div>
+                  {/* Probability bar */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 7 }}>
+                    <div style={{ flex: 1, height: 2, background: "rgba(255,255,255,0.08)", borderRadius: 1 }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: PctColor(pct), borderRadius: 1 }} />
+                    </div>
+                    <span style={{ fontSize: 9, color: PctColor(pct), fontWeight: 700, whiteSpace: "nowrap" }}>
+                      {pct}% TRUE
+                    </span>
+                  </div>
+                  {/* Vote buttons */}
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <button
+                      disabled={!!voted || voting}
+                      onClick={() => castSidebarVote(claim.id, "yes")}
+                      style={{
+                        flex: 1, padding: "4px 0", fontSize: 8, fontWeight: 700,
+                        textTransform: "uppercase", letterSpacing: "1px",
+                        cursor: voted ? "default" : "pointer",
+                        border: `1px solid ${voted === "yes" ? "#ef4444" : "rgba(239,68,68,0.3)"}`,
+                        background: voted === "yes" ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.05)",
+                        color: voted === "yes" ? "#ef4444" : "rgba(239,68,68,0.65)",
+                        borderRadius: 2, fontFamily: "var(--font-mono, monospace)",
+                      }}
+                    >
+                      {voted === "yes" ? "✓ TRUE" : "TRUE"}
+                    </button>
+                    <button
+                      disabled={!!voted || voting}
+                      onClick={() => castSidebarVote(claim.id, "no")}
+                      style={{
+                        flex: 1, padding: "4px 0", fontSize: 8, fontWeight: 700,
+                        textTransform: "uppercase", letterSpacing: "1px",
+                        cursor: voted ? "default" : "pointer",
+                        border: `1px solid ${voted === "no" ? "#3b82f6" : "rgba(59,130,246,0.3)"}`,
+                        background: voted === "no" ? "rgba(59,130,246,0.15)" : "rgba(59,130,246,0.05)",
+                        color: voted === "no" ? "#3b82f6" : "rgba(59,130,246,0.65)",
+                        borderRadius: 2, fontFamily: "var(--font-mono, monospace)",
+                      }}
+                    >
+                      {voted === "no" ? "✓ FALSE" : "FALSE"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            flexShrink: 0, padding: "10px 14px",
+            borderTop: "1px solid rgba(0,212,255,0.15)",
+          }}>
+            <Link href="/predictions" style={{
+              display: "block", textAlign: "center",
+              fontSize: 9, color: "#00d4ff", textTransform: "uppercase",
+              letterSpacing: "1.5px", textDecoration: "none",
+              fontFamily: "var(--font-mono)",
+            }}>
+              SEE ALL PREDICTIONS →
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* ── Featured prediction card (bottom center) ── */}
-      {featured && !dismissed && (
-        <div style={{
-          position: "absolute", bottom: 28, left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 20,
-          display: "flex", alignItems: "center", gap: 10,
-          background: "rgba(4,6,14,0.9)",
-          border: "1px solid rgba(0,212,255,0.22)",
-          borderRadius: 4, padding: "9px 14px",
-          backdropFilter: "blur(10px)",
-          maxWidth: 580, width: "calc(100vw - 32px)",
-          boxShadow: "0 0 30px rgba(0,212,255,0.07)",
-        }}>
-          {/* Topic tag */}
-          {featured.topic_display && (
-            <span style={{
-              flexShrink: 0, fontSize: 7.5, fontFamily: "var(--font-mono)",
-              color: "#00d4ff", textTransform: "uppercase", letterSpacing: "1.2px",
-              background: "rgba(0,212,255,0.1)", padding: "2px 7px", borderRadius: 2,
-              whiteSpace: "nowrap",
-            }}>
-              {featured.topic_display}
-            </span>
-          )}
-
-          {/* Claim text */}
-          <span style={{ flex: 1, fontSize: 10.5, color: "#e5e7eb", lineHeight: 1.4, minWidth: 0 }}>
-            {featured.text.length > 88 ? featured.text.slice(0, 88) + "…" : featured.text}
-          </span>
-
-          {/* Probability */}
-          <span style={{
-            flexShrink: 0, fontSize: 13, fontWeight: 700, color: pctColor,
-            fontFamily: "var(--font-mono)",
-          }}>
-            {featuredPct}%
-          </span>
-
-          {/* Vote buttons */}
-          {voted ? (
-            <span style={{
-              flexShrink: 0, fontSize: 8, fontFamily: "var(--font-mono)",
-              color: voted === "yes" ? "#ef4444" : "#3b82f6",
-              textTransform: "uppercase", letterSpacing: "1px",
-            }}>
-              Voted {voted === "yes" ? "TRUE" : "FALSE"} ✓
-            </span>
-          ) : (
-            <>
-              <button onClick={() => castVote("yes")} disabled={voting} style={{
-                flexShrink: 0, fontSize: 8, fontFamily: "var(--font-mono)",
-                textTransform: "uppercase", letterSpacing: "1px",
-                color: "#04060e", background: "#ef4444",
-                border: "none", borderRadius: 2, padding: "5px 10px",
-                cursor: voting ? "not-allowed" : "pointer", opacity: voting ? 0.6 : 1,
-              }}>
-                TRUE
-              </button>
-              <button onClick={() => castVote("no")} disabled={voting} style={{
-                flexShrink: 0, fontSize: 8, fontFamily: "var(--font-mono)",
-                textTransform: "uppercase", letterSpacing: "1px",
-                color: "#04060e", background: "#3b82f6",
-                border: "none", borderRadius: 2, padding: "5px 10px",
-                cursor: voting ? "not-allowed" : "pointer", opacity: voting ? 0.6 : 1,
-              }}>
-                FALSE
-              </button>
-            </>
-          )}
-
-          {/* Dismiss */}
-          <button onClick={() => setDismissed(true)} style={{
-            flexShrink: 0, background: "none", border: "none",
-            color: "rgba(229,231,235,0.25)", cursor: "pointer",
-            fontSize: 14, lineHeight: 1, padding: "2px 2px",
-          }}>
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Ticker animation */}
+      {/* Ticker animation + live dot */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes iv-marquee {
           0%   { transform: translateX(0); }
@@ -248,6 +275,17 @@ export default function Home() {
         }
         .iv-ticker:hover {
           animation-play-state: paused;
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.2; }
+        }
+        .live-dot {
+          display: inline-block;
+          width: 6px; height: 6px;
+          background: #ef4444; border-radius: 50%;
+          animation: blink 1.4s ease-in-out infinite;
+          flex-shrink: 0;
         }
       ` }} />
     </div>
