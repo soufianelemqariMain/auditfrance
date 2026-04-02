@@ -6,6 +6,8 @@ import { useAppStore } from "@/lib/store";
 interface MapProps {
   onDeptClick?: (code: string, nom: string) => void;
   onCommuneClick?: (code: string, nom: string) => void;
+  /** Global mode: globe projection, no France layers, centered on world */
+  globalMode?: boolean;
 }
 
 // Centroids [lon, lat] for major countries — for global shooting star events
@@ -59,7 +61,7 @@ const DEPT_CENTROIDS: Record<string, [number, number]> = {
 
 const ALL_DEPT_CODES = Object.keys(DEPT_CENTROIDS);
 
-export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
+export default function Map({ onDeptClick, onCommuneClick, globalMode = false }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const onDeptClickRef = useRef(onDeptClick);
@@ -80,29 +82,41 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
       const maplibregl = (await import("maplibre-gl")).default;
       await import("maplibre-gl/dist/maplibre-gl.css");
 
-      // Start at world view; France drill-down kicks in when user zooms to > 4
-      const initialCenter: [number, number] = mapState.zoom > 3 ? [mapState.lon, mapState.lat] : [10, 20];
-      const initialZoom = mapState.zoom > 3 ? mapState.zoom : 2;
+      // Global mode: globe, centered on world. France mode: preserve last map state.
+      const initialCenter: [number, number] = globalMode
+        ? [15, 20]
+        : (mapState.zoom > 3 ? [mapState.lon, mapState.lat] : [10, 20]);
+      const initialZoom = globalMode ? 1.5 : (mapState.zoom > 3 ? mapState.zoom : 2);
 
-      map = new maplibregl.Map({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mapOptions: Record<string, any> = {
         container: mapContainer.current!,
         style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         center: initialCenter,
         zoom: initialZoom,
-        pitch: is3D ? 45 : 0,
+        pitch: globalMode ? 0 : (is3D ? 45 : 0),
         bearing: 0,
-      }) as typeof map;
+      };
+      // MapLibre GL v3+ globe projection — rotatable 3D globe
+      if (globalMode) {
+        mapOptions.projection = "globe";
+      }
+
+      map = new maplibregl.Map(mapOptions) as typeof map;
 
       mapRef.current = map;
 
       map!.on("load", () => {
-        map!.getStyle().layers.forEach((layer: { id: string; type: string; layout?: Record<string, unknown> }) => {
-          if (layer.type === "symbol" && layer.layout?.["text-field"] !== undefined) {
-            map!.setLayoutProperty(layer.id, "text-field", [
-              "coalesce", ["get", "name:fr"], ["get", "name"],
-            ]);
-          }
-        });
+        // Localise label language (only needed in France mode)
+        if (!globalMode) {
+          map!.getStyle().layers.forEach((layer: { id: string; type: string; layout?: Record<string, unknown> }) => {
+            if (layer.type === "symbol" && layer.layout?.["text-field"] !== undefined) {
+              map!.setLayoutProperty(layer.id, "text-field", [
+                "coalesce", ["get", "name:fr"], ["get", "name"],
+              ]);
+            }
+          });
+        }
 
         injectOverlayCSS();
 
@@ -112,43 +126,48 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
 
         // Load world choropleth (primary view)
         loadWorldLayer(map!);
-        // Load France dept + city layers (shown when zoom > 4)
-        loadLayers(map!, maplibregl);
 
-        // Live vote shooting stars (fires from real vote events)
-        voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
-
-        setTimeout(() => {
-          radarInterval = startNewsRadar(map!, maplibregl, wrapper, (code, nom) => {
-            if (onDeptClickRef.current) onDeptClickRef.current(code, nom);
-          });
-        }, 3000);
-      });
-
-      map!.on("mouseenter", "departments-fill", () => { map!.getCanvas().style.cursor = "pointer"; });
-      map!.on("mouseleave", "departments-fill", () => { map!.getCanvas().style.cursor = ""; });
-      map!.on("mouseenter", "cities-dot", () => { map!.getCanvas().style.cursor = "pointer"; });
-      map!.on("mouseleave", "cities-dot", () => { map!.getCanvas().style.cursor = ""; });
-
-      map!.on("click", "cities-dot", (e: { features?: Array<{properties: {code: string, name: string}}>, point: {x: number, y: number} }) => {
-        if (!e.features?.length) return;
-        const { code, name } = e.features[0].properties;
-        if (onCommuneClickRef.current && code) onCommuneClickRef.current(code, name);
-      });
-
-      map!.on("click", (e: { point: {x: number, y: number} }) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cityFeatures = map!.queryRenderedFeatures(e.point, { layers: ["cities-dot"] });
-        if (cityFeatures?.length) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const deptFeatures = map!.queryRenderedFeatures(e.point, { layers: ["departments-fill"] });
-        if (deptFeatures?.length) {
-          const props = deptFeatures[0].properties as { code?: string; nom?: string; nom_dept?: string };
-          const code = props.code ?? "";
-          const nom = props.nom ?? props.nom_dept ?? code;
-          if (code && onDeptClickRef.current) onDeptClickRef.current(code, nom);
+        if (globalMode) {
+          // Global mode: only live vote radar, no France news radar or layers
+          voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
+        } else {
+          // France mode: load department + city layers + news radar
+          loadLayers(map!, maplibregl);
+          voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
+          setTimeout(() => {
+            radarInterval = startNewsRadar(map!, maplibregl, wrapper, (code, nom) => {
+              if (onDeptClickRef.current) onDeptClickRef.current(code, nom);
+            });
+          }, 3000);
         }
       });
+
+      if (!globalMode) {
+        map!.on("mouseenter", "departments-fill", () => { map!.getCanvas().style.cursor = "pointer"; });
+        map!.on("mouseleave", "departments-fill", () => { map!.getCanvas().style.cursor = ""; });
+        map!.on("mouseenter", "cities-dot", () => { map!.getCanvas().style.cursor = "pointer"; });
+        map!.on("mouseleave", "cities-dot", () => { map!.getCanvas().style.cursor = ""; });
+
+        map!.on("click", "cities-dot", (e: { features?: Array<{properties: {code: string, name: string}}>, point: {x: number, y: number} }) => {
+          if (!e.features?.length) return;
+          const { code, name } = e.features[0].properties;
+          if (onCommuneClickRef.current && code) onCommuneClickRef.current(code, name);
+        });
+
+        map!.on("click", (e: { point: {x: number, y: number} }) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const cityFeatures = map!.queryRenderedFeatures(e.point, { layers: ["cities-dot"] });
+          if (cityFeatures?.length) return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const deptFeatures = map!.queryRenderedFeatures(e.point, { layers: ["departments-fill"] });
+          if (deptFeatures?.length) {
+            const props = deptFeatures[0].properties as { code?: string; nom?: string; nom_dept?: string };
+            const code = props.code ?? "";
+            const nom = props.nom ?? props.nom_dept ?? code;
+            if (code && onDeptClickRef.current) onDeptClickRef.current(code, nom);
+          }
+        });
+      }
     };
 
     initMap();
@@ -595,6 +614,10 @@ async function loadWorldLayer(map: any) {
     if (!map.getSource("world-countries")) {
       map.addSource("world-countries", { type: "geojson", data: geoData });
 
+      // Determine safe insertion point (departments-fill may not exist in global mode)
+      const hasDeptLayer = !!map.getLayer("departments-fill");
+      const beforeLayer = hasDeptLayer ? "departments-fill" : undefined;
+
       // Choropleth fill: color by narrative_risk (0 = dark blue, 1 = coral red)
       map.addLayer(
         {
@@ -614,7 +637,7 @@ async function loadWorldLayer(map: any) {
             "fill-opacity": 0.55,
           },
         },
-        "departments-fill" // insert below France layers
+        beforeLayer
       );
 
       // Country borders
@@ -629,7 +652,7 @@ async function loadWorldLayer(map: any) {
             "line-opacity": 0.8,
           },
         },
-        "departments-fill"
+        beforeLayer
       );
 
       // Visibility toggle: show world at low zoom, hide at high zoom

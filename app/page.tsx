@@ -15,7 +15,7 @@ export default function Home() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Globe / world map — 55% of height */}
         <div style={{ flex: "0 0 55%", position: "relative", overflow: "hidden" }}>
-          <Map />
+          <Map globalMode={true} />
 
           {/* Overlay label — top left */}
           <div style={{
