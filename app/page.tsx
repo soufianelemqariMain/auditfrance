@@ -152,7 +152,7 @@ export default function Home() {
 
       {/* ── Full-screen globe ── */}
       <div style={{ position: "absolute", inset: 0, top: 30 }}>
-        <Map globalMode={true} />
+        <Map />
       </div>
 
       {/* ── Featured prediction card (bottom center) ── */}
