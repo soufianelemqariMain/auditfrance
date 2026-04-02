@@ -8,6 +8,19 @@ interface MapProps {
   onCommuneClick?: (code: string, nom: string) => void;
 }
 
+// Centroids [lon, lat] for major countries — for global shooting star events
+const WORLD_CENTROIDS: Record<string, [number, number]> = {
+  US:  [-98.58, 39.83],  GB:  [-3.44,  55.38],  FR:  [2.21,  46.23],
+  DE:  [10.45,  51.17],  ES:  [-3.75,  40.46],  IT:  [12.57,  41.87],
+  BR:  [-51.93, -14.24], IN:  [78.96,  20.59],  CN:  [104.19, 35.86],
+  RU:  [105.32, 61.52],  JP:  [138.25, 36.20],  AU:  [133.78, -25.27],
+  CA:  [-96.80, 60.00],  MX:  [-102.55, 23.63], ZA:  [25.08, -29.00],
+  NG:  [8.68,   9.08],   EG:  [30.80,  26.82],  SA:  [45.08,  23.89],
+  TR:  [35.24,  38.96],  UA:  [31.17,  48.38],  PL:  [19.15,  51.92],
+  NL:  [5.29,   52.13],  SE:  [18.64,  60.13],  IL:  [34.85,  31.05],
+  KR:  [127.77, 35.91],  AR:  [-63.62, -38.42], ID:  [117.72, -0.79],
+};
+
 // Approximate centroid [lon, lat] for each metropolitan department
 const DEPT_CENTROIDS: Record<string, [number, number]> = {
   "01": [5.35, 46.0],   "02": [3.62, 49.57],  "03": [3.39, 46.35],
@@ -66,11 +79,15 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
       const maplibregl = (await import("maplibre-gl")).default;
       await import("maplibre-gl/dist/maplibre-gl.css");
 
+      // Start at world view; France drill-down kicks in when user zooms to > 4
+      const initialCenter: [number, number] = mapState.zoom > 3 ? [mapState.lon, mapState.lat] : [10, 20];
+      const initialZoom = mapState.zoom > 3 ? mapState.zoom : 2;
+
       map = new maplibregl.Map({
         container: mapContainer.current!,
         style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-        center: [mapState.lon, mapState.lat],
-        zoom: mapState.zoom,
+        center: initialCenter,
+        zoom: initialZoom,
         pitch: is3D ? 45 : 0,
         bearing: 0,
       }) as typeof map;
@@ -92,6 +109,9 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
         const wrapper = mapContainer.current!.parentElement!;
         addOverlays(wrapper);
 
+        // Load world choropleth (primary view)
+        loadWorldLayer(map!);
+        // Load France dept + city layers (shown when zoom > 4)
         loadLayers(map!, maplibregl);
 
         setTimeout(() => {
@@ -329,7 +349,29 @@ function startNewsRadar(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeMarkers: any[] = [];
 
+  // Determine current view: world (zoom < 4) or France drill-down
+  function isWorldView(): boolean {
+    return map.getZoom() < 4;
+  }
+
   async function poll() {
+    if (isWorldView()) {
+      // World mode: fire shooting stars at random country centroids
+      const worldCodes = Object.keys(WORLD_CENTROIDS);
+      const shuffled = [...worldCodes].sort(() => Math.random() - 0.5).slice(0, 5);
+      for (const iso of shuffled) {
+        const centroid = WORLD_CENTROIDS[iso];
+        if (!centroid) continue;
+        const px: { x: number; y: number } = map.project(centroid);
+        fireShootingStar(wrapper, px);
+        setTimeout(() => {
+          firePulse(map, maplibregl, centroid, iso, onDeptClick, activeMarkers);
+        }, 550);
+      }
+      return;
+    }
+
+    // France mode: existing dept-news radar
     const shuffled = [...ALL_DEPT_CODES].sort(() => Math.random() - 0.5).slice(0, 8);
     for (const code of shuffled) {
       const centroid = DEPT_CENTROIDS[code];
@@ -419,6 +461,104 @@ function firePulse(
     if (i !== -1) activeMarkers.splice(i, 1);
   }, 8000);
 }
+
+// ── World choropleth (narrative risk by country) ──────────────────────────────
+
+// Maps topic region codes to ISO-2 country codes for coloring
+const REGION_TO_ISO: Record<string, string[]> = {
+  US: ["US"], GB: ["GB"], FR: ["FR"], DE: ["DE"], ES: ["ES"],
+  EU: ["FR", "DE", "ES", "IT", "NL", "PL", "SE"],
+  GLOBAL: Object.keys(WORLD_CENTROIDS),
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadWorldLayer(map: any) {
+  // Fetch narrative probabilities from InfoVerif API
+  let narrativeRisk: Record<string, number> = {};
+  try {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://api.infoverif.org";
+    const res = await fetch(`${apiBase}/api/topics`, { cache: "no-store" });
+    if (res.ok) {
+      const topics: Array<{ slug: string; region?: string; avg_probability: number }> = await res.json();
+      // Map topics to countries; use avg_probability as risk signal
+      for (const topic of topics) {
+        const regions = REGION_TO_ISO[topic.region || "GLOBAL"] || REGION_TO_ISO.GLOBAL;
+        for (const iso of regions) {
+          narrativeRisk[iso] = Math.max(narrativeRisk[iso] || 0, topic.avg_probability || 0.5);
+        }
+      }
+    }
+  } catch {
+    // Fallback to static demo values if API unreachable
+    narrativeRisk = { US: 0.72, FR: 0.65, GB: 0.58, DE: 0.48, RU: 0.80, CN: 0.61 };
+  }
+
+  try {
+    // Natural Earth 110m countries — lightweight public dataset via MapLibre CDN
+    const geoRes = await fetch(
+      "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson"
+    );
+    if (!geoRes.ok) return;
+    const geoData = await geoRes.json();
+
+    // Inject narrative_risk property into each feature
+    geoData.features = geoData.features.map((f: { properties: Record<string, string> }) => ({
+      ...f,
+      properties: {
+        ...f.properties,
+        narrative_risk: narrativeRisk[f.properties.iso_a2] ?? 0.35,
+      },
+    }));
+
+    if (!map.getSource("world-countries")) {
+      map.addSource("world-countries", { type: "geojson", data: geoData });
+
+      // Choropleth fill: color by narrative_risk (0 = dark blue, 1 = coral red)
+      map.addLayer(
+        {
+          id: "world-fill",
+          type: "fill",
+          source: "world-countries",
+          paint: {
+            "fill-color": [
+              "interpolate", ["linear"],
+              ["get", "narrative_risk"],
+              0.0, "#0a2d5c",   // low risk — deep navy
+              0.4, "#1a5276",   // moderate — teal blue
+              0.6, "#7d3c98",   // elevated — purple
+              0.75, "#c0392b",  // high — coral red
+              1.0, "#ff1a1a",   // critical — bright red
+            ],
+            "fill-opacity": 0.55,
+          },
+        },
+        "departments-fill" // insert below France layers
+      );
+
+      // Country borders
+      map.addLayer(
+        {
+          id: "world-line",
+          type: "line",
+          source: "world-countries",
+          paint: {
+            "line-color": "#334155",
+            "line-width": 0.5,
+            "line-opacity": 0.8,
+          },
+        },
+        "departments-fill"
+      );
+
+      // Visibility toggle: show world at low zoom, hide at high zoom
+      map.setLayoutProperty("world-fill", "visibility", "visible");
+      map.setLayoutProperty("world-line", "visibility", "visible");
+    }
+  } catch {
+    // World layer is optional — silently skip on error
+  }
+}
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function loadLayers(map: any, _maplibregl: any) {
