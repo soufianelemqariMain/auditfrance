@@ -24,11 +24,16 @@ const COUNTRY_NAMES: Record<string, string> = {
   IL: "Israel", KR: "South Korea", AR: "Argentina", ID: "Indonesia",
 };
 
-// Region-to-ISO mapping (mirrors backend logic)
+// Region-to-ISO mapping — only explicit mappings.
+// GLOBAL topics do NOT get dots (they'd appear on every country as false signal).
 const REGION_TO_ISO: Record<string, string[]> = {
   US: ["US"], GB: ["GB"], FR: ["FR"], DE: ["DE"], ES: ["ES"], IT: ["IT"],
+  BR: ["BR"], IN: ["IN"], CN: ["CN"], RU: ["RU"], JP: ["JP"], AU: ["AU"],
+  CA: ["CA"], MX: ["MX"], ZA: ["ZA"], NG: ["NG"], EG: ["EG"], SA: ["SA"],
+  TR: ["TR"], UA: ["UA"], PL: ["PL"], NL: ["NL"], SE: ["SE"], IL: ["IL"],
+  KR: ["KR"], AR: ["AR"], ID: ["ID"],
   EU: ["FR", "DE", "ES", "IT", "NL", "PL", "SE"],
-  GLOBAL: Object.keys(WORLD_CENTROIDS),
+  // GLOBAL intentionally omitted — no dots for global topics
 };
 
 interface ClaimDot {
@@ -47,30 +52,92 @@ interface PanelClaim {
   topic_slug?: string;
 }
 
+// Stable voter ID stored in localStorage so a user's votes persist
+function getVoterId(): string {
+  if (typeof window === "undefined") return "anon";
+  const key = "iv_voter_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 export default function Map() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const voteRadarRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const claimDotsRef = useRef<ClaimDot[]>([]);
+  const topicsRef = useRef<Array<{ slug: string; region?: string; avg_probability?: number; yes_percent?: number }>>([]);
   // showPanel is called from inside the canvas click handler (not React land)
   const showPanelRef = useRef<(isoCode: string) => void>(() => {});
 
   const [panel, setPanel] = useState<{ isoCode: string; name: string } | null>(null);
   const [panelClaims, setPanelClaims] = useState<PanelClaim[]>([]);
   const [panelLoading, setPanelLoading] = useState(false);
+  const [votedIds, setVotedIds] = useState<Record<number, "yes" | "no">>({});
+
+  // Cast a vote on a claim
+  const castVote = useCallback(async (claimId: number, vote: "yes" | "no") => {
+    setVotedIds((prev) => ({ ...prev, [claimId]: vote }));
+    // Optimistically update counts
+    setPanelClaims((prev) => prev.map((c) => {
+      if (c.id !== claimId) return c;
+      return {
+        ...c,
+        yes_count: vote === "yes" ? c.yes_count + 1 : c.yes_count,
+        no_count: vote === "no" ? c.no_count + 1 : c.no_count,
+      };
+    }));
+    try {
+      await fetch(`/api/claims/${claimId}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Voter-Id": getVoterId() },
+        body: JSON.stringify({ vote }),
+      });
+    } catch {/* silent */}
+  }, []);
 
   // When a country is clicked from the canvas, open the panel and fetch claims
+  // Uses topic slugs (not region ISO) to query — the only reliable backend param.
   const openPanel = useCallback(async (isoCode: string) => {
     setPanel({ isoCode, name: COUNTRY_NAMES[isoCode] ?? isoCode });
     setPanelClaims([]);
+    setVotedIds({});
     setPanelLoading(true);
     try {
-      const res = await fetch(`/api/claims?region=${isoCode}&limit=20`, { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        const list: PanelClaim[] = Array.isArray(data) ? data : (data.claims ?? data.items ?? []);
-        setPanelClaims(list);
+      // Find topics that map to this country via REGION_TO_ISO
+      const matchingSlugs = topicsRef.current
+        .filter((t) => {
+          if (!t.region) return false;
+          const isos = REGION_TO_ISO[t.region];
+          return isos?.includes(isoCode);
+        })
+        .map((t) => t.slug);
+
+      if (matchingSlugs.length === 0) {
+        setPanelLoading(false);
+        return;
       }
+
+      // Fetch claims for each matching topic in parallel
+      const results = await Promise.allSettled(
+        matchingSlugs.map((slug) =>
+          fetch(`/api/claims?topic=${slug}&limit=10`, { cache: "no-store" }).then((r) => r.json())
+        )
+      );
+      const all: PanelClaim[] = [];
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          const d = r.value;
+          const items: PanelClaim[] = Array.isArray(d) ? d : (d.claims ?? d.items ?? []);
+          all.push(...items);
+        }
+      }
+      // Deduplicate by ID
+      const seen = new Set<number>();
+      setPanelClaims(all.filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; }));
     } catch {/* silent */}
     setPanelLoading(false);
   }, []);
@@ -209,25 +276,28 @@ export default function Map() {
         }
       } catch {/* skip */}
 
-      // ── Load claim dots ───────────────────────────────────────────────────────
+      // ── Load claim dots (active topics only, explicit regions) ───────────────
       try {
         const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
         const res = await fetch(`${apiBase}/api/topics`, { cache: "no-store" });
         if (res.ok) {
           const topics: Array<{ slug: string; region?: string; avg_probability?: number; yes_percent?: number }> =
             await res.json();
+          topicsRef.current = topics; // store for panel country → topic lookup
           const dots: ClaimDot[] = [];
           for (const topic of topics) {
-            const region = topic.region ?? "GLOBAL";
-            const isos = REGION_TO_ISO[region] ?? REGION_TO_ISO.GLOBAL;
+            const region = topic.region;
+            // Skip GLOBAL or unmapped topics — dots must represent real country claims
+            if (!region || !REGION_TO_ISO[region]) continue;
+            const isos = REGION_TO_ISO[region];
             const yesPercent = topic.avg_probability ?? topic.yes_percent ?? 0.5;
             for (const iso of isos) {
               const centroid = WORLD_CENTROIDS[iso];
               if (!centroid) continue;
-              // Small random offset so multiple topics for same country don't stack
+              // Small jitter so multiple topics for same country don't overlap exactly
               const jitter: [number, number] = [
-                centroid[0] + (Math.random() - 0.5) * 4,
-                centroid[1] + (Math.random() - 0.5) * 4,
+                centroid[0] + (Math.random() - 0.5) * 3,
+                centroid[1] + (Math.random() - 0.5) * 3,
               ];
               dots.push({ lnglat: jitter, yesPercent, slug: topic.slug, region: iso });
             }
@@ -385,6 +455,7 @@ export default function Map() {
             )}
             {panelClaims.map((claim) => {
               const pct = yesPercent(claim);
+              const voted = votedIds[claim.id];
               return (
                 <div key={claim.id} style={{
                   padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)",
@@ -394,11 +465,11 @@ export default function Map() {
                       {claim.topic_display}
                     </div>
                   )}
-                  <div style={{ fontSize: 11, color: "#e5e7eb", lineHeight: 1.5, marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, color: "#e5e7eb", lineHeight: 1.5, marginBottom: 7 }}>
                     {claim.claim_text}
                   </div>
                   {pct !== null && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                       <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}>
                         <div style={{ width: `${pct}%`, height: "100%", background: pct > 60 ? "#ef4444" : pct > 40 ? "#f59e0b" : "#22c55e", borderRadius: 2 }} />
                       </div>
@@ -407,6 +478,37 @@ export default function Map() {
                       </div>
                     </div>
                   )}
+                  {/* Vote buttons */}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      disabled={!!voted}
+                      onClick={() => castVote(claim.id, "yes")}
+                      style={{
+                        flex: 1, padding: "4px 0", fontSize: 9, fontWeight: 700,
+                        textTransform: "uppercase", letterSpacing: "1px", cursor: voted ? "default" : "pointer",
+                        border: `1px solid ${voted === "yes" ? "#ef4444" : "rgba(239,68,68,0.35)"}`,
+                        background: voted === "yes" ? "rgba(239,68,68,0.18)" : "rgba(239,68,68,0.06)",
+                        color: voted === "yes" ? "#ef4444" : "rgba(239,68,68,0.7)",
+                        borderRadius: 2, fontFamily: "var(--font-mono, monospace)",
+                      }}
+                    >
+                      {voted === "yes" ? "✓ TRUE" : "TRUE"}
+                    </button>
+                    <button
+                      disabled={!!voted}
+                      onClick={() => castVote(claim.id, "no")}
+                      style={{
+                        flex: 1, padding: "4px 0", fontSize: 9, fontWeight: 700,
+                        textTransform: "uppercase", letterSpacing: "1px", cursor: voted ? "default" : "pointer",
+                        border: `1px solid ${voted === "no" ? "#3b82f6" : "rgba(59,130,246,0.35)"}`,
+                        background: voted === "no" ? "rgba(59,130,246,0.18)" : "rgba(59,130,246,0.06)",
+                        color: voted === "no" ? "#3b82f6" : "rgba(59,130,246,0.7)",
+                        borderRadius: 2, fontFamily: "var(--font-mono, monospace)",
+                      }}
+                    >
+                      {voted === "no" ? "✓ FALSE" : "FALSE"}
+                    </button>
+                  </div>
                 </div>
               );
             })}
