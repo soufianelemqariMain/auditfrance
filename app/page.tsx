@@ -1,119 +1,136 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import dynamic from "next/dynamic";
 import Navbar from "@/components/Navbar";
-import NewsBandeau from "@/components/NewsBandeau";
-import TVPanel from "@/components/TVPanel";
-import DepartmentPanel from "@/components/DepartmentPanel";
-import CommunePanel from "@/components/CommunePanel";
 import LiveClaimsPanel from "@/components/LiveClaimsPanel";
-import DiscoursPanel from "@/components/DiscoursPanel";
-import NewsTickerPanel from "@/components/NewsTickerPanel";
+import Link from "next/link";
 
-// MapLibre requires browser APIs — load client-side only
-const Map = dynamic(() => import("@/components/Map"), { ssr: false });
+const TOPICS = [
+  { slug: "all", label: "All" },
+  { slug: "economics", label: "Economics" },
+  { slug: "geopolitics", label: "Geopolitics" },
+  { slug: "technology", label: "Technology" },
+  { slug: "health", label: "Health" },
+  { slug: "elections", label: "Elections" },
+  { slug: "climate", label: "Climate" },
+  { slug: "finance", label: "Finance" },
+  { slug: "science", label: "Science" },
+];
 
-/* ── Main page ──────────────────────────────────────────────── */
 export default function Home() {
-  const [selectedDept, setSelectedDept] = useState<{ code: string; nom: string } | null>(null);
-  const [selectedCommune, setSelectedCommune] = useState<{ code: string; nom: string } | null>(null);
-
-  const handleDeptClick = useCallback((code: string, nom: string) => {
-    setSelectedDept({ code, nom });
-    setSelectedCommune(null);
-  }, []);
-
-  const handleCommuneSelect = useCallback((code: string, nom: string) => {
-    setSelectedCommune({ code, nom });
-    setSelectedDept(null);
-  }, []);
-
   return (
-    <div
-      className="main-wrapper"
-      style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg-primary)", overflow: "hidden" }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg-primary)", overflow: "hidden" }}>
       <Navbar />
-      <NewsBandeau />
 
-      <div className="main-content-area" style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-        {/* Map — 50% of available height */}
-        <div className="map-section" style={{ flex: "0 0 50%", position: "relative", overflow: "hidden" }}>
-          <Map onDeptClick={handleDeptClick} onCommuneClick={handleCommuneSelect} />
-
-          {selectedDept && !selectedCommune && (
-            <DepartmentPanel
-              code={selectedDept.code}
-              nom={selectedDept.nom}
-              onClose={() => setSelectedDept(null)}
-            />
-          )}
-
-          {selectedCommune && (
-            <CommunePanel
-              code={selectedCommune.code}
-              nom={selectedCommune.nom}
-              onClose={() => setSelectedCommune(null)}
-            />
-          )}
-        </div>
-
-        {/* Bottom panels — Claims en direct · Infos · Discours · TV */}
-        <div
-          className="bottom-panels"
-          style={{ flex: "0 0 50%", display: "flex", borderTop: "1px solid var(--border)", overflow: "hidden" }}
-        >
-          {/* Claims en direct — primary, fills remaining space */}
-          <div style={{ flex: 1, overflow: "hidden" }}>
-            <LiveClaimsPanel />
-          </div>
-
-          {/* Infos en direct (live radar news) — 20% */}
-          <div style={{ flex: "0 0 20%", overflow: "hidden" }}>
-            <NewsTickerPanel />
-          </div>
-
-          {/* Discours & Interventions — 18% */}
-          <div style={{ flex: "0 0 18%", overflow: "hidden" }}>
-            <DiscoursPanel />
-          </div>
-
-          {/* TV Direct — 22% */}
-          <div style={{ flex: "0 0 22%", overflow: "hidden", borderLeft: "1px solid var(--border)" }}>
-            <TVPanel />
+      {/* Hero */}
+      <div style={{
+        padding: "24px 24px 16px",
+        borderBottom: "1px solid var(--border)",
+        flexShrink: 0,
+        background: "var(--bg-secondary)",
+      }}>
+        <div style={{ maxWidth: 640 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "var(--accent-white)", letterSpacing: "-0.01em", lineHeight: 1.2 }}>
+            The global prediction community
+          </h1>
+          <p style={{ margin: "6px 0 0", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+            Vote on world events. Zero bets, zero risk. Earn XP and climb the leaderboard.
+            Companies buy the aggregated intelligence.
+          </p>
+          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+            <Link
+              href="/predictions"
+              style={{
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                color: "var(--accent-white)",
+                background: "var(--accent-blue)",
+                border: "none",
+                padding: "6px 14px",
+                textDecoration: "none",
+                borderRadius: "2px",
+                fontWeight: 600,
+              }}
+            >
+              See All Predictions
+            </Link>
+            <Link
+              href="/leaderboard"
+              style={{
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                color: "var(--accent-blue)",
+                background: "transparent",
+                border: "1px solid var(--accent-blue)",
+                padding: "6px 14px",
+                textDecoration: "none",
+                borderRadius: "2px",
+              }}
+            >
+              Leaderboard
+            </Link>
+            <Link
+              href="/pro"
+              style={{
+                fontSize: 11,
+                fontFamily: "var(--font-mono)",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                color: "var(--accent-green, #4ade80)",
+                background: "transparent",
+                border: "1px solid var(--accent-green, #4ade80)",
+                padding: "6px 14px",
+                textDecoration: "none",
+                borderRadius: "2px",
+              }}
+            >
+              For Companies
+            </Link>
           </div>
         </div>
       </div>
 
+      {/* Live predictions feed */}
+      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{
+          padding: "8px 16px",
+          borderBottom: "1px solid var(--border)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          flexShrink: 0,
+          background: "var(--bg-secondary)",
+        }}>
+          <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--accent-red)", textTransform: "uppercase", letterSpacing: "1px" }}>
+            ● LIVE
+          </span>
+          <span style={{ fontSize: 9, color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
+            Community predictions
+          </span>
+        </div>
+
+        <div style={{ flex: 1, overflow: "hidden" }}>
+          <LiveClaimsPanel />
+        </div>
+      </div>
+
       {/* Footer */}
-      <div
-        className="footer-bar"
-        style={{
-          height: 22, background: "var(--bg-secondary)", borderTop: "1px solid var(--border)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0, gap: 6,
-        }}
-      >
+      <div style={{
+        height: 22,
+        background: "var(--bg-secondary)",
+        borderTop: "1px solid var(--border)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        gap: 6,
+      }}>
         <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>OPEN SOURCE</span>
         <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
-        <a
-          href="https://infoverif.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em" }}
-        >
-          infoverif.org
-        </a>
-        <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
-        <a
-          href="https://github.com/soufianelemqariMain/auditfrance"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ fontSize: 9, color: "var(--text-secondary)", textDecoration: "none", letterSpacing: "0.1em" }}
-        >
-          GitHub
-        </a>
+        <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>ZERO BETS</span>
         <span style={{ fontSize: 9, color: "var(--border)" }}>·</span>
         <span style={{ fontSize: 9, color: "var(--text-secondary)", letterSpacing: "0.1em" }}>MIT</span>
       </div>

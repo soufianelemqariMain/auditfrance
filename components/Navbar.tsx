@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import VigipirateBadge from "./VigipirateBadge";
 
 function formatUTC(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -17,7 +16,6 @@ function formatUTC(date: Date): string {
 
 export default function Navbar() {
   const [clock, setClock] = useState("");
-  const [copied, setCopied] = useState(false);
   const [light, setLight] = useState(false);
 
   useEffect(() => {
@@ -35,44 +33,26 @@ export default function Navbar() {
   }
 
   useEffect(() => {
-    // Set immediately on mount to avoid server/client mismatch (hydration)
     setClock(formatUTC(new Date()));
-    const id = setInterval(() => {
-      setClock(formatUTC(new Date()));
-    }, 1000);
+    const id = setInterval(() => setClock(formatUTC(new Date())), 1000);
     return () => clearInterval(id);
   }, []);
 
-  function handleShare() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
-
-  function handleFullscreen() {
-    document.documentElement.requestFullscreen();
-  }
-
   return (
-    <>
-      {/* French tricolor stripe */}
-      <div className="tricolor-bar" />
-
     <nav
       style={{
-        height: 44,
+        height: 48,
         background: "var(--bg-secondary)",
         borderBottom: "1px solid var(--border)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 16px",
+        padding: "0 20px",
         flexShrink: 0,
       }}
     >
-      {/* Left: brand + rooster + nav tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      {/* Left: brand + nav */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <span style={{ fontSize: 18, lineHeight: 1 }}>🔍</span>
           <div>
@@ -88,14 +68,13 @@ export default function Navbar() {
               Info<span style={{ color: "var(--accent-blue)" }}>Verif</span>
             </span>
             <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
-              TRANSPARENCE · VÉRITÉ · DÉMOCRATIE
+              GLOBAL PREDICTION COMMUNITY
             </div>
           </div>
         </Link>
 
-        {/* Nav links */}
         <Link
-          href="/narratives"
+          href="/predictions"
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: 9,
@@ -106,13 +85,13 @@ export default function Navbar() {
             padding: "3px 8px",
             textDecoration: "none",
             borderRadius: "2px",
-            opacity: 0.85,
           }}
         >
-          Live Claims
+          Predictions
         </Link>
+
         <Link
-          href="/analyse"
+          href="/leaderboard"
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: 9,
@@ -123,19 +102,34 @@ export default function Navbar() {
             padding: "3px 8px",
             textDecoration: "none",
             borderRadius: "2px",
-            opacity: 0.85,
           }}
         >
-          Analyser
+          Leaderboard
+        </Link>
+
+        <Link
+          href="/pro"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 9,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "var(--accent-green, #4ade80)",
+            border: "1px solid var(--accent-green, #4ade80)",
+            padding: "3px 8px",
+            textDecoration: "none",
+            borderRadius: "2px",
+          }}
+        >
+          For Companies
         </Link>
       </div>
 
-      {/* Center: live UTC clock — suppressHydrationWarning prevents #418 mismatch */}
+      {/* Center: UTC clock */}
       <span
-        className="nav-clock"
         suppressHydrationWarning
         style={{
-          fontSize: 12,
+          fontSize: 11,
           color: "var(--text-secondary)",
           letterSpacing: "0.05em",
           fontVariantNumeric: "tabular-nums",
@@ -144,30 +138,11 @@ export default function Navbar() {
         {clock}
       </span>
 
-      {/* Right: badge + actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <VigipirateBadge />
-
-        <button
-          className="nav-share"
-          onClick={handleShare}
-          title="Copier le lien"
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: copied ? "var(--accent-green)" : "var(--text-secondary)",
-            fontSize: 11,
-            padding: "3px 8px",
-            cursor: "pointer",
-            letterSpacing: "0.05em",
-          }}
-        >
-          {copied ? "COPIÉ" : "PARTAGER"}
-        </button>
-
+      {/* Right: theme toggle */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button
           onClick={toggleTheme}
-          title={light ? "Thème sombre" : "Thème clair"}
+          title={light ? "Dark mode" : "Light mode"}
           style={{
             background: "transparent",
             border: "1px solid var(--border)",
@@ -179,24 +154,7 @@ export default function Navbar() {
         >
           {light ? "🌙" : "☀️"}
         </button>
-
-        <button
-          onClick={handleFullscreen}
-          title="Plein écran"
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--text-secondary)",
-            fontSize: 11,
-            padding: "3px 8px",
-            cursor: "pointer",
-            letterSpacing: "0.05em",
-          }}
-        >
-          ⛶
-        </button>
       </div>
     </nav>
-    </>
   );
 }
