@@ -69,6 +69,7 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: 
   const onCommuneClickRef = useRef(onCommuneClick);
   onCommuneClickRef.current = onCommuneClick;
   const voteRadarRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rotAnimRef = useRef<number | null>(null);
   const { mapState, is3D } = useAppStore();
 
   useEffect(() => {
@@ -85,7 +86,7 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: 
       const initialCenter: [number, number] = globalMode
         ? [15, 20]
         : (mapState.zoom > 3 ? [mapState.lon, mapState.lat] : [10, 20]);
-      const initialZoom = globalMode ? 1.5 : (mapState.zoom > 3 ? mapState.zoom : 2);
+      const initialZoom = globalMode ? 1.2 : (mapState.zoom > 3 ? mapState.zoom : 2);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapOptions: any = {
@@ -126,6 +127,45 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: 
         // Load world choropleth (primary view)
         loadWorldLayer(map!);
 
+        if (globalMode) {
+          // Force globe projection (belt-and-suspenders alongside constructor option)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (map! as any).setProjection("globe");
+
+          // Fog creates the sphere-floating-in-space appearance
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (map! as any).setFog({
+            range: [0.8, 8],
+            color: "#1a1f3c",
+            "horizon-blend": 0.4,
+            "high-color": "#0f1428",
+            "space-color": "#060a18",
+            "star-intensity": 0.15,
+          });
+
+          // Gentle auto-rotation — stops immediately on any user interaction
+          let isRotating = true;
+          function spinGlobe() {
+            if (!map || !isRotating) return;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const center = (map as any).getCenter();
+            center.lng -= 0.06;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (map as any).setCenter(center);
+            rotAnimRef.current = requestAnimationFrame(spinGlobe);
+          }
+          rotAnimRef.current = requestAnimationFrame(spinGlobe);
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const stopRotation = () => {
+            isRotating = false;
+            if (rotAnimRef.current) cancelAnimationFrame(rotAnimRef.current);
+          };
+          map!.once("mousedown", stopRotation);
+          map!.once("touchstart", stopRotation);
+          map!.once("wheel", stopRotation);
+        }
+
         voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
         if (!globalMode) {
           // France mode: also load department + city layers
@@ -164,6 +204,7 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: 
     initMap();
 
     return () => {
+      if (rotAnimRef.current) cancelAnimationFrame(rotAnimRef.current);
       if (voteRadarRef.current) clearInterval(voteRadarRef.current);
       if (mapRef.current) {
         (mapRef.current as { remove: () => void }).remove();
