@@ -369,23 +369,23 @@ export default function Map() {
           const claims: Array<{ id: number; region?: string; probability?: number; topic_slug?: string }> =
             Array.isArray(data) ? data : (data.claims ?? data.items ?? []);
           // Aggregate by ISO country: collect probability values, pick avg
-          const byCountry = new Map<string, { probs: number[]; slug: string }>();
+          // Use plain object to avoid naming conflict with the Map component
+          const byCountry: Record<string, { probs: number[]; slug: string }> = {};
           for (const claim of claims) {
             const region = claim.region;
             if (!region || region === "GLOBAL") continue;
             const isos = REGION_TO_ISO[region] ?? (WORLD_CENTROIDS[region] ? [region] : null);
             if (!isos) continue;
             for (const iso of isos) {
-              if (!byCountry.has(iso)) byCountry.set(iso, { probs: [], slug: claim.topic_slug ?? "" });
-              byCountry.get(iso)!.probs.push(claim.probability ?? 0.5);
+              if (!byCountry[iso]) byCountry[iso] = { probs: [], slug: claim.topic_slug ?? "" };
+              byCountry[iso].probs.push(claim.probability ?? 0.5);
             }
           }
           const dots: ClaimDot[] = [];
-          for (const [iso, { probs, slug }] of byCountry) {
+          for (const [iso, { probs, slug }] of Object.entries(byCountry)) {
             const centroid = WORLD_CENTROIDS[iso as keyof typeof WORLD_CENTROIDS];
             if (!centroid) continue;
             const yesPercent = probs.reduce((a, b) => a + b, 0) / probs.length;
-            // At centroid — no jitter so the dot sits exactly on the country
             dots.push({ lnglat: [centroid[0], centroid[1]], yesPercent, slug, region: iso });
           }
           claimDotsRef.current = dots;
