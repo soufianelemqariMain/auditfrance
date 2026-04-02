@@ -61,6 +61,20 @@ const DEPT_CENTROIDS: Record<string, [number, number]> = {
 
 const ALL_DEPT_CODES = Object.keys(DEPT_CENTROIDS);
 
+// Minimal dark style for globe mode — no external tile server that could override projection.
+// All geography comes from the GeoJSON choropleth loaded in loadWorldLayer.
+const GLOBE_STYLE = {
+  version: 8 as const,
+  sources: {},
+  layers: [
+    {
+      id: "background",
+      type: "background" as const,
+      paint: { "background-color": "#060d1f" }, // dark ocean / space base
+    },
+  ],
+};
+
 export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
@@ -91,13 +105,19 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapOptions: any = {
         container: mapContainer.current!,
-        style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        // Globe mode: use minimal inline style — CartoDB sets its own projection
+        // which silently overrides the globe option. Inline style has no projection
+        // key so MapLibre respects the globe we set below.
+        // France mode: CartoDB dark-matter gives us detailed tiles + labels.
+        style: globalMode
+          ? GLOBE_STYLE
+          : "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         center: initialCenter,
         zoom: initialZoom,
         pitch: globalMode ? 0 : (is3D ? 45 : 0),
         bearing: 0,
+        renderWorldCopies: !globalMode, // false = no side-by-side world tiling on globe
       };
-      // MapLibre GL v3+ globe projection — rotatable 3D globe
       if (globalMode) {
         mapOptions.projection = "globe";
       }
@@ -581,7 +601,7 @@ async function loadWorldLayer(map: any) {
               0.75, "#c0392b",  // high — coral red
               1.0, "#ff1a1a",   // critical — bright red
             ],
-            "fill-opacity": 0.55,
+            "fill-opacity": 0.75,
           },
         },
         beforeLayer
@@ -594,9 +614,9 @@ async function loadWorldLayer(map: any) {
           type: "line",
           source: "world-countries",
           paint: {
-            "line-color": "#334155",
-            "line-width": 0.5,
-            "line-opacity": 0.8,
+            "line-color": "rgba(148,163,184,0.4)",
+            "line-width": 0.6,
+            "line-opacity": 1,
           },
         },
         beforeLayer

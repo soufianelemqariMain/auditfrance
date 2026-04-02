@@ -120,7 +120,7 @@ export default function Home() {
         <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
           <div className="iv-ticker" style={{
             display: "inline-block", whiteSpace: "nowrap",
-            fontFamily: "var(--font-mono)", fontSize: 9, color: "rgba(229,231,235,0.75)",
+            fontFamily: "var(--font-mono)", fontSize: 10, color: "rgba(229,231,235,0.92)",
             letterSpacing: "0.04em",
           }}>
             {/* Double the text for seamless loop */}
@@ -244,7 +244,7 @@ export default function Home() {
           100% { transform: translateX(-50%); }
         }
         .iv-ticker {
-          animation: iv-marquee 80s linear infinite;
+          animation: iv-marquee 120s linear infinite;
         }
         .iv-ticker:hover {
           animation-play-state: paused;
