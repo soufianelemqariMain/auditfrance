@@ -53,9 +53,11 @@ interface ActiveStar {
 
 interface PanelClaim {
   id: number;
-  claim_text: string;
+  text: string;
   yes_count: number;
   no_count: number;
+  total_votes?: number;
+  probability?: number;
   topic_display?: string;
   topic_slug?: string;
 }
@@ -108,32 +110,23 @@ export default function Map() {
     } catch {/* silent */}
   }, []);
 
-  // When a country is clicked from the canvas, open the panel and fetch claims
-  // Uses topic slugs (not region ISO) to query — the only reliable backend param.
+  // When a country is clicked, open the panel and fetch claims by region ISO code.
+  // Backend supports ?region=ISO directly — much simpler than topic lookup.
   const openPanel = useCallback(async (isoCode: string) => {
     setPanel({ isoCode, name: COUNTRY_NAMES[isoCode] ?? isoCode });
     setPanelClaims([]);
     setVotedIds({});
     setPanelLoading(true);
     try {
-      // Find topics that map to this country via REGION_TO_ISO
-      const matchingSlugs = topicsRef.current
-        .filter((t) => {
-          if (!t.region) return false;
-          const isos = REGION_TO_ISO[t.region];
-          return isos?.includes(isoCode);
-        })
-        .map((t) => t.slug);
+      // Fetch country-specific claims + EU-regional claims if applicable
+      const regions = new Set<string>([isoCode]);
+      // EU members also get EU-level claims
+      const euMembers = new Set(["FR", "DE", "ES", "IT", "NL", "PL", "SE", "BE", "PT", "AT", "FI", "DK", "CZ", "RO", "HU", "SK", "BG", "HR", "SI", "EE", "LV", "LT", "CY", "LU", "MT", "IE", "GR"]);
+      if (euMembers.has(isoCode)) regions.add("EU");
 
-      if (matchingSlugs.length === 0) {
-        setPanelLoading(false);
-        return;
-      }
-
-      // Fetch claims for each matching topic in parallel
       const results = await Promise.allSettled(
-        matchingSlugs.map((slug) =>
-          fetch(`/api/claims?topic=${slug}&limit=10`, { cache: "no-store" }).then((r) => r.json())
+        [...regions].map((region) =>
+          fetch(`/api/claims?region=${region}&status=open&limit=15`, { cache: "no-store" }).then((r) => r.json())
         )
       );
       const all: PanelClaim[] = [];
@@ -144,9 +137,11 @@ export default function Map() {
           all.push(...items);
         }
       }
-      // Deduplicate by ID
+      // Deduplicate by ID, sort by vote count desc
       const seen = new Set<number>();
-      setPanelClaims(all.filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; }));
+      const deduped = all.filter((c) => { if (seen.has(c.id)) return false; seen.add(c.id); return true; });
+      deduped.sort((a, b) => ((b.total_votes ?? 0) - (a.total_votes ?? 0)));
+      setPanelClaims(deduped);
     } catch {/* silent */}
     setPanelLoading(false);
   }, []);
@@ -237,30 +232,63 @@ export default function Map() {
           ctx.fill();
         });
 
-        // Persistent claim dots
+        // Persistent pulsing claim dots — one per country with active claims
+        const nowMs = performance.now();
         claimDotsRef.current.forEach((dot) => {
           const p = projection(dot.lnglat);
           if (!p) return;
           const [px, py] = p;
           if (px < 0 || px > w || py < 0 || py > h) return;
-          // Color: green (low yes%) → yellow → red (high yes%)
-          const r = Math.round(dot.yesPercent * 220 + 35);
-          const g = Math.round((1 - dot.yesPercent) * 180 + 40);
-          const color = `rgb(${r},${g},40)`;
-          const dotR = 4 * sf;
-          // Glow
-          const grd = ctx.createRadialGradient(px, py, 0, px, py, dotR * 2.5);
-          grd.addColorStop(0, color.replace("rgb", "rgba").replace(")", ",0.9)"));
-          grd.addColorStop(1, color.replace("rgb", "rgba").replace(")", ",0)"));
+          // Color: blue (low yes%) → yellow → red (high yes%)
+          const rv = Math.round(dot.yesPercent * 200 + 55);
+          const gv = Math.round((1 - dot.yesPercent) * 160 + 60);
+          const color = `rgb(${rv},${gv},40)`;
+          const dotR = Math.max(4, 4 * sf);
+          // Pulse: 0→1 cycle every 1.6s
+          const pulse = (Math.sin(nowMs * 0.004 + dot.lnglat[0]) * 0.5 + 0.5);
+          const outerR = dotR * (2.2 + pulse * 1.4);
+          // Pulsing outer glow
+          const grd = ctx.createRadialGradient(px, py, 0, px, py, outerR);
+          grd.addColorStop(0, `rgba(${rv},${gv},40,${0.55 + pulse * 0.3})`);
+          grd.addColorStop(0.5, `rgba(${rv},${gv},40,0.2)`);
+          grd.addColorStop(1, `rgba(${rv},${gv},40,0)`);
           ctx.beginPath();
-          ctx.arc(px, py, dotR * 2.5, 0, 2 * Math.PI);
+          ctx.arc(px, py, outerR, 0, 2 * Math.PI);
           ctx.fillStyle = grd;
           ctx.fill();
-          // Core
+          // Solid core dot
           ctx.beginPath();
-          ctx.arc(px, py, dotR, 0, 2 * Math.PI);
+          ctx.arc(px, py, dotR * 0.85, 0, 2 * Math.PI);
           ctx.fillStyle = color;
           ctx.fill();
+          // Bright center highlight
+          ctx.beginPath();
+          ctx.arc(px, py, dotR * 0.35, 0, 2 * Math.PI);
+          ctx.fillStyle = `rgba(255,255,255,0.85)`;
+          ctx.fill();
+        });
+
+        // Country name labels for countries with active claims
+        const labeledCountries = new Set(claimDotsRef.current.map((d) => d.region));
+        labeledCountries.forEach((iso) => {
+          const centroid = WORLD_CENTROIDS[iso as keyof typeof WORLD_CENTROIDS];
+          if (!centroid) return;
+          const p = projection(centroid);
+          if (!p) return;
+          const [px, py] = p;
+          if (px < 5 || px > w - 5 || py < 5 || py > h - 5) return;
+          const name = COUNTRY_NAMES[iso as keyof typeof COUNTRY_NAMES];
+          if (!name) return;
+          const fontSize = Math.max(8, Math.min(11, 9 * sf));
+          ctx.font = `600 ${fontSize}px monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          // Shadow for readability
+          ctx.shadowColor = "rgba(0,0,0,0.9)";
+          ctx.shadowBlur = 4;
+          ctx.fillStyle = "rgba(200,230,255,0.85)";
+          ctx.fillText(name, px, py + Math.max(5, 6 * sf));
+          ctx.shadowBlur = 0;
         });
 
         // Canvas shooting stars — reprojected every frame so they track globe rotation
@@ -331,31 +359,34 @@ export default function Map() {
         }
       } catch {/* skip */}
 
-      // ── Load claim dots (active topics only, explicit regions) ───────────────
+      // ── Load claim dots — one per country with active claims ─────────────────
+      // Fetch claims directly (they have a region field), group by country ISO.
       try {
         const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
-        const res = await fetch(`${apiBase}/api/topics`, { cache: "no-store" });
+        const res = await fetch(`${apiBase}/api/claims?status=open&limit=100`, { cache: "no-store" });
         if (res.ok) {
-          const topics: Array<{ slug: string; region?: string; avg_probability?: number; yes_percent?: number }> =
-            await res.json();
-          topicsRef.current = topics; // store for panel country → topic lookup
-          const dots: ClaimDot[] = [];
-          for (const topic of topics) {
-            const region = topic.region;
-            // Skip GLOBAL or unmapped topics — dots must represent real country claims
-            if (!region || !REGION_TO_ISO[region]) continue;
-            const isos = REGION_TO_ISO[region];
-            const yesPercent = topic.avg_probability ?? topic.yes_percent ?? 0.5;
+          const data = await res.json();
+          const claims: Array<{ id: number; region?: string; probability?: number; topic_slug?: string }> =
+            Array.isArray(data) ? data : (data.claims ?? data.items ?? []);
+          // Aggregate by ISO country: collect probability values, pick avg
+          const byCountry = new Map<string, { probs: number[]; slug: string }>();
+          for (const claim of claims) {
+            const region = claim.region;
+            if (!region || region === "GLOBAL") continue;
+            const isos = REGION_TO_ISO[region] ?? (WORLD_CENTROIDS[region] ? [region] : null);
+            if (!isos) continue;
             for (const iso of isos) {
-              const centroid = WORLD_CENTROIDS[iso];
-              if (!centroid) continue;
-              // Small jitter so multiple topics for same country don't overlap exactly
-              const jitter: [number, number] = [
-                centroid[0] + (Math.random() - 0.5) * 3,
-                centroid[1] + (Math.random() - 0.5) * 3,
-              ];
-              dots.push({ lnglat: jitter, yesPercent, slug: topic.slug, region: iso });
+              if (!byCountry.has(iso)) byCountry.set(iso, { probs: [], slug: claim.topic_slug ?? "" });
+              byCountry.get(iso)!.probs.push(claim.probability ?? 0.5);
             }
+          }
+          const dots: ClaimDot[] = [];
+          for (const [iso, { probs, slug }] of byCountry) {
+            const centroid = WORLD_CENTROIDS[iso as keyof typeof WORLD_CENTROIDS];
+            if (!centroid) continue;
+            const yesPercent = probs.reduce((a, b) => a + b, 0) / probs.length;
+            // At centroid — no jitter so the dot sits exactly on the country
+            dots.push({ lnglat: [centroid[0], centroid[1]], yesPercent, slug, region: iso });
           }
           claimDotsRef.current = dots;
         }
@@ -515,7 +546,7 @@ export default function Map() {
                     </div>
                   )}
                   <div style={{ fontSize: 11, color: "#e5e7eb", lineHeight: 1.5, marginBottom: 7 }}>
-                    {claim.claim_text}
+                    {claim.text}
                   </div>
                   {pct !== null && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
