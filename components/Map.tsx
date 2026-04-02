@@ -116,6 +116,13 @@ export default function Map() {
   return (
     <div className="relative w-full h-full" style={{ background: "#000008" }}>
       <div ref={mapContainer} className="w-full h-full" />
+      {/* Radial vignette: darkens edges of the globe to create sphere depth */}
+      <div
+        style={{
+          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3,
+          background: "radial-gradient(ellipse at center, transparent 38%, rgba(0,0,8,0.55) 68%, rgba(0,0,8,0.92) 100%)",
+        }}
+      />
     </div>
   );
 }
@@ -359,33 +366,10 @@ function startVoteRadar(
   return setInterval(poll, 8000);
 }
 
-// ── World choropleth (narrative risk by country) ──────────────────────────────
-
-const REGION_TO_ISO: Record<string, string[]> = {
-  US: ["US"], GB: ["GB"], FR: ["FR"], DE: ["DE"], ES: ["ES"],
-  EU: ["FR", "DE", "ES", "IT", "NL", "PL", "SE"],
-  GLOBAL: Object.keys(WORLD_CENTROIDS),
-};
+// ── World country borders ─────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadWorldLayer(map: any) {
-  let narrativeRisk: Record<string, number> = {};
-  try {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://api.infoverif.org";
-    const res = await fetch(`${apiBase}/api/topics`, { cache: "no-store" });
-    if (res.ok) {
-      const topics: Array<{ slug: string; region?: string; avg_probability: number }> = await res.json();
-      for (const topic of topics) {
-        const regions = REGION_TO_ISO[topic.region || "GLOBAL"] || REGION_TO_ISO.GLOBAL;
-        for (const iso of regions) {
-          narrativeRisk[iso] = Math.max(narrativeRisk[iso] || 0, topic.avg_probability || 0.5);
-        }
-      }
-    }
-  } catch {
-    narrativeRisk = { US: 0.72, FR: 0.65, GB: 0.58, DE: 0.48, RU: 0.80, CN: 0.61 };
-  }
-
   try {
     const geoRes = await fetch(
       "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson"
@@ -393,41 +377,17 @@ async function loadWorldLayer(map: any) {
     if (!geoRes.ok) return;
     const geoData = await geoRes.json();
 
-    geoData.features = geoData.features.map((f: { properties: Record<string, string> }) => ({
-      ...f,
-      properties: {
-        ...f.properties,
-        narrative_risk: narrativeRisk[f.properties.iso_a2] ?? 0.35,
-      },
-    }));
-
     if (!map.getSource("world-countries")) {
       map.addSource("world-countries", { type: "geojson", data: geoData });
 
-      map.addLayer({
-        id: "world-fill",
-        type: "fill",
-        source: "world-countries",
-        paint: {
-          "fill-color": [
-            "interpolate", ["linear"], ["get", "narrative_risk"],
-            0.0, "#0a2d5c",
-            0.4, "#1a5276",
-            0.6, "#7d3c98",
-            0.75, "#c0392b",
-            1.0, "#ff1a1a",
-          ],
-          "fill-opacity": 0.75,
-        },
-      });
-
+      // No fill layer — board wants event dots only (polyglobe style), not colored countries.
       map.addLayer({
         id: "world-line",
         type: "line",
         source: "world-countries",
         paint: {
-          "line-color": "rgba(148,163,184,0.4)",
-          "line-width": 0.6,
+          "line-color": "rgba(100,160,220,0.45)",
+          "line-width": 0.7,
           "line-opacity": 1,
         },
       });
