@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import VigipirateBadge from "./VigipirateBadge";
 
 function formatUTC(date: Date): string {
@@ -90,6 +91,24 @@ export default function Navbar() {
           </div>
         </div>
 
+        {/* Narrative Intelligence nav link */}
+        <Link
+          href="/narratives"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 9,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "var(--accent-red)",
+            border: "1px solid var(--accent-red)",
+            padding: "3px 8px",
+            textDecoration: "none",
+            borderRadius: "2px",
+            opacity: 0.85,
+          }}
+        >
+          Narratives
+        </Link>
       </div>
 
       {/* Center: live UTC clock — suppressHydrationWarning prevents #418 mismatch */}
