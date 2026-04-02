@@ -15,117 +15,240 @@ const WORLD_CENTROIDS: Record<string, [number, number]> = {
   KR:  [127.77, 35.91],  AR:  [-63.62, -38.42], ID:  [117.72, -0.79],
 };
 
-// Minimal inline style — no external tile server to conflict with globe projection.
-// All geography comes from the GeoJSON choropleth in loadWorldLayer.
-// Background is dark ocean blue so the globe sphere is visible against the black container.
-const GLOBE_STYLE = {
-  version: 8 as const,
-  sources: {},
-  layers: [
-    {
-      id: "background",
-      type: "background" as const,
-      // Dark ocean blue — clearly distinct from the CSS container background (#000008)
-      // so the globe sphere shape is always visible.
-      paint: { "background-color": "#0a1a3a" },
-    },
-  ],
-};
-
 export default function Map() {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const voteRadarRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const rotAnimRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
+    const wrapper = wrapperRef.current;
+    const canvas = canvasRef.current;
+    if (!wrapper || !canvas) return;
 
+    let destroyed = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let map: any = null;
+    let timerHandle: any = null;
+    let canvasMouseDown: ((e: MouseEvent) => void) | null = null;
+    let canvasWheel: ((e: WheelEvent) => void) | null = null;
 
-    const initMap = async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
-      await import("maplibre-gl/dist/maplibre-gl.css");
+    const init = async () => {
+      const d3 = await import("d3");
+
+      const w = wrapper.clientWidth;
+      const h = wrapper.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      const ctx = canvas.getContext("2d")!;
+      ctx.scale(dpr, dpr);
+
+      // Radius: fill most of the screen, leave small margin so circle edge is visible
+      const R = Math.min(w, h) * 0.46;
+
+      const projection = d3
+        .geoOrthographic()
+        .scale(R)
+        .translate([w / 2, h / 2])
+        .clipAngle(90);
+
+      const path = d3.geoPath().projection(projection).context(ctx);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mapOptions: any = {
-        container: mapContainer.current!,
-        style: GLOBE_STYLE,
-        center: [15, 20] as [number, number],
-        zoom: 1.2,
-        bearing: 0,
-        pitch: 0,
-        projection: "globe",
-        renderWorldCopies: false,
+      let landFeatures: any = null;
+      const allDots: [number, number][] = [];
+
+      // ── Render ───────────────────────────────────────────────────────────────
+      const render = () => {
+        ctx.clearRect(0, 0, w, h);
+        const scale = projection.scale();
+
+        // Globe circle (ocean)
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, scale, 0, 2 * Math.PI);
+        ctx.fillStyle = "#000814";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(60,120,220,0.5)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        if (!landFeatures) return;
+
+        // Graticule
+        const graticule = d3.geoGraticule()();
+        ctx.beginPath();
+        path(graticule);
+        ctx.strokeStyle = "rgba(40,90,180,0.2)";
+        ctx.lineWidth = 0.6;
+        ctx.globalAlpha = 1;
+        ctx.stroke();
+
+        // Land outlines
+        ctx.beginPath();
+        landFeatures.features.forEach((f: unknown) => path(f as never));
+        ctx.strokeStyle = "rgba(80,150,240,0.55)";
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        // Halftone land dots (InfoVerif blue)
+        const sf = scale / R;
+        allDots.forEach((dot) => {
+          const p = projection(dot);
+          if (!p) return;
+          const [px, py] = p;
+          if (px < 0 || px > w || py < 0 || py > h) return;
+          ctx.beginPath();
+          ctx.arc(px, py, 1.1 * sf, 0, 2 * Math.PI);
+          ctx.fillStyle = "rgba(80,160,255,0.75)";
+          ctx.fill();
+        });
       };
 
-      map = new maplibregl.Map(mapOptions);
-      mapRef.current = map;
+      // ── Load land + generate dots ─────────────────────────────────────────────
+      try {
+        const res = await fetch(
+          "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/refs/heads/master/110m/physical/ne_110m_land.json"
+        );
+        if (res.ok && !destroyed) {
+          landFeatures = await res.json();
 
-      map.on("load", () => {
-        // Belt-and-suspenders: set projection after load too
-        map.setProjection("globe");
+          // Generate halftone dot grid for each land feature
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          landFeatures.features.forEach((feature: any) => {
+            const [[minLng, minLat], [maxLng, maxLat]] = d3.geoBounds(feature);
+            const step = 1.4; // degrees — lower = more dots, higher = faster
 
-        // Note: MapLibre GL JS does not have setFog() — that is Mapbox-only.
-        // Globe sphere is visible because background layer (#0a1a3a) contrasts
-        // against the CSS container background (#000008). Atmosphere glow is
-        // done via CSS box-shadow in injectOverlayCSS().
+            for (let lng = minLng; lng <= maxLng; lng += step) {
+              for (let lat = minLat; lat <= maxLat; lat += step) {
+                if (pointInFeature([lng, lat], feature)) {
+                  allDots.push([lng, lat]);
+                }
+              }
+            }
+          });
 
-        injectOverlayCSS();
-        const wrapper = mapContainer.current!.parentElement!;
-        addOverlays(wrapper);
-
-        loadWorldLayer(map);
-
-        // Gentle auto-rotation — stops on first user interaction
-        let isRotating = true;
-        function spinGlobe() {
-          if (!map || !isRotating) return;
-          const center = map.getCenter();
-          center.lng -= 0.06;
-          map.setCenter(center);
-          rotAnimRef.current = requestAnimationFrame(spinGlobe);
+          render();
         }
-        rotAnimRef.current = requestAnimationFrame(spinGlobe);
+      } catch {/* skip */}
 
-        const stopRotation = () => {
-          isRotating = false;
-          if (rotAnimRef.current) cancelAnimationFrame(rotAnimRef.current);
-        };
-        map.once("mousedown", stopRotation);
-        map.once("touchstart", stopRotation);
-        map.once("wheel", stopRotation);
+      // ── Auto-rotation ─────────────────────────────────────────────────────────
+      const rotation: [number, number] = [0, -20];
+      let autoRotate = true;
 
-        voteRadarRef.current = startVoteRadar(map, maplibregl, wrapper);
+      timerHandle = d3.timer(() => {
+        if (destroyed) return;
+        if (autoRotate) {
+          rotation[0] += 0.18;
+          projection.rotate(rotation);
+          render();
+        }
       });
+
+      // ── Drag to rotate ────────────────────────────────────────────────────────
+      canvasMouseDown = (e: MouseEvent) => {
+        autoRotate = false;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startRot: [number, number] = [...rotation];
+
+        const onMove = (me: MouseEvent) => {
+          rotation[0] = startRot[0] + (me.clientX - startX) * 0.4;
+          rotation[1] = Math.max(-80, Math.min(80, startRot[1] - (me.clientY - startY) * 0.4));
+          projection.rotate(rotation);
+          render();
+        };
+        const onUp = () => {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          setTimeout(() => { autoRotate = true; }, 50);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      };
+
+      // ── Scroll to zoom ────────────────────────────────────────────────────────
+      canvasWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 0.92 : 1.08;
+        const newScale = Math.max(R * 0.5, Math.min(R * 2.5, projection.scale() * factor));
+        projection.scale(newScale);
+        render();
+      };
+
+      canvas.addEventListener("mousedown", canvasMouseDown);
+      canvas.addEventListener("wheel", canvasWheel, { passive: false });
+
+      // ── Vote radar overlays ───────────────────────────────────────────────────
+      injectOverlayCSS();
+      addOverlays(wrapper);
+
+      const projectFn = (lnglat: [number, number]): { x: number; y: number } | null => {
+        const p = projection(lnglat);
+        if (!p) return null;
+        return { x: p[0], y: p[1] };
+      };
+
+      voteRadarRef.current = startVoteRadar(wrapper, projectFn);
     };
 
-    initMap();
+    init();
 
     return () => {
-      if (rotAnimRef.current) cancelAnimationFrame(rotAnimRef.current);
+      destroyed = true;
+      if (timerHandle) timerHandle.stop();
       if (voteRadarRef.current) clearInterval(voteRadarRef.current);
-      if (mapRef.current) {
-        (mapRef.current as { remove: () => void }).remove();
-        mapRef.current = null;
-      }
+      if (canvas && canvasMouseDown) canvas.removeEventListener("mousedown", canvasMouseDown);
+      if (canvas && canvasWheel) canvas.removeEventListener("wheel", canvasWheel);
     };
   }, []);
 
   return (
-    <div className="relative w-full h-full" style={{ background: "#000008" }}>
-      <div ref={mapContainer} className="w-full h-full" />
-      {/* Radial vignette: darkens edges of the globe to create sphere depth */}
-      <div
-        style={{
-          position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3,
-          background: "radial-gradient(ellipse at center, transparent 38%, rgba(0,0,8,0.55) 68%, rgba(0,0,8,0.92) 100%)",
-        }}
-      />
+    <div ref={wrapperRef} className="relative w-full h-full" style={{ background: "#000010" }}>
+      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0 }} />
     </div>
   );
 }
+
+// ── Point-in-polygon helpers ──────────────────────────────────────────────────
+
+function pointInPolygon(point: [number, number], polygon: number[][]): boolean {
+  const [x, y] = point;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function pointInFeature(point: [number, number], feature: any): boolean {
+  const { type, coordinates } = feature.geometry;
+  if (type === "Polygon") {
+    if (!pointInPolygon(point, coordinates[0])) return false;
+    for (let i = 1; i < coordinates.length; i++) {
+      if (pointInPolygon(point, coordinates[i])) return false;
+    }
+    return true;
+  } else if (type === "MultiPolygon") {
+    for (const poly of coordinates) {
+      if (pointInPolygon(point, poly[0])) {
+        let inHole = false;
+        for (let i = 1; i < poly.length; i++) {
+          if (pointInPolygon(point, poly[i])) { inHole = true; break; }
+        }
+        if (!inHole) return true;
+      }
+    }
+  }
+  return false;
+}
+
+// ── Overlay helpers (shooting stars + pulse dots + toasts) ────────────────────
 
 function addOverlays(wrapper: HTMLElement) {
   if (wrapper.querySelector(".star-svg")) return;
@@ -166,7 +289,8 @@ function injectOverlayCSS() {
       to   { opacity: 0; }
     }
     .news-pulse-wrap {
-      position: relative; width: 12px; height: 12px; cursor: pointer;
+      position: absolute; width: 12px; height: 12px; transform: translate(-50%,-50%);
+      pointer-events: none; z-index: 10;
     }
     .news-pulse-dot {
       position: absolute; inset: 0; border-radius: 50%;
@@ -179,9 +303,7 @@ function injectOverlayCSS() {
       border: 1.5px solid #00d4ff;
       animation: pulse-ring 1.8s ease-out infinite;
     }
-    .news-pulse-ring.d {
-      animation-delay: 0.9s;
-    }
+    .news-pulse-ring.d { animation-delay: 0.9s; }
     .news-toast {
       background: rgba(8,12,24,0.88);
       border: 1px solid rgba(0,212,255,0.3);
@@ -190,25 +312,14 @@ function injectOverlayCSS() {
       animation: toast-in 0.2s ease-out forwards;
       backdrop-filter: blur(4px);
     }
-    .news-toast.out {
-      animation: toast-out 0.3s ease-in forwards;
-    }
+    .news-toast.out { animation: toast-out 0.3s ease-in forwards; }
     .toast-src {
-      font-size: 8px;
-      color: #00d4ff;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      display: block;
-      margin-bottom: 2px;
+      font-size: 8px; color: #00d4ff; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; display: block; margin-bottom: 2px;
       font-family: var(--font-mono, monospace);
     }
     .toast-title {
-      font-size: 9.5px;
-      color: #e5e7eb;
-      line-height: 1.4;
-      display: block;
-      font-family: inherit;
+      font-size: 9.5px; color: #e5e7eb; line-height: 1.4; display: block;
     }
   `;
   document.head.appendChild(style);
@@ -217,10 +328,8 @@ function injectOverlayCSS() {
 function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number }) {
   const svg = wrapper.querySelector(".star-svg") as SVGSVGElement | null;
   if (!svg) return;
-
   const w = wrapper.clientWidth;
   const h = wrapper.clientHeight;
-
   const side = Math.floor(Math.random() * 4);
   let x0: number, y0: number;
   if (side === 0)      { x0 = Math.random() * w; y0 = -10; }
@@ -247,7 +356,6 @@ function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number
 
   const DRAW = 500, HOLD = 150, FADE = 350;
   let t0: number | null = null;
-
   function tick(ts: number) {
     if (!t0) t0 = ts;
     const el = ts - t0;
@@ -267,16 +375,26 @@ function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number
   requestAnimationFrame(tick);
 }
 
+function firePulse(wrapper: HTMLElement, px: { x: number; y: number }) {
+  const el = document.createElement("div");
+  el.className = "news-pulse-wrap";
+  el.style.left = `${px.x}px`;
+  el.style.top = `${px.y}px`;
+  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-dot" }));
+  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-ring" }));
+  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-ring d" }));
+  wrapper.appendChild(el);
+  setTimeout(() => el.remove(), 8000);
+}
+
 function showVoteToast(wrapper: HTMLElement, topic: string, claimText: string, vote: string) {
   const toastWrap = wrapper.querySelector(".news-toast-wrap");
   if (!toastWrap) return;
-
   const existing = toastWrap.querySelectorAll(".news-toast");
   if (existing.length >= 3) existing[0].remove();
 
   const voteColor = vote === "yes" ? "#ef4444" : "#3b82f6";
   const voteLabel = vote === "yes" ? "TRUE" : "FALSE";
-
   const toast = document.createElement("div");
   toast.className = "news-toast";
   toast.innerHTML = `
@@ -284,50 +402,17 @@ function showVoteToast(wrapper: HTMLElement, topic: string, claimText: string, v
     <span class="toast-title">${claimText.slice(0, 80)}${claimText.length > 80 ? "…" : ""}</span>
   `;
   toastWrap.appendChild(toast);
-
   setTimeout(() => {
     toast.classList.add("out");
     setTimeout(() => toast.remove(), 350);
   }, 5000);
 }
 
-function firePulse(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  map: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  maplibregl: any,
-  lnglat: [number, number],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  activeMarkers: any[],
-) {
-  const el = document.createElement("div");
-  el.className = "news-pulse-wrap";
-  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-dot" }));
-  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-ring" }));
-  el.appendChild(Object.assign(document.createElement("div"), { className: "news-pulse-ring d" }));
-
-  const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-    .setLngLat(lnglat)
-    .addTo(map);
-
-  activeMarkers.push(marker);
-  setTimeout(() => {
-    marker.remove();
-    const i = activeMarkers.indexOf(marker);
-    if (i !== -1) activeMarkers.splice(i, 1);
-  }, 8000);
-}
-
 function startVoteRadar(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  map: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  maplibregl: any,
   wrapper: HTMLElement,
+  projectFn: (lnglat: [number, number]) => { x: number; y: number } | null,
 ): ReturnType<typeof setInterval> {
   let lastSeenVoteId: number | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activeMarkers: any[] = [];
 
   async function poll() {
     try {
@@ -351,10 +436,12 @@ function startVoteRadar(
         for (const iso of event.countries) {
           const centroid = WORLD_CENTROIDS[iso];
           if (!centroid) continue;
-          const px: { x: number; y: number } = map.project(centroid);
+          const px = projectFn(centroid);
+          if (!px) continue; // country is on the back of the globe
           fireShootingStar(wrapper, px);
           setTimeout(() => {
-            firePulse(map, maplibregl, centroid, activeMarkers);
+            const px2 = projectFn(centroid);
+            if (px2) firePulse(wrapper, px2);
             showVoteToast(wrapper, event.topic_display, event.claim_text, event.vote);
           }, 550);
         }
@@ -364,33 +451,4 @@ function startVoteRadar(
 
   setTimeout(poll, 2000);
   return setInterval(poll, 8000);
-}
-
-// ── World country borders ─────────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function loadWorldLayer(map: any) {
-  try {
-    const geoRes = await fetch(
-      "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_admin_0_countries.geojson"
-    );
-    if (!geoRes.ok) return;
-    const geoData = await geoRes.json();
-
-    if (!map.getSource("world-countries")) {
-      map.addSource("world-countries", { type: "geojson", data: geoData });
-
-      // No fill layer — board wants event dots only (polyglobe style), not colored countries.
-      map.addLayer({
-        id: "world-line",
-        type: "line",
-        source: "world-countries",
-        paint: {
-          "line-color": "rgba(100,160,220,0.45)",
-          "line-width": 0.7,
-          "line-opacity": 1,
-        },
-      });
-    }
-  } catch {/* silently skip */}
 }
