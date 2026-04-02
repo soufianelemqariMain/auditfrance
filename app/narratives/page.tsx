@@ -173,44 +173,6 @@ export default function NarrativesPage() {
           </div>
         )}
 
-        {/* Corporate CTA */}
-        <div
-          style={{
-            marginTop: "48px",
-            border: "1px solid var(--border)",
-            borderRadius: "2px",
-            padding: "24px",
-            background: "var(--bg-panel)",
-            textAlign: "center",
-          }}
-        >
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: "9px", textTransform: "uppercase", letterSpacing: "2px", color: "var(--text-secondary)", marginBottom: "8px" }}>
-            For organizations
-          </p>
-          <h3 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "8px" }}>
-            Track narrative risk for your brand
-          </h3>
-          <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px", maxWidth: "420px", margin: "0 auto 16px" }}>
-            Subscribe to topics, monitor real-time community probability, and get alerts when narrative risk crosses your threshold.
-          </p>
-          <a
-            href="https://app.infoverif.org/pricing"
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "9px",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              background: "var(--accent-red)",
-              color: "#fff",
-              padding: "10px 20px",
-              borderRadius: "2px",
-              textDecoration: "none",
-              display: "inline-block",
-            }}
-          >
-            Get Pro access →
-          </a>
-        </div>
       </div>
     </div>
   );

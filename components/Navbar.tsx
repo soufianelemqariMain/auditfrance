@@ -73,25 +73,27 @@ export default function Navbar() {
     >
       {/* Left: brand + rooster + nav tabs */}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <span style={{ fontSize: 18, lineHeight: 1 }}>🔍</span>
-        <div>
-          <span
-            style={{
-              color: "var(--accent-white)",
-              fontWeight: 700,
-              letterSpacing: "0.2em",
-              fontSize: 13,
-              textTransform: "uppercase",
-            }}
-          >
-            Info<span style={{ color: "var(--accent-blue)" }}>Verif</span>
-          </span>
-          <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
-            TRANSPARENCE · VÉRITÉ · DÉMOCRATIE
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>🔍</span>
+          <div>
+            <span
+              style={{
+                color: "var(--accent-white)",
+                fontWeight: 700,
+                letterSpacing: "0.2em",
+                fontSize: 13,
+                textTransform: "uppercase",
+              }}
+            >
+              Info<span style={{ color: "var(--accent-blue)" }}>Verif</span>
+            </span>
+            <div style={{ fontSize: 8, color: "var(--text-secondary)", letterSpacing: "0.15em", marginTop: 1 }}>
+              TRANSPARENCE · VÉRITÉ · DÉMOCRATIE
+            </div>
           </div>
-        </div>
+        </Link>
 
-        {/* Narrative Intelligence nav link */}
+        {/* Nav links */}
         <Link
           href="/narratives"
           style={{
@@ -107,7 +109,24 @@ export default function Navbar() {
             opacity: 0.85,
           }}
         >
-          Narratives
+          Prédictions
+        </Link>
+        <Link
+          href="/analyse"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 9,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "var(--accent-blue)",
+            border: "1px solid var(--accent-blue)",
+            padding: "3px 8px",
+            textDecoration: "none",
+            borderRadius: "2px",
+            opacity: 0.85,
+          }}
+        >
+          Analyser
         </Link>
       </div>
 
