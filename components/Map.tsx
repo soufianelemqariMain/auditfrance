@@ -66,6 +66,7 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
   onDeptClickRef.current = onDeptClick;
   const onCommuneClickRef = useRef(onCommuneClick);
   onCommuneClickRef.current = onCommuneClick;
+  const voteRadarRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { mapState, is3D } = useAppStore();
 
   useEffect(() => {
@@ -114,6 +115,9 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
         // Load France dept + city layers (shown when zoom > 4)
         loadLayers(map!, maplibregl);
 
+        // Live vote shooting stars (fires from real vote events)
+        voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
+
         setTimeout(() => {
           radarInterval = startNewsRadar(map!, maplibregl, wrapper, (code, nom) => {
             if (onDeptClickRef.current) onDeptClickRef.current(code, nom);
@@ -151,6 +155,7 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
 
     return () => {
       if (radarInterval) clearInterval(radarInterval);
+      if (voteRadarRef.current) clearInterval(voteRadarRef.current);
       if (mapRef.current) {
         (mapRef.current as { remove: () => void }).remove();
         mapRef.current = null;
@@ -335,6 +340,83 @@ function fireShootingStar(wrapper: HTMLElement, targetPx: { x: number; y: number
     }
   }
   requestAnimationFrame(tick);
+}
+
+// ── Live vote radar (fires shooting stars from real vote events) ───────────────
+
+function startVoteRadar(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  map: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  maplibregl: any,
+  wrapper: HTMLElement,
+): ReturnType<typeof setInterval> {
+  let lastSeenVoteId: number | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const activeMarkers: any[] = [];
+
+  async function poll() {
+    try {
+      const res = await fetch("/api/votes/recent?limit=10", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      const events: Array<{
+        vote_id: number; claim_text: string; topic_display: string;
+        topic_slug: string; vote: string; countries: string[];
+      }> = data.events ?? [];
+
+      if (!events.length) return;
+
+      // Only process votes we haven't seen yet
+      const newEvents = lastSeenVoteId
+        ? events.filter((e) => e.vote_id > lastSeenVoteId!)
+        : events.slice(0, 3); // first poll: show last 3
+
+      if (newEvents.length) lastSeenVoteId = newEvents[0].vote_id;
+
+      for (const event of newEvents.slice(0, 4)) {
+        for (const iso of event.countries) {
+          const centroid = WORLD_CENTROIDS[iso];
+          if (!centroid) continue;
+          const px: { x: number; y: number } = map.project(centroid);
+          fireShootingStar(wrapper, px);
+          setTimeout(() => {
+            firePulse(map, maplibregl, centroid, iso, () => {}, activeMarkers);
+            // Show vote toast
+            showVoteToast(wrapper, event.topic_display, event.claim_text, event.vote);
+          }, 550);
+        }
+      }
+    } catch {/* silent */}
+  }
+
+  // Start polling after 2s, then every 8s
+  setTimeout(poll, 2000);
+  return setInterval(poll, 8000);
+}
+
+function showVoteToast(wrapper: HTMLElement, topic: string, claimText: string, vote: string) {
+  const toastWrap = wrapper.querySelector(".news-toast-wrap");
+  if (!toastWrap) return;
+
+  const existing = toastWrap.querySelectorAll(".news-toast");
+  if (existing.length >= 3) existing[0].remove();
+
+  const voteColor = vote === "yes" ? "#ef4444" : "#3b82f6";
+  const voteLabel = vote === "yes" ? "TRUE" : "FALSE";
+
+  const toast = document.createElement("div");
+  toast.className = "news-toast";
+  toast.innerHTML = `
+    <span class="toast-src" style="color:${voteColor}">${topic} · ${voteLabel}</span>
+    <span class="toast-title">${claimText.slice(0, 80)}${claimText.length > 80 ? "…" : ""}</span>
+  `;
+  toastWrap.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("out");
+    setTimeout(() => toast.remove(), 350);
+  }, 5000);
 }
 
 function startNewsRadar(
