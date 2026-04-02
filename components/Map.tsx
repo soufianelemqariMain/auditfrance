@@ -61,7 +61,7 @@ const DEPT_CENTROIDS: Record<string, [number, number]> = {
 
 const ALL_DEPT_CODES = Object.keys(DEPT_CENTROIDS);
 
-export default function Map({ onDeptClick, onCommuneClick, globalMode = false }: MapProps) {
+export default function Map({ onDeptClick, onCommuneClick, globalMode = true }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const onDeptClickRef = useRef(onDeptClick);
@@ -76,7 +76,6 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = false }:
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let map: any = null;
-    let radarInterval: ReturnType<typeof setInterval> | null = null;
 
     const initMap = async () => {
       const maplibregl = (await import("maplibre-gl")).default;
@@ -89,7 +88,7 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = false }:
       const initialZoom = globalMode ? 1.5 : (mapState.zoom > 3 ? mapState.zoom : 2);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mapOptions: Record<string, any> = {
+      const mapOptions: any = {
         container: mapContainer.current!,
         style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         center: initialCenter,
@@ -127,18 +126,10 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = false }:
         // Load world choropleth (primary view)
         loadWorldLayer(map!);
 
-        if (globalMode) {
-          // Global mode: only live vote radar, no France news radar or layers
-          voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
-        } else {
-          // France mode: load department + city layers + news radar
+        voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
+        if (!globalMode) {
+          // France mode: also load department + city layers
           loadLayers(map!, maplibregl);
-          voteRadarRef.current = startVoteRadar(map!, maplibregl, wrapper);
-          setTimeout(() => {
-            radarInterval = startNewsRadar(map!, maplibregl, wrapper, (code, nom) => {
-              if (onDeptClickRef.current) onDeptClickRef.current(code, nom);
-            });
-          }, 3000);
         }
       });
 
@@ -173,7 +164,6 @@ export default function Map({ onDeptClick, onCommuneClick, globalMode = false }:
     initMap();
 
     return () => {
-      if (radarInterval) clearInterval(radarInterval);
       if (voteRadarRef.current) clearInterval(voteRadarRef.current);
       if (mapRef.current) {
         (mapRef.current as { remove: () => void }).remove();
@@ -438,90 +428,6 @@ function showVoteToast(wrapper: HTMLElement, topic: string, claimText: string, v
   }, 5000);
 }
 
-function startNewsRadar(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  map: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  maplibregl: any,
-  wrapper: HTMLElement,
-  onDeptClick: (code: string, nom: string) => void,
-): ReturnType<typeof setInterval> {
-  const seenTitles = new Set<string>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activeMarkers: any[] = [];
-
-  // Determine current view: world (zoom < 4) or France drill-down
-  function isWorldView(): boolean {
-    return map.getZoom() < 4;
-  }
-
-  async function poll() {
-    if (isWorldView()) {
-      // World mode: fire shooting stars at random country centroids
-      const worldCodes = Object.keys(WORLD_CENTROIDS);
-      const shuffled = [...worldCodes].sort(() => Math.random() - 0.5).slice(0, 5);
-      for (const iso of shuffled) {
-        const centroid = WORLD_CENTROIDS[iso];
-        if (!centroid) continue;
-        const px: { x: number; y: number } = map.project(centroid);
-        fireShootingStar(wrapper, px);
-        setTimeout(() => {
-          firePulse(map, maplibregl, centroid, iso, onDeptClick, activeMarkers);
-        }, 550);
-      }
-      return;
-    }
-
-    // France mode: existing dept-news radar
-    const shuffled = [...ALL_DEPT_CODES].sort(() => Math.random() - 0.5).slice(0, 8);
-    for (const code of shuffled) {
-      const centroid = DEPT_CENTROIDS[code];
-      if (!centroid) continue;
-      try {
-        const res = await fetch(`/api/dept-news/${code}?bust=${Date.now()}`, { cache: "no-store" });
-        if (!res.ok) continue;
-        const data = await res.json();
-        const articles: Array<{ title: string; source: string; url: string; description?: string }> = data.articles ?? [];
-        const fresh = articles.filter((a) => a.title && !seenTitles.has(a.title));
-        if (!fresh.length) continue;
-        fresh.forEach((a) => seenTitles.add(a.title));
-
-        const first = fresh[0];
-        const source = first.source && first.source !== "Google Actualités" ? first.source : (data.source ?? "Presse locale");
-
-        // Pixel position of centroid (for SVG overlay)
-        const px: { x: number; y: number } = map.project(centroid);
-
-        // 1) Shooting star
-        fireShootingStar(wrapper, px);
-
-        // Push to radar news store for NewsTickerPanel
-        useAppStore.getState().addRadarNewsItem({
-          id: `${code}-${Date.now()}`,
-          source,
-          title: first.title,
-          url: first.url || "",
-          publishedAt: new Date().toISOString(),
-          description: first.description,
-        });
-
-        // 2) Pulse marker (fires after star arrives)
-        setTimeout(() => {
-          firePulse(map, maplibregl, centroid, code, onDeptClick, activeMarkers);
-          // 3) Toast
-          showToast(wrapper, source, first.title);
-        }, 550);
-
-      } catch {
-        // silent
-      }
-    }
-  }
-
-  setTimeout(poll, 4000);
-  const interval = setInterval(poll, 90_000);
-  return interval;
-}
 
 function firePulse(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
