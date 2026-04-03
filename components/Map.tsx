@@ -84,6 +84,8 @@ export default function Map() {
   // showPanel is called from inside the canvas click handler (not React land)
   const showPanelRef = useRef<(isoCode: string) => void>(() => {});
 
+  const markersOverlayRef = useRef<HTMLDivElement>(null);
+
   const [panel, setPanel] = useState<{ isoCode: string; name: string } | null>(null);
   const [panelClaims, setPanelClaims] = useState<PanelClaim[]>([]);
   const [panelLoading, setPanelLoading] = useState(false);
@@ -232,41 +234,8 @@ export default function Map() {
           ctx.fill();
         });
 
-        // Persistent pulsing claim dots — one per country with active claims
-        const nowMs = performance.now();
-        claimDotsRef.current.forEach((dot) => {
-          const p = projection(dot.lnglat);
-          if (!p) return;
-          const [px, py] = p;
-          if (px < 0 || px > w || py < 0 || py > h) return;
-          // Color: blue (low yes%) → yellow → red (high yes%)
-          const rv = Math.round(dot.yesPercent * 200 + 55);
-          const gv = Math.round((1 - dot.yesPercent) * 160 + 60);
-          const color = `rgb(${rv},${gv},40)`;
-          const dotR = Math.max(4, 4 * sf);
-          // Pulse: 0→1 cycle every 1.6s
-          const pulse = (Math.sin(nowMs * 0.004 + dot.lnglat[0]) * 0.5 + 0.5);
-          const outerR = dotR * (2.2 + pulse * 1.4);
-          // Pulsing outer glow
-          const grd = ctx.createRadialGradient(px, py, 0, px, py, outerR);
-          grd.addColorStop(0, `rgba(${rv},${gv},40,${0.55 + pulse * 0.3})`);
-          grd.addColorStop(0.5, `rgba(${rv},${gv},40,0.2)`);
-          grd.addColorStop(1, `rgba(${rv},${gv},40,0)`);
-          ctx.beginPath();
-          ctx.arc(px, py, outerR, 0, 2 * Math.PI);
-          ctx.fillStyle = grd;
-          ctx.fill();
-          // Solid core dot
-          ctx.beginPath();
-          ctx.arc(px, py, dotR * 0.85, 0, 2 * Math.PI);
-          ctx.fillStyle = color;
-          ctx.fill();
-          // Bright center highlight
-          ctx.beginPath();
-          ctx.arc(px, py, dotR * 0.35, 0, 2 * Math.PI);
-          ctx.fillStyle = `rgba(255,255,255,0.85)`;
-          ctx.fill();
-        });
+        // DOM-based claim markers — positioned via projection, styled with CSS
+        // (GlobeletJS-style: HTML elements that track globe rotation precisely)
 
         // Country name labels for countries with active claims
         const labeledCountries = new Set(claimDotsRef.current.map((d) => d.region));
@@ -392,6 +361,55 @@ export default function Map() {
         }
       } catch {/* skip */}
 
+      // ── DOM markers overlay — GlobeletJS-style HTML elements ─────────────────
+      const markersOverlay = markersOverlayRef.current;
+      const markerEls: Record<string, HTMLElement> = {};
+
+      function syncMarkers() {
+        if (!markersOverlay) return;
+        const currentRegions = new Set(claimDotsRef.current.map((d) => d.region));
+
+        // Remove stale markers
+        for (const region of Object.keys(markerEls)) {
+          if (!currentRegions.has(region)) {
+            markerEls[region].remove();
+            delete markerEls[region];
+          }
+        }
+
+        // Create new markers
+        for (const dot of claimDotsRef.current) {
+          if (markerEls[dot.region]) continue;
+          const rv = Math.round(dot.yesPercent * 200 + 55);
+          const gv = Math.round((1 - dot.yesPercent) * 160 + 60);
+          const c = `rgb(${rv},${gv},40)`;
+          const el = document.createElement("div");
+          el.className = "iv-claim-marker";
+          el.style.cssText = `
+            position:absolute; width:14px; height:14px; border-radius:50%;
+            border:2px solid ${c}; background:rgba(${rv},${gv},40,0.25);
+            transform:translate(-50%,-50%); pointer-events:none;
+            box-shadow:0 0 10px ${c}, 0 0 20px rgba(${rv},${gv},40,0.4);
+            animation:iv-marker-pulse 1.8s ease-in-out infinite;
+          `;
+          markersOverlay.appendChild(el);
+          markerEls[dot.region] = el;
+        }
+
+        // Position all markers
+        for (const dot of claimDotsRef.current) {
+          const el = markerEls[dot.region];
+          if (!el) continue;
+          const p = projection(dot.lnglat);
+          if (!p) { el.style.display = "none"; continue; }
+          const [px, py] = p;
+          if (px < 0 || px > w || py < 0 || py > h) { el.style.display = "none"; continue; }
+          el.style.display = "block";
+          el.style.left = `${px}px`;
+          el.style.top = `${py}px`;
+        }
+      }
+
       // ── Auto-rotation ─────────────────────────────────────────────────────────
       const rotation: [number, number] = [0, -20];
       let autoRotate = true;
@@ -403,6 +421,7 @@ export default function Map() {
           projection.rotate(rotation);
         }
         render();
+        syncMarkers();
       });
 
       // ── Drag to rotate ────────────────────────────────────────────────────────
@@ -491,6 +510,8 @@ export default function Map() {
   return (
     <div ref={wrapperRef} className="relative w-full h-full" style={{ background: "#000010" }}>
       <canvas ref={canvasRef} style={{ position: "absolute", inset: 0 }} />
+      {/* DOM markers overlay — GlobeletJS-style precise HTML elements */}
+      <div ref={markersOverlayRef} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5 }} />
 
       {/* Country claims panel */}
       {panel && (
@@ -572,7 +593,7 @@ export default function Map() {
                         borderRadius: 2, fontFamily: "var(--font-mono, monospace)",
                       }}
                     >
-                      {voted === "yes" ? "✓ TRUE" : "TRUE"}
+                      {voted === "yes" ? "✓ YES" : "YES"}
                     </button>
                     <button
                       disabled={!!voted}
@@ -586,7 +607,7 @@ export default function Map() {
                         borderRadius: 2, fontFamily: "var(--font-mono, monospace)",
                       }}
                     >
-                      {voted === "no" ? "✓ FALSE" : "FALSE"}
+                      {voted === "no" ? "✓ NO" : "NO"}
                     </button>
                   </div>
                 </div>
@@ -652,6 +673,10 @@ function injectOverlayCSS() {
   const style = document.createElement("style");
   style.id = "map-overlay-style";
   style.textContent = `
+    @keyframes iv-marker-pulse {
+      0%, 100% { transform:translate(-50%,-50%) scale(1); opacity:0.9; }
+      50%       { transform:translate(-50%,-50%) scale(1.55); opacity:0.5; }
+    }
     @keyframes toast-in  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     @keyframes toast-out { from { opacity:1; } to { opacity:0; } }
     .news-toast {
@@ -680,7 +705,7 @@ function showVoteFeedToast(wrapper: HTMLElement, topic: string, countries: strin
 
   const isYes = vote === "yes";
   const color = isYes ? "#ef4444" : "#3b82f6";
-  const label = isYes ? "VOTED TRUE" : "VOTED FALSE";
+  const label = isYes ? "VOTED YES" : "VOTED NO";
   const countryNames = countries
     .map((iso) => COUNTRY_NAMES[iso] ?? iso)
     .slice(0, 2)
