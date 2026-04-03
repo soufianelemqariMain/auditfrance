@@ -151,6 +151,9 @@ function parseRawInterventions(html: string, date: string, sessionUrl: string): 
 
   const parts = html.split(/(?=<div\s+id="\d+"\s+class="crs-inter)/);
 
+  // Collect all paragraphs per speaker run — AN splits one speech across many crs-inter divs
+  let lastSpeaker: string | null = null;
+
   for (const part of parts) {
     if (!part.includes('class="orateur"')) continue;
 
@@ -168,6 +171,25 @@ function parseRawInterventions(html: string, date: string, sessionUrl: string): 
     // Skip president/procedural
     if (/[Pp]r[eé]sid[ei]/.test(speaker)) continue;
 
+    // Extract speech text
+    const textM = part.match(/<p class="">\s*<span>([\s\S]+?)<\/span>\s*<\/p>/);
+    if (!textM) continue;
+
+    const texte = stripHtml(textM[1]);
+    if (texte.length < 20) continue;
+
+    // Merge consecutive blocks from the same speaker into one entry
+    if (speaker === lastSpeaker && results.length > 0) {
+      const prev = results[results.length - 1];
+      if (prev.texte.length < 3000) {
+        prev.texte = (prev.texte + " " + texte).slice(0, 3000);
+      }
+      continue;
+    }
+
+    // New speaker — cap at 12 unique speakers
+    if (results.length >= 12) break;
+
     // Extract actor ID from data-tipsy (present for deputies, absent for ministers)
     const actorM = spanAttrs.match(/data-tipsy=\/dyn\/embed\/acteur-info-card\/(PA\d+)/);
     const actorId = actorM ? actorM[1] : null;
@@ -175,13 +197,6 @@ function parseRawInterventions(html: string, date: string, sessionUrl: string): 
     // Extract role from span.italique
     const roleM = part.match(/class="italique"[^>]*>([\s\S]*?)<\/span>/);
     const role = roleM ? stripHtml(roleM[1]).replace(/^,\s*/, "").trim() : "";
-
-    // Extract speech text
-    const textM = part.match(/<p class="">\s*<span>([\s\S]+?)<\/span>\s*<\/p>/);
-    if (!textM) continue;
-
-    const texte = stripHtml(textM[1]);
-    if (texte.length < 80) continue;
 
     const isGovt = /ministre|secrétaire d'[ée]tat|Premier ministre|[Pp]r[ée]mier ministre/i.test(role);
 
@@ -197,7 +212,7 @@ function parseRawInterventions(html: string, date: string, sessionUrl: string): 
       actorId,
     });
 
-    if (results.length >= 12) break;
+    lastSpeaker = speaker;
   }
 
   return results;
