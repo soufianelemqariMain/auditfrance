@@ -108,6 +108,23 @@ export default function Navbar() {
         </Link>
 
         <Link
+          href="/analysis"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 9,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            color: "var(--accent-yellow, #eab308)",
+            border: "1px solid var(--accent-yellow, #eab308)",
+            padding: "3px 8px",
+            textDecoration: "none",
+            borderRadius: "2px",
+          }}
+        >
+          Analysis
+        </Link>
+
+        <Link
           href="/pro"
           style={{
             fontFamily: "var(--font-mono)",
