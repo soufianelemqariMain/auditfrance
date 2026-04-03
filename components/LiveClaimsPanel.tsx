@@ -78,7 +78,7 @@ function CompactClaim({ claim, voterId }: { claim: Claim; voterId: string }) {
       {/* Vote buttons */}
       {hasVoted ? (
         <span style={{ fontSize: 8, color: local.user_vote === "yes" ? "var(--accent-red)" : "var(--accent-blue)", fontFamily: "var(--font-mono)" }}>
-          ✓ Voté {local.user_vote === "yes" ? "Oui" : "Non"}
+          ✓ {local.user_vote === "yes" ? "True" : "False"}
         </span>
       ) : (
         <div style={{ display: "flex", gap: 4 }}>
@@ -92,7 +92,7 @@ function CompactClaim({ claim, voterId }: { claim: Claim; voterId: string }) {
               opacity: voting ? 0.5 : 1, textTransform: "uppercase", letterSpacing: "0.05em",
             }}
           >
-            {voting === "yes" ? "…" : "Oui"}
+            {voting === "yes" ? "…" : "True"}
           </button>
           <button
             onClick={() => vote("no")}
@@ -104,7 +104,7 @@ function CompactClaim({ claim, voterId }: { claim: Claim; voterId: string }) {
               opacity: voting ? 0.5 : 1, textTransform: "uppercase", letterSpacing: "0.05em",
             }}
           >
-            {voting === "no" ? "…" : "Non"}
+            {voting === "no" ? "…" : "False"}
           </button>
         </div>
       )}
