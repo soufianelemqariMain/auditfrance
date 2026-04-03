@@ -148,7 +148,7 @@ export default function ClaimCard({ claim, voterId, onVoted }: Props) {
               borderRadius: "2px",
             }}
           >
-            ✓ {local.user_vote === "yes" ? "True" : "False"}
+            ✓ {local.user_vote === "yes" ? "Yes" : "No"}
           </span>
           {deadline && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--text-secondary)", marginLeft: "auto" }}>
@@ -179,7 +179,7 @@ export default function ClaimCard({ claim, voterId, onVoted }: Props) {
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,65,53,0.1)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            {loading === "yes" ? "..." : "True"}
+            {loading === "yes" ? "..." : "Yes"}
           </button>
           <button
             onClick={() => handleVote("no")}
@@ -202,7 +202,7 @@ export default function ClaimCard({ claim, voterId, onVoted }: Props) {
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,85,164,0.15)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
-            {loading === "no" ? "..." : "False"}
+            {loading === "no" ? "..." : "No"}
           </button>
           {deadline && (
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>

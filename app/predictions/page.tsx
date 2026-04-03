@@ -18,19 +18,6 @@ interface Claim {
   status: string;
 }
 
-const TOPICS = [
-  { slug: "", label: "All Topics" },
-  { slug: "economics", label: "Economics" },
-  { slug: "geopolitics", label: "Geopolitics" },
-  { slug: "technology", label: "Technology" },
-  { slug: "health", label: "Health" },
-  { slug: "elections", label: "Elections" },
-  { slug: "climate", label: "Climate" },
-  { slug: "finance", label: "Finance" },
-  { slug: "science", label: "Science" },
-  { slug: "media", label: "Media" },
-  { slug: "sports", label: "Sports" },
-];
 
 function getOrCreateVoterId(): string {
   if (typeof window === "undefined") return "";
@@ -115,7 +102,7 @@ function ClaimRow({ claim, voterId, onVoted }: { claim: Claim; voterId: string; 
               opacity: claim.user_vote && claim.user_vote !== "yes" ? 0.3 : 1,
             }}
           >
-            {voting === "yes" ? "…" : "True"}
+            {voting === "yes" ? "…" : "Yes"}
           </button>
           <button
             onClick={() => vote("no")}
@@ -134,12 +121,17 @@ function ClaimRow({ claim, voterId, onVoted }: { claim: Claim; voterId: string; 
               opacity: claim.user_vote && claim.user_vote !== "no" ? 0.3 : 1,
             }}
           >
-            {voting === "no" ? "…" : "False"}
+            {voting === "no" ? "…" : "No"}
           </button>
         </div>
       </div>
     </div>
   );
+}
+
+interface TopicOption {
+  slug: string;
+  label: string;
 }
 
 export default function PredictionsPage() {
@@ -148,6 +140,7 @@ export default function PredictionsPage() {
   const [activeTopic, setActiveTopic] = useState("");
   const [loading, setLoading] = useState(true);
   const [voterId, setVoterId] = useState("");
+  const [topics, setTopics] = useState<TopicOption[]>([{ slug: "", label: "All Topics" }]);
 
   useEffect(() => { setVoterId(getOrCreateVoterId()); }, []);
 
@@ -155,6 +148,26 @@ export default function PredictionsPage() {
     fetch("/api/claims/shooting-stars")
       .then((r) => r.json())
       .then((d) => setShootingStars(d.shooting_stars || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/topics")
+      .then((r) => r.json())
+      .then((d: { slug: string; display: string }[]) => {
+        if (Array.isArray(d) && d.length > 0) {
+          // Deduplicate by slug (DB has multiple topic_display per slug)
+          const seen = new Set<string>();
+          const unique: TopicOption[] = [];
+          for (const t of d) {
+            if (!seen.has(t.slug)) {
+              seen.add(t.slug);
+              unique.push({ slug: t.slug, label: t.display });
+            }
+          }
+          setTopics([{ slug: "", label: "All Topics" }, ...unique]);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -190,7 +203,7 @@ export default function PredictionsPage() {
         flexShrink: 0,
         background: "var(--bg-secondary)",
       }}>
-        {TOPICS.map((t) => (
+        {topics.map((t) => (
           <button
             key={t.slug}
             onClick={() => setActiveTopic(t.slug)}
