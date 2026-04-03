@@ -34,6 +34,8 @@ export default function Home() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [sidebarVoted, setSidebarVoted] = useState<Record<number, "yes" | "no">>({});
   const [sidebarVoting, setSidebarVoting] = useState<Record<number, boolean>>({});
+  const [totalVotes, setTotalVotes] = useState<number>(0);
+  const [totalClaims, setTotalClaims] = useState<number>(0);
 
   const fetchClaims = useCallback(async () => {
     try {
@@ -43,7 +45,13 @@ export default function Home() {
       const list: Claim[] = Array.isArray(data) ? data : (data.claims ?? data.items ?? []);
       if (!list.length) return;
       // Sort by vote count descending
-      setClaims([...list].sort((a, b) => (b.vote_count ?? 0) - (a.vote_count ?? 0)));
+      const sorted = [...list].sort((a, b) => (b.vote_count ?? 0) - (a.vote_count ?? 0));
+      setClaims(sorted);
+      // Derive stats from the full page (approximate total from returned count + total field)
+      const total = Array.isArray(data) ? data.length : (data.total ?? list.length);
+      setTotalClaims(total);
+      const votes = sorted.reduce((sum, c) => sum + (c.vote_count ?? 0), 0);
+      setTotalVotes(v => Math.max(v, votes)); // only goes up
     } catch { /* silent */ }
   }, []);
 
@@ -172,9 +180,14 @@ export default function Home() {
                 LIVE PREDICTIONS
               </span>
             </div>
-            <span style={{ fontSize: 9, color: "rgba(229,231,235,0.35)" }}>
-              {claims.length} open
-            </span>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 9, color: "rgba(229,231,235,0.35)" }}>{totalClaims || claims.length} open</div>
+              {totalVotes > 0 && (
+                <div style={{ fontSize: 8, color: "rgba(0,212,255,0.5)", marginTop: 1 }}>
+                  {totalVotes.toLocaleString()} votes cast
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Claims list */}
