@@ -53,7 +53,7 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
   onDeptClickRef.current = onDeptClick;
   const onCommuneClickRef = useRef(onCommuneClick);
   onCommuneClickRef.current = onCommuneClick;
-  const { mapState, is3D } = useAppStore();
+  const { mapState } = useAppStore();
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -70,8 +70,9 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
         container: mapContainer.current!,
         style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         center: [mapState.lon, mapState.lat],
-        zoom: mapState.zoom,
-        pitch: is3D ? 45 : 0,
+        zoom: 3.5,
+        projection: "globe",
+        pitch: 0,
         bearing: 0,
       }) as typeof map;
 
@@ -138,11 +139,6 @@ export default function Map({ onDeptClick, onCommuneClick }: MapProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-    (mapRef.current as { setPitch: (v: number) => void }).setPitch(is3D ? 45 : 0);
-  }, [is3D]);
 
   return (
     <div className="relative w-full h-full">
