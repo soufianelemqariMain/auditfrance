@@ -148,8 +148,11 @@ interface RawIntervention extends Intervention {
 
 function parseRawInterventions(html: string, date: string, sessionUrl: string): RawIntervention[] {
   const results: RawIntervention[] = [];
+  const seenIds = new Set<string>();
 
-  const parts = html.split(/(?=<div\s+id="\d+"\s+class="crs-inter)/);
+  // Split on any <div> with a numeric id and a class containing "crs-inter"
+  // Flexible: tolerates extra attributes between id and class, or class before id
+  const parts = html.split(/(?=<div\b[^>]*\bid="\d+"[^>]*\bclass="[^"]*crs-inter[^"]*"|<div\b[^>]*\bclass="[^"]*crs-inter[^"]*"[^>]*\bid="\d+")/);
 
   // Collect all paragraphs per speaker run — AN splits one speech across many crs-inter divs
   let lastSpeaker: string | null = null;
@@ -158,8 +161,12 @@ function parseRawInterventions(html: string, date: string, sessionUrl: string): 
     if (!part.includes('class="orateur"')) continue;
 
     // Extract numeric ID
-    const idM = part.match(/<div\s+id="(\d+)"/);
+    const idM = part.match(/<div\b[^>]*\bid="(\d+)"/);
     const id = idM ? idM[1] : String(results.length + 1);
+
+    // Skip duplicates (can occur when AN page repeats blocks in ToC + body)
+    if (seenIds.has(id)) continue;
+    seenIds.add(id);
 
     // Extract speaker span (may have data-tipsy actor ID for deputies)
     const orateurM = part.match(/class="orateur"[^>]*>[\s\S]*?<span([^>]*)>([^<]+)<\/span>/);
